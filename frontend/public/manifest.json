@@ -1,15 +1,29 @@
 {
   "name": "FitMate",
   "short_name": "FitMate",
+  "description": "Scanner keamanan TCM berbasis AI untuk konsumen Indonesia",
   "theme_color": "#69000B",
   "background_color": "#FFF8F7",
   "display": "standalone",
+  "orientation": "portrait",
   "start_url": "/",
   "icons": [
     {
       "src": "/favicon.ico",
       "sizes": "64x64 32x32 24x24 16x16",
       "type": "image/x-icon"
+    },
+    {
+      "src": "/icons/icon-192.png",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "any maskable"
+    },
+    {
+      "src": "/icons/icon-512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any maskable"
     }
   ]
 }

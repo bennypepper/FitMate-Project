@@ -34,7 +34,18 @@ export default function RootLayout({
       lang="id"
       className={`${inter.variable} ${newsreader.variable} ${notoSansSC.variable} h-full antialiased`}
     >
-      <body className="font-sans min-h-full flex flex-col">{children}</body>
+      <body className="font-sans min-h-full flex flex-col">
+        {children}
+        <script
+          dangerouslySetInnerHTML={{
+            __html: `
+              if (typeof window !== 'undefined' && 'serviceWorker' in navigator) {
+                navigator.serviceWorker.register('/sw.js');
+              }
+            `,
+          }}
+        />
+      </body>
     </html>
   );
 }
