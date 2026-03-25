@@ -1,18 +1,2 @@
 data/scraper/output/
 data/scraper/validated/
-
-# Google Cloud credentials — NEVER commit
-backend/credentials/*.json
-
-# Environment files
-backend/.env
-.env
-
-# Python
-backend/venv/
-**/__pycache__/
-**/*.pyc
-
-# Next.js
-frontend/.next/
-frontend/node_modules/
