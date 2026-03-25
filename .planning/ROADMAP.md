@@ -33,7 +33,7 @@ Decimal phases appear between their surrounding integers in numeric order.
 **Plans**: 2 plans
 
 Plans:
-- [ ] 01-01: Data scraping pipeline (BeautifulSoup4/Selenium scripts for TCMID/SymMap/BPOM, Excel export)
+- [x] 01-01: Data scraping pipeline (BeautifulSoup4/Selenium scripts for TCMID/SymMap/BPOM, Excel export)
 - [ ] 01-02: MongoDB schema and seeding (database setup, collection schemas, seed script from validated Excel)
 
 ### Phase 2: Backend Core
