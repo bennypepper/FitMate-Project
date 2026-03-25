@@ -83,23 +83,22 @@ export default function IngredientsPage() {
   return (
     <div>
       {/* Sticky Header */}
-      <header className="sticky top-0 z-10 bg-surface-container-lowest/80 backdrop-blur-md px-10 py-6">
-        <h2 className="font-serif text-3xl font-bold text-primary italic">
+      <header className="sticky top-0 z-10 bg-surface/80 backdrop-blur-md px-10 py-6">
+        <h2 className="font-headline text-3xl font-bold text-dark mb-2">
           Manajemen Basis Pengetahuan
         </h2>
-        <p className="font-sans text-sm text-on-surface-variant mt-1">
+        <p className="font-body text-sm text-on-surface-variant font-medium">
           Database bahan-bahan TCM dan profil toksisitasnya
         </p>
       </header>
 
       <section className="px-10 pb-12">
-        {/* Table card — matches stitch reference lines 181-266 */}
-        <div className="bg-surface-container-lowest rounded-3xl overflow-hidden shadow-ambient">
+        <div className="bg-white rounded-3xl overflow-hidden shadow-sm border border-light/50">
 
           {/* Search bar */}
-          <div className="bg-surface-container-low px-8 py-4 flex justify-between items-center gap-4">
+          <div className="bg-light/10 px-8 py-4 flex justify-between items-center gap-4 border-b border-light/30">
             <div className="flex items-center gap-3 flex-1 max-w-md">
-              <span className="material-symbols-outlined text-on-surface-variant text-xl">
+              <span className="material-symbols-outlined text-primary text-xl">
                 search
               </span>
               <input
@@ -108,56 +107,48 @@ export default function IngredientsPage() {
                 value={search}
                 onChange={(e) => setSearch(e.target.value)}
                 placeholder="Cari nama Mandarin, Indonesia, atau Latin..."
-                className="bg-transparent border-none focus:outline-none w-full font-sans text-sm text-on-surface placeholder:text-on-surface-variant/50"
+                className="bg-transparent border-none focus:outline-none focus:ring-0 w-full font-body text-sm text-dark placeholder:text-on-surface-variant/50"
               />
             </div>
             <a
               href="/admin/upload"
-              className="flex items-center gap-2 text-on-tertiary-fixed font-sans font-bold text-xs bg-tertiary-container px-5 py-2.5 rounded-xl hover:brightness-105 transition-all whitespace-nowrap"
+              className="flex items-center gap-2 text-white font-body font-bold text-xs bg-accent px-6 py-2.5 rounded-xl hover:brightness-105 transition-all whitespace-nowrap shadow-sm"
             >
-              <span className="material-symbols-outlined text-sm">upload_file</span>
-              Unggah Excel
+              <span className="material-symbols-outlined text-sm">add</span>
+              Tambah Bahan
             </a>
           </div>
 
           {/* Table */}
           <div className="overflow-x-auto">
-            <table className="w-full text-left">
+            <table className="w-full text-left border-collapse">
               <thead>
-                <tr className="border-b border-surface-container">
-                  <th className="px-8 py-5 font-sans text-xs font-bold uppercase tracking-widest text-on-surface-variant">
+                <tr className="bg-light/5 border-b border-light/30 font-body">
+                  <th className="px-8 py-5 text-xs font-bold uppercase tracking-widest text-on-surface-variant">
                     NAMA BAHAN
                   </th>
-                  <th className="px-8 py-5 font-sans text-xs font-bold uppercase tracking-widest text-on-surface-variant">
+                  <th className="px-8 py-5 text-xs font-bold uppercase tracking-widest text-on-surface-variant">
                     NAMA LATIN
                   </th>
-                  <th className="px-8 py-5 font-sans text-xs font-bold uppercase tracking-widest text-on-surface-variant">
+                  <th className="px-8 py-5 text-xs font-bold uppercase tracking-widest text-on-surface-variant">
                     TERJEMAHAN
                   </th>
-                  <th className="px-8 py-5 font-sans text-xs font-bold uppercase tracking-widest text-on-surface-variant">
+                  <th className="px-8 py-5 text-xs font-bold uppercase tracking-widest text-on-surface-variant text-right">
                     STATUS TOKSISITAS
                   </th>
                 </tr>
               </thead>
-              <tbody className="divide-y divide-surface-container">
+              <tbody className="divide-y divide-light/30 font-body">
                 {loading ? (
                   <tr>
-                    <td
-                      colSpan={4}
-                      className="px-8 py-16 text-center font-sans text-sm text-on-surface-variant"
-                    >
+                    <td colSpan={4} className="px-8 py-16 text-center text-sm text-on-surface-variant">
                       Memuat data...
                     </td>
                   </tr>
                 ) : filtered.length === 0 ? (
                   <tr>
-                    <td
-                      colSpan={4}
-                      className="px-8 py-16 text-center font-sans text-sm text-on-surface-variant"
-                    >
-                      {search
-                        ? `Tidak ada hasil untuk "${search}"`
-                        : "Belum ada bahan dalam database."}
+                    <td colSpan={4} className="px-8 py-16 text-center text-sm text-on-surface-variant">
+                      {search ? `Tidak ada hasil untuk "${search}"` : "Belum ada bahan dalam database."}
                     </td>
                   </tr>
                 ) : (
@@ -165,39 +156,32 @@ export default function IngredientsPage() {
                     const badge = getBadge(ing);
                     const firstChar = ing.mandarin_name.charAt(0) || "?";
                     return (
-                      <tr
-                        key={ing._id}
-                        className="hover:bg-surface-container-low transition-colors"
-                      >
-                        {/* Mandarin char avatar — matches stitch reference lines 205-213 */}
-                        <td className="px-8 py-5">
+                      <tr key={ing._id} className="hover:bg-light/5 transition-colors group">
+                        <td className="px-8 py-6">
                           <div className="flex items-center gap-4">
-                            <div className="w-10 h-10 rounded-lg bg-surface-container-high flex items-center justify-center flex-shrink-0">
-                              <span className="font-cjk text-primary font-bold text-lg leading-none">
+                            <div className="w-10 h-10 rounded-lg bg-light/30 flex items-center justify-center flex-shrink-0">
+                              <span className="font-chinese text-primary font-bold text-lg leading-none">
                                 {firstChar}
                               </span>
                             </div>
                             <div>
-                              <p className="font-serif font-bold text-lg text-on-surface leading-tight">
+                              <p className="font-headline font-bold text-lg text-dark leading-tight">
                                 {ing.mandarin_name}
                               </p>
-                              <p className="font-sans text-xs text-on-surface-variant mt-0.5">
+                              <p className="text-xs text-on-surface-variant mt-0.5">
                                 {ing.indonesian_name}
                               </p>
                             </div>
                           </div>
                         </td>
-                        <td className="px-8 py-5 font-sans text-sm text-on-surface-variant italic">
+                        <td className="px-8 py-6 text-sm text-on-surface-variant italic">
                           {ing.latin_name ?? "—"}
                         </td>
-                        <td className="px-8 py-5 font-sans text-sm text-on-surface-variant">
+                        <td className="px-8 py-6 text-sm text-on-surface-variant">
                           {ing.english_name ?? "—"}
                         </td>
-                        {/* Toxicity badge — matches stitch reference lines 216-220 */}
-                        <td className="px-8 py-5">
-                          <span
-                            className={`inline-flex items-center px-3 py-1 rounded-full text-[10px] font-bold uppercase tracking-wider ${badge.className}`}
-                          >
+                        <td className="px-8 py-6 text-right">
+                          <span className={`inline-flex items-center px-3 py-1 rounded-full text-[10px] font-bold uppercase tracking-wider ${badge.className}`}>
                             {badge.label}
                           </span>
                         </td>
@@ -209,31 +193,25 @@ export default function IngredientsPage() {
             </table>
           </div>
 
-          {/* Pagination — matches stitch reference lines 256-264 */}
-          <div className="px-8 py-5 border-t border-surface-container flex justify-between items-center">
-            <span className="font-sans text-sm text-on-surface-variant">
-              {loading
-                ? "Memuat..."
-                : `Menampilkan ${filtered.length} dari ${total} bahan`}
+          {/* Pagination */}
+          <div className="px-8 py-6 border-t border-light/30 flex justify-between items-center text-sm font-medium text-on-surface-variant font-body">
+            <span>
+              {loading ? "Memuat..." : `Menampilkan ${filtered.length} dari ${total} bahan`}
             </span>
-            <div className="flex gap-1 items-center">
+            <div className="flex gap-2 items-center">
               <button
                 onClick={() => setPage(Math.max(1, page - 1))}
                 disabled={page === 1}
-                className="w-8 h-8 rounded flex items-center justify-center hover:bg-surface-container-low disabled:opacity-30 transition-colors"
+                className="w-8 h-8 rounded flex items-center justify-center hover:bg-light/10 disabled:opacity-30 transition-colors"
               >
-                <span className="material-symbols-outlined text-sm">
-                  chevron_left
-                </span>
+                <span className="material-symbols-outlined text-sm">chevron_left</span>
               </button>
               {pageNumbers.map((p) => (
                 <button
                   key={p}
                   onClick={() => setPage(p)}
                   className={`w-8 h-8 rounded flex items-center justify-center text-xs font-bold transition-colors ${
-                    p === page
-                      ? "bg-primary text-white"
-                      : "hover:bg-surface-container-low text-on-surface-variant"
+                    p === page ? "bg-primary text-white" : "hover:bg-light/20 text-on-surface-variant"
                   }`}
                 >
                   {p}
@@ -242,11 +220,9 @@ export default function IngredientsPage() {
               <button
                 onClick={() => setPage(Math.min(pages, page + 1))}
                 disabled={page === pages}
-                className="w-8 h-8 rounded flex items-center justify-center hover:bg-surface-container-low disabled:opacity-30 transition-colors"
+                className="w-8 h-8 rounded flex items-center justify-center hover:bg-light/10 disabled:opacity-30 transition-colors"
               >
-                <span className="material-symbols-outlined text-sm">
-                  chevron_right
-                </span>
+                <span className="material-symbols-outlined text-sm">chevron_right</span>
               </button>
             </div>
           </div>

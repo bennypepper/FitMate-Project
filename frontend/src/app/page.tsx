@@ -67,35 +67,32 @@ export default function ScannerPage() {
   };
 
   return (
-    <main className="flex flex-col flex-1 items-center justify-center p-4 max-w-md mx-auto w-full relative min-h-[100dvh]">
-      {!results && (
-        <>
-          <h1 className="font-serif text-3xl font-bold text-primary mb-2 text-center tracking-tight">
-            FitMate
-          </h1>
-          <h2 className="font-sans text-lg font-medium text-secondary mb-8 text-center uppercase tracking-widest">
-            Apothecary Scanner
-          </h2>
-          
-          <p className="font-sans text-on-surface text-center mb-8 leading-relaxed">
-            Arahkan kamera ke komposisi TCM (huruf Mandarin) untuk melihat analisis keamanan.
-          </p>
-
-          <CameraViewfinder onCapture={handleImageReady} />
-          <UploadFallback onImageReady={handleImageReady} />
-        </>
-      )}
+    <main className="flex-grow flex flex-col items-center justify-center p-large md:p-12 max-w-5xl mx-auto w-full mb-24">
+      {/* Header Section */}
+      <div className="w-full text-left mb-10">
+        <h1 className="font-headline text-4xl md:text-5xl text-dark font-bold leading-tight mb-4">
+          Pindai Label Komposisi <br />TCM Anda
+        </h1>
+        <p className="font-body text-on-surface-variant text-lg max-w-2xl">
+          Pastikan keamanan dan efektivitas dengan memverifikasi bahan-bahan terhadap basis data apotek modern kami.
+        </p>
+      </div>
 
       {isProcessing && <ProcessingLoader />}
 
+      {!results && !isProcessing && (
+        <CameraViewfinder 
+          onCapture={handleImageReady} 
+          uploadFallbackNode={<UploadFallback onImageReady={handleImageReady} />} 
+        />
+      )}
+
       {networkError && !isProcessing && (
-        <div className="bg-surface-container-low w-full rounded-xl p-6 shadow-ambient mb-4 outline outline-2 outline-error">
+        <div className="bg-primary/5 w-full rounded-card p-6 border-l-4 border-error mt-8">
           <div className="flex flex-col items-center gap-4 text-center">
-            <svg xmlns="http://www.w3.org/2000/svg" className="h-12 w-12 text-error" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
-            </svg>
-            <p className="text-on-surface font-sans font-medium">{networkError}</p>
-            <button onClick={handleReset} className="mt-2 px-6 py-2 bg-primary text-on-primary font-bold rounded-lg shadow-sm transition active:scale-95">
+            <span className="material-symbols-outlined text-4xl text-error">wifi_off</span>
+            <p className="text-dark font-body font-medium">{networkError}</p>
+            <button onClick={handleReset} className="mt-2 px-6 py-2 bg-accent text-dark font-bold rounded-button shadow-sm transition active:scale-95">
               Coba Lagi
             </button>
           </div>
@@ -103,7 +100,36 @@ export default function ScannerPage() {
       )}
 
       {results && !isProcessing && !networkError && (
-        <ResultsCard ingredients={results.ingredients} onReset={handleReset} />
+        <div className="w-full mt-4">
+          <ResultsCard ingredients={results.ingredients} onReset={handleReset} />
+        </div>
+      )}
+
+      {/* Recent Scans Section (Placeholder) */}
+      {!results && !isProcessing && (
+        <div className="w-full mt-16">
+          <div className="flex justify-between items-end mb-8">
+            <h3 className="font-headline text-2xl text-dark font-bold">Pencarian Terbaru</h3>
+            <a className="text-sm font-bold text-secondary hover:text-primary underline underline-offset-4 uppercase tracking-tight" href="#">
+              Lihat Semua Riwayat
+            </a>
+          </div>
+          <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+            {/* Card 1 */}
+            <div className="bg-light/5 aspect-square rounded-card overflow-hidden relative group cursor-pointer border border-light/20">
+              <div className="absolute inset-0 bg-dark/10" />
+              <div className="absolute bottom-0 left-0 right-0 p-4 bg-gradient-to-t from-dark/90 to-transparent">
+                <p className="text-white text-xs font-bold uppercase tracking-wider">Lianhua Qingwen</p>
+                <p className="text-white/70 text-[10px]">Terverifikasi 2 jam lalu</p>
+              </div>
+            </div>
+            {/* Empty State */}
+            <div className="border-2 border-dashed border-light/30 aspect-square rounded-card flex flex-col items-center justify-center gap-2 group hover:bg-light/5 transition-colors cursor-pointer">
+              <span className="material-symbols-outlined text-light text-3xl">add_a_photo</span>
+              <span className="text-[10px] font-bold text-light uppercase tracking-widest">Pindai Baru</span>
+            </div>
+          </div>
+        </div>
       )}
     </main>
   );

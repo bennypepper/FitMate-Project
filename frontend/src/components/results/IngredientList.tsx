@@ -8,14 +8,31 @@ export default function IngredientList({ ingredients }: IngredientListProps) {
   if (!ingredients || ingredients.length === 0) return null;
 
   return (
-    <div className="w-full flex justify-center mb-8">
-      <div className="flex flex-wrap gap-3 justify-center">
-        {ingredients.map((item, idx) => (
-          <div key={idx} className="bg-surface-container-low px-4 py-2 rounded-full border border-surface-container-highest shadow-ambient text-center min-w-[100px]">
-            <span className="font-cjk text-xl block text-on-surface/60 mb-1">{item.mandarin_name || item.matched_mandarin}</span>
-            <span className="font-sans font-bold text-sm text-on-surface">{item.indonesian_name || item.detected_text || "Unknown"}</span>
-          </div>
-        ))}
+    <div className="space-y-6">
+      <h5 className="font-headline text-2xl font-bold text-on-surface">
+        Bahan-Bahan yang Diekstrak
+      </h5>
+      <div className="flex flex-wrap gap-3">
+        {ingredients.map((item, idx) => {
+          if (item.is_toxic) {
+            return (
+              <span
+                key={idx}
+                className="px-5 py-2 bg-error-container text-primary font-bold rounded-full text-sm border border-primary/20"
+              >
+                {item.indonesian_name || item.mandarin_name || item.detected_text || "Unknown"}
+              </span>
+            );
+          }
+          return (
+            <span
+              key={idx}
+              className="px-5 py-2 bg-light/30 text-on-surface-variant font-medium rounded-full text-sm"
+            >
+              {item.indonesian_name || item.mandarin_name || item.detected_text || "Unknown"}
+            </span>
+          );
+        })}
       </div>
     </div>
   );

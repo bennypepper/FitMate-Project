@@ -22,9 +22,9 @@ export default function UploadFallback({ onImageReady }: UploadFallbackProps) {
   };
 
   return (
-    <div className="w-full flex flex-col items-center mt-4">
-      <label className="bg-surface-container-highest text-on-surface font-sans font-medium px-8 py-3 w-full text-center rounded-md cursor-pointer transition-colors active:scale-95">
-        Unggah dari Galeri
+    <div className="w-full flex flex-col items-center">
+      <label className="w-full py-3 px-6 rounded-button bg-secondary text-white font-bold hover:bg-primary transition-colors flex items-center justify-center gap-2 text-sm cursor-pointer active:scale-95">
+        PILIH FILE
         <input
           type="file"
           accept="image/*"

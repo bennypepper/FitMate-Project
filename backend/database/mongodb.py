@@ -9,7 +9,14 @@ from pymongo import MongoClient
 from pymongo.collection import Collection
 from pymongo.database import Database
 
-MONGODB_URL = os.getenv("MONGODB_URL", "mongodb://admin:REDACTED@localhost:27017/fitmate_db?authSource=admin")
+# Load .env so os.getenv picks up MONGODB_URL correctly
+try:
+    from dotenv import load_dotenv
+    load_dotenv()
+except ImportError:
+    pass
+
+MONGODB_URL = os.getenv("MONGODB_URL", "mongodb://localhost:27017")
 MONGODB_DB_NAME = os.getenv("MONGODB_DB_NAME", "fitmate_db")
 
 
