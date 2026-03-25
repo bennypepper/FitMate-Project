@@ -10,6 +10,7 @@ export default function ScannerPage() {
   const [image, setImage] = useState<string | null>(null);
   const [isProcessing, setIsProcessing] = useState(false);
   const [results, setResults] = useState<any | null>(null);
+  const [networkError, setNetworkError] = useState<string | null>(null);
 
   const handleImageReady = async (base64: string) => {
     setImage(base64);
@@ -24,7 +25,7 @@ export default function ScannerPage() {
       const formData = new FormData();
       formData.append("file", blob, "scan.jpg");
 
-      const response = await fetch("http://localhost:8000/api/v1/analyze/", {
+      const response = await fetch((process.env.NEXT_PUBLIC_API_URL || "http://localhost:8000") + "/api/v1/analyze/", {
         method: "POST",
         body: formData,
       });
@@ -49,12 +50,11 @@ export default function ScannerPage() {
       });
     } catch (error) {
       console.error(error);
-      alert("Gagal memproses gambar. Pastikan server lokal berjalan.");
-      // For demo fallback if backend is down
-      setResults({
-        ingredients: [],
-        disclaimer: "INFORMASI INI HANYA UNTUK TUJUAN EDUKASI",
-      });
+      if (!navigator.onLine) {
+        setNetworkError("Tidak ada koneksi internet atau server tidak dapat dijangkau. Pastikan Anda terhubung ke internet untuk menggunakan fitur scanning.");
+      } else {
+        setNetworkError("Server tidak dapat dijangkau. Coba lagi dalam beberapa saat.");
+      }
     } finally {
       setIsProcessing(false);
     }
@@ -63,6 +63,7 @@ export default function ScannerPage() {
   const handleReset = () => {
     setImage(null);
     setResults(null);
+    setNetworkError(null);
   };
 
   return (
@@ -87,7 +88,21 @@ export default function ScannerPage() {
 
       {isProcessing && <ProcessingLoader />}
 
-      {results && !isProcessing && (
+      {networkError && !isProcessing && (
+        <div className="bg-surface-container-low w-full rounded-xl p-6 shadow-ambient mb-4 outline outline-2 outline-error">
+          <div className="flex flex-col items-center gap-4 text-center">
+            <svg xmlns="http://www.w3.org/2000/svg" className="h-12 w-12 text-error" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
+            </svg>
+            <p className="text-on-surface font-sans font-medium">{networkError}</p>
+            <button onClick={handleReset} className="mt-2 px-6 py-2 bg-primary text-on-primary font-bold rounded-lg shadow-sm transition active:scale-95">
+              Coba Lagi
+            </button>
+          </div>
+        </div>
+      )}
+
+      {results && !isProcessing && !networkError && (
         <ResultsCard ingredients={results.ingredients} onReset={handleReset} />
       )}
     </main>
