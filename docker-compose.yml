@@ -1,0 +1,31 @@
+version: "3.9"
+services:
+  mongodb:
+    image: mongo:7.0
+    container_name: fitmate_mongodb
+    restart: unless-stopped
+    environment:
+      MONGO_INITDB_ROOT_USERNAME: ${MONGO_ROOT_USER:-admin}
+      MONGO_INITDB_ROOT_PASSWORD: ${MONGO_ROOT_PASSWORD:-fitmate_dev_password}
+      MONGO_INITDB_DATABASE: fitmate_db
+    ports:
+      - "27017:27017"
+    volumes:
+      - mongodb_data:/data/db
+
+  postgres:
+    image: postgres:16-alpine
+    container_name: fitmate_postgres
+    restart: unless-stopped
+    environment:
+      POSTGRES_DB: fitmate_admin
+      POSTGRES_USER: ${POSTGRES_USER:-fitmate}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-fitmate_dev_password}
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+
+volumes:
+  mongodb_data:
+  postgres_data:
