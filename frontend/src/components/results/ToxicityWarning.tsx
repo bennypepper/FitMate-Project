@@ -29,7 +29,7 @@ export default function ToxicityWarning({ ingredients }: ToxicityWarningProps) {
       <div className="flex flex-col gap-3">
         {toxicItems.map((item, idx) => (
           <div key={idx} className="bg-black/10 rounded-lg p-3 border border-white/10">
-            <p className="font-sans font-bold text-lg mb-1">{item.indonesian_name || item.mandarin_name}</p>
+            <p className="font-sans font-bold text-lg mb-1">{item.indonesian_name || item.mandarin_name || item.matched_mandarin}</p>
             <p className="text-sm opacity-90 font-sans"><strong>Organ Target:</strong> {item.target_organ || "Tidak diketahui"}</p>
             <p className="text-sm opacity-90 mt-1 font-sans">{item.severity_warning || item.description || "Komponen berisiko tinggi ditemukan."}</p>
           </div>

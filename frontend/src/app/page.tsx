@@ -24,7 +24,7 @@ export default function ScannerPage() {
       const formData = new FormData();
       formData.append("file", blob, "scan.jpg");
 
-      const response = await fetch("http://localhost:8000/api/v1/scan", {
+      const response = await fetch("http://localhost:8000/api/v1/analyze/", {
         method: "POST",
         body: formData,
       });
@@ -34,10 +34,18 @@ export default function ScannerPage() {
       }
 
       const data = await response.json();
+      // Backend returns: { status, ocr_blocks, safety_analysis: {toxic, contraindicated, safe, unknown}, disclaimer }
+      const sa = data.safety_analysis || {};
+      const allIngredients = [
+        ...(sa.toxic || []).map((i: any) => ({ ...i, category: "toxic", is_toxic: true })),
+        ...(sa.contraindicated || []).map((i: any) => ({ ...i, category: "contraindicated", is_toxic: true })),
+        ...(sa.safe || []).map((i: any) => ({ ...i, category: "safe", is_toxic: false })),
+        ...(sa.unknown || []).map((i: any) => ({ ...i, category: "unknown", is_toxic: false })),
+      ];
       setResults({
-        ingredients: data.matched_ingredients || [],
+        ingredients: allIngredients,
         disclaimer: data.disclaimer || "",
-        text_detected: data.text_detected || "",
+        ocr_blocks: data.ocr_blocks || [],
       });
     } catch (error) {
       console.error(error);
