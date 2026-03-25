@@ -66,9 +66,9 @@ Plans:
 **Plans**: 3 plans
 
 Plans:
-- [ ] 03-01: Next.js project setup with PWA config, Tailwind CSS, design system (color palette, typography, global styles)
-- [ ] 03-02: Camera module (HTML5 camera access, image capture, gallery upload, processing loader)
-- [ ] 03-03: Results display (ingredient list, toxicity warnings in Imperial Red, contraindication details, medical disclaimer)
+- [x] 03-01: Next.js project setup with PWA config, Tailwind CSS, design system (color palette, typography, global styles)
+- [x] 03-02: Camera module (HTML5 camera access, image capture, gallery upload, processing loader)
+- [x] 03-03: Results display (ingredient list, toxicity warnings in Imperial Red, contraindication details, medical disclaimer)
 
 ### Phase 4: WhatsApp Chatbot
 **Goal**: Build the hybrid WhatsApp chatbot — LLM for natural conversation, strict rules for medical recommendations
