@@ -19,13 +19,13 @@ Users can scan any TCM label and instantly know if it contains ingredients that 
 - [x] Medical disclaimer system (always recommend professional consultation) (Phase 02)
 - [x] React PWA frontend with camera capture and glassmorphism loader (Phase 03)
 - [x] PWA configuration for native-like mobile experience (Phase 03)
+- [x] Hybrid WhatsApp chatbot (LLM for natural conversation, strict rules for medical info) (Phase 04)
 
 ### Active
 
 <!-- Current scope. Building toward these. -->
 
 - [ ] Stateless WhatsApp deep link generation with pre-filled ingredient context
-- [ ] Hybrid WhatsApp chatbot (LLM for natural conversation, strict rules for medical info)
 - [ ] Admin dashboard with convincing UI for knowledge base management
 - [ ] Data pipeline: scrape TCMID/SymMap/BPOM → Excel → pharmacist validation → MongoDB import
 - [ ] Curated baseline dataset of 50-100 most common TCM products in Indonesia
@@ -99,4 +99,4 @@ This document evolves at phase transitions and milestone boundaries.
 4. Update Context with current state
 
 ---
-*Last updated: 2026-03-25 after Phase 03 frontend-scanner*
+*Last updated: 2026-03-25 after Phase 04 whatsapp-chatbot*
