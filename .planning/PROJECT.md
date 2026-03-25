@@ -17,6 +17,8 @@ Users can scan any TCM label and instantly know if it contains ingredients that 
 - [x] OCR-based TCM label scanning with Mandarin-to-Indonesian translation (Phase 02)
 - [x] Rule-based toxicity warning system with contraindication flagging (Phase 02)
 - [x] Medical disclaimer system (always recommend professional consultation) (Phase 02)
+- [x] React PWA frontend with camera capture and glassmorphism loader (Phase 03)
+- [x] PWA configuration for native-like mobile experience (Phase 03)
 
 ### Active
 
@@ -27,7 +29,6 @@ Users can scan any TCM label and instantly know if it contains ingredients that 
 - [ ] Admin dashboard with convincing UI for knowledge base management
 - [ ] Data pipeline: scrape TCMID/SymMap/BPOM → Excel → pharmacist validation → MongoDB import
 - [ ] Curated baseline dataset of 50-100 most common TCM products in Indonesia
-- [ ] PWA configuration for native-like mobile experience
 - [ ] JWT-based admin authentication
 
 ### Out of Scope
@@ -98,4 +99,4 @@ This document evolves at phase transitions and milestone boundaries.
 4. Update Context with current state
 
 ---
-*Last updated: 2026-03-25 after Phase 02 backend-core*
+*Last updated: 2026-03-25 after Phase 03 frontend-scanner*
