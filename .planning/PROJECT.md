@@ -21,15 +21,16 @@ Users can scan any TCM label and instantly know if it contains ingredients that 
 - [x] PWA configuration for native-like mobile experience (Phase 03)
 - [x] Hybrid WhatsApp chatbot (LLM for natural conversation, strict rules for medical info) (Phase 04)
 - [x] Stateless WhatsApp deep link generation with pre-filled ingredient context (Phase 06)
+- [x] Admin dashboard with convincing UI for knowledge base management (Phase 05)
+- [x] Data pipeline: scrape TCMID/SymMap/BPOM → Excel → pharmacist validation → MongoDB import (Phase 01)
+- [x] Curated baseline dataset of 50-100 most common TCM products in Indonesia (Phase 01)
+- [x] JWT-based admin authentication (Phase 05)
 
 ### Active
 
 <!-- Current scope. Building toward these. -->
 
-- [ ] Admin dashboard with convincing UI for knowledge base management
-- [ ] Data pipeline: scrape TCMID/SymMap/BPOM → Excel → pharmacist validation → MongoDB import
-- [ ] Curated baseline dataset of 50-100 most common TCM products in Indonesia
-- [ ] JWT-based admin authentication
+(No active requirements planned yet for v1.1)
 
 ### Out of Scope
 
@@ -55,9 +56,12 @@ Users can scan any TCM label and instantly know if it contains ingredients that 
 
 **The approach:** Combine Google Cloud Vision OCR with a pharmacist-validated rule-based database. The bot uses LLM for natural conversation understanding but strictly defers to rules for any medical recommendation. If an ingredient isn't in the database, the system says "I don't know" rather than guessing.
 
-**UI guidelines:** Existing design concept and brand guidelines folder available. 60-25-10-5 color ratio rule with Imperial Red (#930014) for critical warnings. Typography: Playfair Display for headings, Inter/Poppins for body, Noto Sans SC for Chinese characters.
+**UI guidelines:** Perfectly aligned with the "Modern Apothecary" concept. Uses 60-25-10-5 color ratio with Imperial Red (#930014) for critical warnings. Typography: Merriweather for headings, Inter for body, Noto Sans SC for Chinese characters.
 
 **Data strategy:** Start with manually curated 50-100 most common TCM products in Indonesia. Pharmacy team validates each entry for toxicity flags and contraindications. Expandable via scraping pipeline targeting TCMID, SymMap, and BPOM databases.
+
+**Codebase State (v1.0):** 
+Successfully shipped prototype. Fully functioning Next.js frontend, FastAPI + MongoDB backend, completely functioning image upload → OCR → TCM Safety Fuzzy Matching pipeline. Admin UI fully mocked and partially functional. WhatsApp webhook running smoothly handling incoming deep-link intents.
 
 ## Constraints
 
@@ -74,12 +78,12 @@ Users can scan any TCM label and instantly know if it contains ingredients that 
 
 | Decision | Rationale | Outcome |
 |----------|-----------|---------|
-| Hybrid LLM + Rules for WhatsApp bot | LLM handles natural conversation/intent; rules handle medical recommendations — balances usability with zero-hallucination safety | — Pending |
-| Stateless wa.me deep links (no session management) | Eliminates server-side session overhead; Frontend generates WhatsApp URLs directly with ingredient context | — Validated |
-| MongoDB for knowledge base, PostgreSQL for admin/logs | MongoDB's flexible schema suits evolving TCM data structure; PostgreSQL for structured admin data | — Pending |
-| 50-100 TCM products for prototype baseline | Sufficient for PIMNAS demo; quality over quantity; pharmacy team can validate thoroughly | — Pending |
-| Medical disclaimer on all outputs | Team are students, not licensed practitioners; always recommend professional consultation | — Pending |
-| Push to GitHub for backups | Remote: https://github.com/bennypepper/FitMate-PKM-KI | — Pending |
+| Hybrid LLM + Rules for WhatsApp bot | LLM handles natural conversation/intent; rules handle medical recommendations — balances usability with zero-hallucination safety | ✓ Validated |
+| Stateless wa.me deep links (no session management) | Eliminates server-side session overhead; Frontend generates WhatsApp URLs directly with ingredient context | ✓ Validated |
+| MongoDB for knowledge base, drop PostgreSQL for MVP auth | MongoDB's flexible schema suits evolving TCM data structure; JWT suffices for dashboard prototype | ✓ Validated |
+| 50-100 TCM products for prototype baseline | Sufficient for PIMNAS demo; quality over quantity; pharmacy team can validate thoroughly | ✓ Validated |
+| Medical disclaimer on all outputs | Team are students, not licensed practitioners; always recommend professional consultation | ✓ Validated |
+| Push to GitHub for backups | Remote: https://github.com/bennypepper/FitMate-PKM-KI | ✓ Validated |
 
 ## Evolution
 
@@ -99,4 +103,4 @@ This document evolves at phase transitions and milestone boundaries.
 4. Update Context with current state
 
 ---
-*Last updated: 2026-03-26 after Phase 06 integration-polish*
+*Last updated: 2026-03-26 after shipping v1.0 PIMNAS Prototype*
