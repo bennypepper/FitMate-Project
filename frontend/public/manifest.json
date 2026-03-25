@@ -1,0 +1,15 @@
+{
+  "name": "FitMate",
+  "short_name": "FitMate",
+  "theme_color": "#69000B",
+  "background_color": "#FFF8F7",
+  "display": "standalone",
+  "start_url": "/",
+  "icons": [
+    {
+      "src": "/favicon.ico",
+      "sizes": "64x64 32x32 24x24 16x16",
+      "type": "image/x-icon"
+    }
+  ]
+}
