@@ -83,8 +83,8 @@ Plans:
 **Plans**: 2 plans
 
 Plans:
-- [ ] 04-01: WhatsApp Cloud API webhook setup (message receiving, response sending, Meta API configuration)
-- [ ] 04-02: Hybrid conversation engine (LLM intent parsing, rule-based medical response lookup, fallback "I don't know" handler)
+- [x] 04-01: WhatsApp Cloud API webhook setup (message receiving, response sending, Meta API configuration)
+- [x] 04-02: Hybrid conversation engine (LLM intent parsing, rule-based medical response lookup, fallback "I don't know" handler)
 
 ### Phase 5: Admin Dashboard
 **Goal**: Build a convincing admin dashboard with JWT authentication and Excel upload functionality
