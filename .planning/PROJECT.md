@@ -20,12 +20,12 @@ Users can scan any TCM label and instantly know if it contains ingredients that 
 - [x] React PWA frontend with camera capture and glassmorphism loader (Phase 03)
 - [x] PWA configuration for native-like mobile experience (Phase 03)
 - [x] Hybrid WhatsApp chatbot (LLM for natural conversation, strict rules for medical info) (Phase 04)
+- [x] Stateless WhatsApp deep link generation with pre-filled ingredient context (Phase 06)
 
 ### Active
 
 <!-- Current scope. Building toward these. -->
 
-- [ ] Stateless WhatsApp deep link generation with pre-filled ingredient context
 - [ ] Admin dashboard with convincing UI for knowledge base management
 - [ ] Data pipeline: scrape TCMID/SymMap/BPOM → Excel → pharmacist validation → MongoDB import
 - [ ] Curated baseline dataset of 50-100 most common TCM products in Indonesia
@@ -75,7 +75,7 @@ Users can scan any TCM label and instantly know if it contains ingredients that 
 | Decision | Rationale | Outcome |
 |----------|-----------|---------|
 | Hybrid LLM + Rules for WhatsApp bot | LLM handles natural conversation/intent; rules handle medical recommendations — balances usability with zero-hallucination safety | — Pending |
-| Stateless wa.me deep links (no session management) | Eliminates server-side session overhead; Frontend generates WhatsApp URLs directly with ingredient context | — Pending |
+| Stateless wa.me deep links (no session management) | Eliminates server-side session overhead; Frontend generates WhatsApp URLs directly with ingredient context | — Validated |
 | MongoDB for knowledge base, PostgreSQL for admin/logs | MongoDB's flexible schema suits evolving TCM data structure; PostgreSQL for structured admin data | — Pending |
 | 50-100 TCM products for prototype baseline | Sufficient for PIMNAS demo; quality over quantity; pharmacy team can validate thoroughly | — Pending |
 | Medical disclaimer on all outputs | Team are students, not licensed practitioners; always recommend professional consultation | — Pending |
@@ -99,4 +99,4 @@ This document evolves at phase transitions and milestone boundaries.
 4. Update Context with current state
 
 ---
-*Last updated: 2026-03-25 after Phase 04 whatsapp-chatbot*
+*Last updated: 2026-03-26 after Phase 06 integration-polish*
