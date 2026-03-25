@@ -100,9 +100,9 @@ Plans:
 **Plans**: 3 plans
 
 Plans:
-- [ ] 05-01: JWT authentication system (login endpoint, token generation, role middleware, protected routes)
-- [ ] 05-02: Admin dashboard UI (React pages — dashboard overview, ingredient list table, data display)
-- [ ] 05-03: Excel upload pipeline (file upload endpoint, Excel parsing, MongoDB upsert, validation feedback)
+- [x] 05-01: JWT authentication system (login endpoint, token generation, role middleware, protected routes)
+- [x] 05-02: Admin dashboard UI (React pages — dashboard overview, ingredient list table, data display)
+- [x] 05-03: Excel upload pipeline (file upload endpoint, Excel parsing, MongoDB upsert, validation feedback)
 
 ### Phase 6: Integration & Polish
 **Goal**: Wire everything end-to-end — scanner to WhatsApp deep links, PWA manifest, final UI polish and testing
