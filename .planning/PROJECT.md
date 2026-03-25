@@ -14,14 +14,14 @@ Users can scan any TCM label and instantly know if it contains ingredients that 
 
 <!-- Shipped and confirmed valuable. -->
 
-(None yet — ship to validate)
+- [x] OCR-based TCM label scanning with Mandarin-to-Indonesian translation (Phase 02)
+- [x] Rule-based toxicity warning system with contraindication flagging (Phase 02)
+- [x] Medical disclaimer system (always recommend professional consultation) (Phase 02)
 
 ### Active
 
 <!-- Current scope. Building toward these. -->
 
-- [ ] OCR-based TCM label scanning with Mandarin-to-Indonesian translation
-- [ ] Rule-based toxicity warning system with contraindication flagging
 - [ ] Stateless WhatsApp deep link generation with pre-filled ingredient context
 - [ ] Hybrid WhatsApp chatbot (LLM for natural conversation, strict rules for medical info)
 - [ ] Admin dashboard with convincing UI for knowledge base management
@@ -29,7 +29,6 @@ Users can scan any TCM label and instantly know if it contains ingredients that 
 - [ ] Curated baseline dataset of 50-100 most common TCM products in Indonesia
 - [ ] PWA configuration for native-like mobile experience
 - [ ] JWT-based admin authentication
-- [ ] Medical disclaimer system (always recommend professional consultation)
 
 ### Out of Scope
 
@@ -99,4 +98,4 @@ This document evolves at phase transitions and milestone boundaries.
 4. Update Context with current state
 
 ---
-*Last updated: 2026-03-25 after initialization*
+*Last updated: 2026-03-25 after Phase 02 backend-core*

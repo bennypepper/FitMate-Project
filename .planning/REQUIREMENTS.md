@@ -12,14 +12,14 @@ Requirements for PIMNAS prototype. Each maps to roadmap phases.
 - [ ] **SCAN-01**: User can access phone camera directly from the PWA
 - [ ] **SCAN-02**: User can capture TCM label image or upload from gallery
 - [ ] **SCAN-03**: System displays real-time processing loader with visual bounding boxes for detected Hanzi text
-- [ ] **SCAN-04**: System extracts and translates Mandarin characters to Indonesian via Google Cloud Vision API
+- [x] **SCAN-04**: System extracts and translates Mandarin characters to Indonesian via Google Cloud Vision API
 
 ### Safety
 
-- [ ] **SAFE-01**: System cross-references translated ingredients against the MongoDB toxicity knowledge base
-- [ ] **SAFE-02**: System displays Imperial Red warning when toxic/dangerous ingredients are detected
-- [ ] **SAFE-03**: System shows contraindication details (target organ, risk level) for flagged ingredients
-- [ ] **SAFE-04**: System displays medical disclaimer recommending professional consultation on every result
+- [x] **SAFE-01**: System cross-references translated ingredients against the MongoDB toxicity knowledge base
+- [x] **SAFE-02**: System displays Imperial Red warning when toxic/dangerous ingredients are detected
+- [x] **SAFE-03**: System shows contraindication details (target organ, risk level) for flagged ingredients
+- [x] **SAFE-04**: System displays medical disclaimer recommending professional consultation on every result
 
 ### WhatsApp Integration
 
@@ -96,11 +96,11 @@ Which phases cover which requirements. Updated during roadmap creation.
 | SCAN-01 | Phase 3 | Pending |
 | SCAN-02 | Phase 3 | Pending |
 | SCAN-03 | Phase 3 | Pending |
-| SCAN-04 | Phase 2 | Pending |
-| SAFE-01 | Phase 2 | Pending |
-| SAFE-02 | Phase 2 | Pending |
-| SAFE-03 | Phase 2 | Pending |
-| SAFE-04 | Phase 2 | Pending |
+| SCAN-04 | Phase 2 | Complete |
+| SAFE-01 | Phase 2 | Complete |
+| SAFE-02 | Phase 2 | Complete |
+| SAFE-03 | Phase 2 | Complete |
+| SAFE-04 | Phase 2 | Complete |
 | WHAP-01 | Phase 6 | Pending |
 | WHAP-02 | Phase 4 | Pending |
 | WHAP-03 | Phase 4 | Pending |

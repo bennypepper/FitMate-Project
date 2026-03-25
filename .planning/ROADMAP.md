@@ -49,8 +49,8 @@ Plans:
 **Plans**: 2 plans
 
 Plans:
-- [ ] 02-01: FastAPI server setup and Google Cloud Vision OCR integration (image upload endpoint, OCR extraction, Mandarin-to-Indonesian translation)
-- [ ] 02-02: Rule-based safety engine (MongoDB toxicity matching, contraindication logic, warning response formatting, disclaimer injection)
+- [x] 02-01: FastAPI server setup and Google Cloud Vision OCR integration (image upload endpoint, OCR extraction, Mandarin-to-Indonesian translation)
+- [x] 02-02: Rule-based safety engine (MongoDB toxicity matching, contraindication logic, warning response formatting, disclaimer injection)
 
 ### Phase 3: Frontend Scanner
 **Goal**: Build the React PWA frontend with camera access, label capture UI, and results display following the design guidelines
