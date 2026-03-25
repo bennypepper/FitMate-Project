@@ -117,7 +117,7 @@ Plans:
 **Plans**: 2 plans
 
 Plans:
-- [ ] 06-01: WhatsApp deep link integration (stateless wa.me URL generation from scan results, CTA button wiring)
+- [x] 06-01: WhatsApp deep link integration (stateless wa.me URL generation from scan results, CTA button wiring)
 - [ ] 06-02: PWA configuration and final polish (manifest.json, service worker, icons, responsive testing, demo walkthrough)
 
 ## Progress
