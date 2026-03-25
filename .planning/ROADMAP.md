@@ -34,7 +34,7 @@ Decimal phases appear between their surrounding integers in numeric order.
 
 Plans:
 - [x] 01-01: Data scraping pipeline (BeautifulSoup4/Selenium scripts for TCMID/SymMap/BPOM, Excel export)
-- [ ] 01-02: MongoDB schema and seeding (database setup, collection schemas, seed script from validated Excel)
+- [x] 01-02: MongoDB schema and seeding (database setup, collection schemas, seed script from validated Excel)
 
 ### Phase 2: Backend Core
 **Goal**: Build the FastAPI backend with Google Cloud Vision OCR integration and the rule-based toxicity matching engine

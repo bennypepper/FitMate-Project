@@ -33,7 +33,7 @@ Requirements for PIMNAS prototype. Each maps to roadmap phases.
 - [x] **DATA-01**: Python scraping scripts fetch raw TCM data from TCMID/SymMap/BPOM
 - [x] **DATA-02**: Scraped data exported to Excel for pharmacist review
 - [ ] **DATA-03**: Admin can upload validated Excel/CSV files to update MongoDB knowledge base
-- [ ] **DATA-04**: Curated baseline dataset of 50-100 most common TCM products loaded
+- [x] **DATA-04**: Curated baseline dataset of 50-100 most common TCM products loaded
 
 ### Admin Dashboard
 
@@ -108,7 +108,7 @@ Which phases cover which requirements. Updated during roadmap creation.
 | DATA-01 | Phase 1 | Complete |
 | DATA-02 | Phase 1 | Complete |
 | DATA-03 | Phase 5 | Pending |
-| DATA-04 | Phase 1 | Pending |
+| DATA-04 | Phase 1 | Complete |
 | ADMN-01 | Phase 5 | Pending |
 | ADMN-02 | Phase 5 | Pending |
 | AUTH-01 | Phase 5 | Pending |
