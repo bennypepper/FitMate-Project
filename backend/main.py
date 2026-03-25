@@ -4,6 +4,12 @@ from fastapi.middleware.cors import CORSMiddleware
 from database.mongo import connect_to_mongo, close_mongo_connection
 from contextlib import asynccontextmanager
 
+from slowapi import Limiter, _rate_limit_exceeded_handler
+from slowapi.util import get_remote_address
+from slowapi.errors import RateLimitExceeded
+
+limiter = Limiter(key_func=get_remote_address)
+
 @asynccontextmanager
 async def lifespan(app: FastAPI):
     await connect_to_mongo()
@@ -17,6 +23,8 @@ app = FastAPI(
     lifespan=lifespan
 )
 
+app.state.limiter = limiter
+app.add_exception_handler(RateLimitExceeded, _rate_limit_exceeded_handler)
 
 # CORS configuration
 app.add_middleware(
@@ -33,6 +41,9 @@ async def root():
 
 from routers.ocr import router as ocr_router
 from routers.analyze import router as analyze_router
+from routers.whatsapp import router as whatsapp_router
+
 app.include_router(ocr_router)
 app.include_router(analyze_router)
+app.include_router(whatsapp_router)
 

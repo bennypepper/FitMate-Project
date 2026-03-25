@@ -1,0 +1,334 @@
+<!DOCTYPE html>
+
+<html class="light" lang="id"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>FitMate TCM Admin Console</title>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<link href="https://fonts.googleapis.com/css2?family=Merriweather:wght@700&amp;family=Inter:wght@400;500;600;700&amp;family=Noto+Sans+SC:wght@400;700&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<script id="tailwind-config">
+      tailwind.config = {
+        darkMode: "class",
+        theme: {
+          extend: {
+            colors: {
+              "primary": "#930014",
+              "primary-dark": "#5B000B",
+              "secondary": "#DB4B3A",
+              "accent": "#D4AF37",
+              "surface-container-high": "#ffe4c6",
+              "surface-container": "#ffebd6",
+              "surface-container-low": "#fff1e5",
+              "surface-container-lowest": "#ffffff",
+              "on-surface": "#2a1800",
+              "on-surface-variant": "#5a403e",
+              "outline": "#8e706d",
+              "error-container": "#ffdad6",
+              "on-error-container": "#93000a",
+              "background": "#fff8f4",
+              "surface": "#fff8f4",
+            },
+            fontFamily: {
+              "headline": ["Merriweather", "serif"],
+              "body": ["Inter", "sans-serif"],
+              "chinese": ["Noto Sans SC", "sans-serif"],
+              "label": ["Inter", "sans-serif"]
+            },
+            borderRadius: {"DEFAULT": "0.125rem", "lg": "0.25rem", "xl": "0.5rem", "full": "0.75rem"},
+          },
+        },
+      }
+    </script>
+<style>
+        .material-symbols-outlined {
+            font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24;
+        }
+        body { font-family: 'Inter', sans-serif; }
+        h1, h2, h3, h4 { font-family: 'Merriweather', serif; font-weight: 700; }
+        .font-chinese { font-family: 'Noto Sans SC', sans-serif; }
+    </style>
+</head>
+<body class="bg-surface-container-lowest text-on-surface min-h-screen flex overflow-hidden">
+<!-- SideNavBar (Shared Component) -->
+<aside class="hidden lg:flex flex-col h-screen sticky top-0 bg-[#fcfaf9] dark:bg-[#1a1110] w-72 border-r border-[#f2ebe9] dark:border-[#2d2120]">
+<div class="p-8">
+<h1 class="text-xl text-primary">Admin Console</h1>
+<p class="text-xs font-body text-on-surface-variant opacity-70">FitMate TCM Systems</p>
+</div>
+<nav class="flex-1 mt-4">
+<ul class="space-y-1">
+<li class="px-4">
+<a class="flex items-center gap-4 px-4 py-3 text-[#534341] dark:text-[#d8c2bf] hover:pl-6 transition-all hover:bg-[#f2ebe9] dark:hover:bg-[#2d2120]" href="#">
+<span class="material-symbols-outlined">menu_book</span>
+<span class="font-body font-medium">Basis Pengetahuan</span>
+</a>
+</li>
+<li class="px-4">
+<a class="flex items-center gap-4 px-4 py-3 text-primary dark:text-[#ffb4ab] font-bold bg-[#f2ebe9] dark:bg-[#2d2120] rounded-r-full" href="#">
+<span class="material-symbols-outlined">analytics</span>
+<span class="font-body">Analitik Scan</span>
+</a>
+</li>
+<li class="px-4">
+<a class="flex items-center gap-4 px-4 py-3 text-[#534341] dark:text-[#d8c2bf] hover:pl-6 transition-all hover:bg-[#f2ebe9] dark:hover:bg-[#2d2120]" href="#">
+<span class="material-symbols-outlined">list_alt</span>
+<span class="font-body">Log Pengguna</span>
+</a>
+</li>
+<li class="px-4">
+<a class="flex items-center gap-4 px-4 py-3 text-[#534341] dark:text-[#d8c2bf] hover:pl-6 transition-all hover:bg-[#f2ebe9] dark:hover:bg-[#2d2120]" href="#">
+<span class="material-symbols-outlined">verified_user</span>
+<span class="font-body">Keamanan</span>
+</a>
+</li>
+<li class="px-4">
+<a class="flex items-center gap-4 px-4 py-3 text-[#534341] dark:text-[#d8c2bf] hover:pl-6 transition-all hover:bg-[#f2ebe9] dark:hover:bg-[#2d2120]" href="#">
+<span class="material-symbols-outlined">settings</span>
+<span class="font-body">Pengaturan</span>
+</a>
+</li>
+</ul>
+</nav>
+<div class="p-8 border-t border-[#f2ebe9] dark:border-[#2d2120]">
+<div class="flex items-center gap-3 mb-6">
+<div class="w-10 h-10 rounded-full bg-surface-container-high overflow-hidden">
+<img alt="Admin User Avatar" src="https://lh3.googleusercontent.com/aida-public/AB6AXuDvEWvXruXuyepHN-Tdp13e7Va5sGzyCJfxQ3xhUoENn1r6J1en-4NeRaVoxAmBWcStxId6LNHoVrEFOb4R4Q1lumYlldQhV4FivbMl2wt29JIrKMxxUdnHqdgHFMhegI2HuajEDoV5LcnUHhmvg7iL6iMhcTy3dbvOEjvddjVLzGaffk8MY-6kCI4x-UbzTPMZU1cJHPwQFXLXIAKnrVZuwkgta2jdn_CXJi4Wues1_-w0beHIOjDh25NciyUZ75rFIAIHeIsXPr4"/>
+</div>
+<div>
+<p class="text-sm font-bold text-on-surface">Dr. Lin Wei</p>
+<p class="text-[10px] uppercase tracking-tighter text-on-surface-variant font-body">Chief Pharmacist</p>
+</div>
+</div>
+<button class="w-full py-2 px-4 rounded-xl border border-primary text-primary font-body text-sm font-semibold hover:bg-primary hover:text-white transition-all active:scale-95">
+                Secure Logout
+            </button>
+</div>
+</aside>
+<!-- Main Content Area -->
+<main class="flex-1 overflow-y-auto bg-surface-container-lowest">
+<!-- Top Header -->
+<header class="sticky top-0 z-10 bg-surface-container-lowest/80 backdrop-blur-md px-10 py-6 flex justify-between items-center">
+<div>
+<h2 class="text-3xl font-bold text-primary italic">Analitik Pemindaian</h2>
+<p class="text-on-surface-variant font-body">Tinjauan klinis penyaringan keamanan bahan.</p>
+</div>
+<div class="flex gap-4">
+<div class="flex items-center gap-2 bg-surface-container px-4 py-2 rounded-full border-none">
+<span class="material-symbols-outlined text-sm text-primary">calendar_today</span>
+<span class="text-xs font-semibold text-on-surface-variant">30 HARI TERAKHIR</span>
+</div>
+<button class="bg-primary text-white px-6 py-2 rounded-xl font-semibold flex items-center gap-2 active:scale-95 transition-all hover:bg-primary-dark">
+<span class="material-symbols-outlined">download</span>
+                    Ekspor Laporan
+                </button>
+</div>
+</header>
+<section class="px-10 pb-12">
+<!-- Analytics Dashboard Grid -->
+<div class="grid grid-cols-12 gap-6 mb-12">
+<!-- Large Summary Card -->
+<div class="col-span-12 lg:col-span-8 bg-surface-container-low p-8 rounded-3xl relative overflow-hidden group">
+<div class="relative z-10">
+<h3 class="text-xl font-bold mb-6 flex items-center gap-2">
+<span class="material-symbols-outlined text-primary">monitoring</span>
+                            Tren Volume Pemindaian
+                        </h3>
+<div class="h-64 w-full flex items-end gap-2 px-4">
+<div class="flex-1 bg-surface-container-high rounded-t-lg h-[40%]" title="Day 1"></div>
+<div class="flex-1 bg-secondary opacity-20 rounded-t-lg h-[60%]" title="Day 2"></div>
+<div class="flex-1 bg-primary opacity-40 rounded-t-lg h-[45%]" title="Day 3"></div>
+<div class="flex-1 bg-surface-container-high rounded-t-lg h-[75%]" title="Day 4"></div>
+<div class="flex-1 bg-primary rounded-t-lg h-[90%]" title="Day 5"></div>
+<div class="flex-1 bg-secondary opacity-60 rounded-t-lg h-[65%]" title="Day 6"></div>
+<div class="flex-1 bg-primary-dark rounded-t-lg h-[85%]" title="Day 7"></div>
+</div>
+<div class="flex justify-between mt-4 text-[10px] font-bold text-on-surface-variant uppercase tracking-widest px-4 font-body">
+<span>Sen</span><span>Sel</span><span>Rab</span><span>Kam</span><span>Jum</span><span>Sab</span><span>Min</span>
+</div>
+</div>
+</div>
+<!-- Stats Side Panel -->
+<div class="col-span-12 lg:col-span-4 flex flex-col gap-6">
+<div class="bg-primary text-white p-6 rounded-3xl flex justify-between items-center shadow-lg">
+<div>
+<p class="text-xs uppercase tracking-widest opacity-80 font-body">TOTAL SCAN</p>
+<h4 class="text-4xl font-bold">12.842</h4>
+</div>
+<span class="material-symbols-outlined text-4xl opacity-40" style="font-variation-settings: 'FILL' 1;">qr_code_scanner</span>
+</div>
+<div class="bg-surface-container p-6 rounded-3xl flex justify-between items-center">
+<div>
+<p class="text-xs uppercase tracking-widest text-on-surface-variant font-body">KONTRAINDIKASI DITANDAI</p>
+<h4 class="text-4xl font-bold text-secondary">841</h4>
+</div>
+<span class="material-symbols-outlined text-4xl text-secondary opacity-30">warning</span>
+</div>
+<div class="bg-secondary/10 text-secondary p-6 rounded-3xl flex justify-between items-center">
+<div>
+<p class="text-xs uppercase tracking-widest opacity-80 font-body">BAHAN BARU</p>
+<h4 class="text-4xl font-bold">24</h4>
+</div>
+<span class="material-symbols-outlined text-4xl opacity-30">clinical_notes</span>
+</div>
+</div>
+</div>
+<!-- Bento Knowledge Base Section -->
+<div class="mb-6">
+<h3 class="text-2xl font-bold text-on-surface mb-2">Manajemen Basis Pengetahuan</h3>
+<p class="text-on-surface-variant font-body mb-6">Database bahan-bahan TCM dan profil toksisitasnya</p>
+</div>
+<div class="bg-surface-container-lowest rounded-3xl border-none shadow-sm overflow-hidden">
+<div class="bg-surface-container-low px-8 py-4 flex justify-between items-center">
+<div class="flex items-center gap-4 flex-1 max-w-md">
+<span class="material-symbols-outlined text-on-surface-variant">search</span>
+<input class="bg-transparent border-none focus:ring-0 w-full text-sm font-body" placeholder="Cari nama Mandarin atau Latin..." type="text"/>
+</div>
+<button class="flex items-center gap-2 text-white font-bold text-sm bg-accent px-6 py-2 rounded-xl shadow-md hover:brightness-110 transition-all">
+<span class="material-symbols-outlined text-sm">add</span>
+                        Tambah Bahan
+                    </button>
+</div>
+<div class="overflow-x-auto">
+<table class="w-full text-left border-collapse">
+<thead>
+<tr class="bg-surface-container-low/50 text-xs font-bold uppercase tracking-widest text-on-surface-variant border-b border-surface-container font-body">
+<th class="px-8 py-5">NAMA BAHAN</th>
+<th class="px-8 py-5">TERJEMAHAN INGGRIS</th>
+<th class="px-8 py-5">STATUS TOKSISITAS</th>
+<th class="px-8 py-5 text-right">AKSI</th>
+</tr>
+</thead>
+<tbody class="divide-y divide-surface-container font-body">
+<tr class="hover:bg-surface-container-low transition-colors group">
+<td class="px-8 py-6">
+<div class="flex items-center gap-4">
+<div class="w-10 h-10 rounded-lg bg-surface-container-high flex items-center justify-center text-primary font-bold font-chinese">
+                                            附
+                                        </div>
+<div>
+<p class="font-headline font-bold text-lg">Fu Zi</p>
+<p class="text-xs text-on-surface-variant">Aconitum carmichaelii</p>
+</div>
+</div>
+</td>
+<td class="px-8 py-6 text-on-surface-variant">Prepared Aconite Root</td>
+<td class="px-8 py-6">
+<span class="inline-flex items-center px-3 py-1 rounded-full bg-error-container text-on-error-container text-[10px] font-bold uppercase tracking-wider">
+                                        Risiko Tinggi
+                                    </span>
+</td>
+<td class="px-8 py-6 text-right">
+<div class="flex justify-end gap-2 opacity-0 group-hover:opacity-100 transition-opacity">
+<button class="p-2 hover:bg-surface-variant rounded-lg text-primary"><span class="material-symbols-outlined text-xl">edit</span></button>
+<button class="p-2 hover:bg-error-container rounded-lg text-secondary"><span class="material-symbols-outlined text-xl">delete</span></button>
+</div>
+</td>
+</tr>
+<tr class="hover:bg-surface-container-low transition-colors group">
+<td class="px-8 py-6">
+<div class="flex items-center gap-4">
+<div class="w-10 h-10 rounded-lg bg-surface-container-high flex items-center justify-center text-primary font-bold font-chinese">
+                                            甘
+                                        </div>
+<div>
+<p class="font-headline font-bold text-lg">Gan Cao</p>
+<p class="text-xs text-on-surface-variant">Glycyrrhiza uralensis</p>
+</div>
+</div>
+</td>
+<td class="px-8 py-6 text-on-surface-variant">Licorice Root</td>
+<td class="px-8 py-6">
+<span class="inline-flex items-center px-3 py-1 rounded-full bg-surface-container text-on-surface-variant text-[10px] font-bold uppercase tracking-wider">
+                                        Aman
+                                    </span>
+</td>
+<td class="px-8 py-6 text-right">
+<div class="flex justify-end gap-2 opacity-0 group-hover:opacity-100 transition-opacity">
+<button class="p-2 hover:bg-surface-variant rounded-lg text-primary"><span class="material-symbols-outlined text-xl">edit</span></button>
+<button class="p-2 hover:bg-error-container rounded-lg text-secondary"><span class="material-symbols-outlined text-xl">delete</span></button>
+</div>
+</td>
+</tr>
+</tbody>
+</table>
+</div>
+<div class="px-8 py-6 border-t border-surface-container flex justify-between items-center text-sm font-medium text-on-surface-variant font-body">
+<span>Menampilkan 2 dari 1.240 bahan</span>
+<div class="flex gap-2">
+<button class="w-8 h-8 rounded flex items-center justify-center hover:bg-surface-container-low"><span class="material-symbols-outlined">chevron_left</span></button>
+<button class="w-8 h-8 rounded flex items-center justify-center bg-primary text-white">1</button>
+<button class="w-8 h-8 rounded flex items-center justify-center hover:bg-surface-container-low">2</button>
+<button class="w-8 h-8 rounded flex items-center justify-center hover:bg-surface-container-low">3</button>
+<button class="w-8 h-8 rounded flex items-center justify-center hover:bg-surface-container-low"><span class="material-symbols-outlined">chevron_right</span></button>
+</div>
+</div>
+</div>
+<!-- Bottom Content: Visual Insights -->
+<div class="mt-12 grid grid-cols-1 lg:grid-cols-2 gap-8">
+<div class="bg-surface-container rounded-3xl p-8 flex flex-col justify-between overflow-hidden relative">
+<div class="relative z-10">
+<h4 class="text-xl font-bold mb-2">Bahan yang Sering Ditandai</h4>
+<p class="text-on-surface-variant text-sm mb-6 italic font-body">Data historis dari 90 hari terakhir pemindaian konsumen</p>
+<div class="space-y-4 font-body">
+<div class="flex items-center gap-4">
+<span class="w-24 text-xs font-bold uppercase">Fu Zi</span>
+<div class="flex-1 h-2 bg-surface-container-lowest rounded-full overflow-hidden">
+<div class="h-full bg-primary" style="width: 82%;"></div>
+</div>
+<span class="text-xs font-bold">82%</span>
+</div>
+<div class="flex items-center gap-4">
+<span class="w-24 text-xs font-bold uppercase">Ban Xia</span>
+<div class="flex-1 h-2 bg-surface-container-lowest rounded-full overflow-hidden">
+<div class="h-full bg-secondary" style="width: 54%;"></div>
+</div>
+<span class="text-xs font-bold">54%</span>
+</div>
+</div>
+</div>
+<div class="absolute bottom-[-50px] right-[-50px] w-64 h-64 bg-primary opacity-5 blur-3xl rounded-full"></div>
+</div>
+<div class="bg-primary text-white rounded-3xl p-8 relative overflow-hidden group">
+<div class="relative z-10">
+<h4 class="text-xl font-bold mb-2">Status Kebijakan Keamanan</h4>
+<div class="flex items-center gap-2 mb-6">
+<span class="w-2 h-2 rounded-full bg-accent shadow-[0_0_10px_rgba(212,175,55,0.8)]"></span>
+<span class="text-xs font-bold uppercase tracking-widest font-body">Sistem Nominal</span>
+</div>
+<p class="text-sm opacity-90 leading-relaxed mb-8 font-body">
+                            Pemeriksaan integritas database selesai 14 menit yang lalu. 
+                            Seluruh 1.240 tanda tangan keamanan TCM telah disinkronkan dengan 
+                            Global Herbal Pharmacopoeia (Edisi 2024).
+                        </p>
+<button class="bg-accent text-primary-dark px-6 py-3 rounded-xl font-bold text-sm hover:brightness-110 transition-all font-body shadow-lg">
+                            Tinjau Log Keamanan
+                        </button>
+</div>
+<div class="absolute right-0 bottom-0 opacity-10 group-hover:scale-110 transition-transform duration-700">
+<span class="material-symbols-outlined text-[160px]" style="font-variation-settings: 'FILL' 1;">verified</span>
+</div>
+</div>
+</div>
+</section>
+</main>
+<!-- BottomNavBar (Mobile Only) -->
+<nav class="md:hidden fixed bottom-0 left-0 w-full flex justify-around items-center px-4 pb-6 pt-3 bg-[#fcfaf9]/80 dark:bg-[#1a1110]/80 backdrop-blur-xl z-50 rounded-t-3xl shadow-[0_-8px_24px_rgba(42,24,0,0.08)] border-t border-[#f2ebe9]/50 dark:border-[#2d2120]/50">
+<a class="flex flex-col items-center justify-center text-[#857371] px-4 py-1 hover:text-primary" href="#">
+<span class="material-symbols-outlined">photo_camera</span>
+<span class="text-[11px] font-body font-medium uppercase tracking-wider">Scanner</span>
+</a>
+<a class="flex flex-col items-center justify-center text-[#857371] px-4 py-1 hover:text-primary" href="#">
+<span class="material-symbols-outlined">history</span>
+<span class="text-[11px] font-body font-medium uppercase tracking-wider">History</span>
+</a>
+<a class="flex flex-col items-center justify-center text-[#857371] px-4 py-1 hover:text-primary" href="#">
+<span class="material-symbols-outlined">chat</span>
+<span class="text-[11px] font-body font-medium uppercase tracking-wider">Consult</span>
+</a>
+<a class="flex flex-col items-center justify-center bg-[#f2ebe9] text-primary rounded-xl px-4 py-1 active:scale-90 transition-transform" href="#">
+<span class="material-symbols-outlined">dashboard</span>
+<span class="text-[11px] font-body font-medium uppercase tracking-wider">Admin</span>
+</a>
+</nav>
+</body></html>

@@ -1,0 +1,199 @@
+<!DOCTYPE html>
+
+<html class="light" lang="id"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>FitMate TCM - Pemindai Apotek Modern</title>
+<!-- Tailwind CSS with Plugins -->
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<!-- Google Fonts: Merriweather for Headings, Inter for Body, Noto Sans SC for Chinese -->
+<link href="https://fonts.googleapis.com/css2?family=Merriweather:wght@700&amp;family=Inter:wght@400;500;600;700&amp;family=Noto+Sans+SC:wght@400;700&amp;display=swap" rel="stylesheet"/>
+<!-- Material Symbols Outlined -->
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<!-- Tailwind Configuration Injection -->
+<script id="tailwind-config">
+      tailwind.config = {
+        darkMode: "class",
+        theme: {
+          extend: {
+            colors: {
+              "primary": "#930014",
+              "dark": "#5B000B",
+              "secondary": "#DB4B3A",
+              "accent": "#D4AF37",
+              "light": "#E7BD8A",
+              "background": "#FFFFFF",
+              "on-surface": "#1a1110",
+              "on-surface-variant": "#534341",
+            },
+            fontFamily: {
+              "headline": ["Merriweather", "serif"],
+              "body": ["Inter", "sans-serif"],
+              "chinese": ["Noto Sans SC", "sans-serif"],
+            },
+            borderRadius: {
+              "button": "10px", // 8-12px range
+              "card": "14px", // 12-16px range
+              "badge": "20px",
+            },
+            spacing: {
+              "large": "24px",
+            }
+          },
+        },
+      }
+    </script>
+<style>
+      .material-symbols-outlined {
+        font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24;
+      }
+      .glass-blur {
+        backdrop-filter: blur(20px);
+        -webkit-backdrop-filter: blur(20px);
+      }
+      body {
+        font-family: 'Inter', sans-serif;
+      }
+    </style>
+</head>
+<body class="bg-background font-body text-on-surface min-h-screen flex flex-col">
+<!-- TopAppBar -->
+<header class="bg-white sticky top-0 z-50 border-b border-light/20">
+<div class="flex justify-between items-center w-full px-6 py-4 max-w-7xl mx-auto">
+<div class="text-2xl font-headline italic text-primary">FitMate TCM</div>
+<div class="hidden md:flex gap-8 items-center">
+<a class="text-primary font-bold border-b-2 border-accent transition-colors px-2 py-1" href="#">Pemindai</a>
+<a class="text-on-surface-variant hover:text-primary transition-colors px-2 py-1" href="#">Riwayat</a>
+<a class="text-on-surface-variant hover:text-primary transition-colors px-2 py-1" href="#">Konsultasi</a>
+</div>
+<div class="flex items-center gap-4">
+<button class="material-symbols-outlined text-primary p-2 rounded-full hover:bg-light/10 transition-colors">account_circle</button>
+<button class="material-symbols-outlined text-primary p-2 rounded-full hover:bg-light/10 transition-colors">menu</button>
+</div>
+</div>
+</header>
+<!-- Main Content: Scanner View -->
+<main class="flex-grow flex flex-col items-center justify-center p-large md:p-12 max-w-5xl mx-auto w-full mb-24">
+<!-- Header Section -->
+<div class="w-full text-left mb-10">
+<h1 class="font-headline text-4xl md:text-5xl text-dark font-bold leading-tight mb-4">
+                Pindai Label Komposisi <br/>TCM Anda
+            </h1>
+<p class="font-body text-on-surface-variant text-lg max-w-2xl">
+                Pastikan keamanan dan efektivitas dengan memverifikasi bahan-bahan terhadap basis data apotek modern kami.
+            </p>
+</div>
+<!-- Scanner Interface -->
+<div class="w-full grid grid-cols-1 lg:grid-cols-12 gap-large items-start">
+<!-- Central Camera Feed Area -->
+<div class="lg:col-span-8 relative group">
+<div class="aspect-[4/3] md:aspect-video rounded-card overflow-hidden bg-black shadow-xl relative">
+<img alt="Pratinjau kamera TCM" class="w-full h-full object-cover opacity-80" src="https://lh3.googleusercontent.com/aida-public/AB6AXuCG3Z22HzuHp_0GckWjBew1YqOL6WREeAcu0ehgKdZehkN5jk-ICIUerow8EACxzOzrVstljFKSc51U98smEt2MDlokPwCoDRKtKYGzFhSGjbzmjkZZ3HQR8A0RWb0k-UHBxTNHoYFdps1lZRDlLg97UNY1cD5kXnVUdWH-SfSNO0FQayWw52kokeYjIXZyCXVFAuNGLA9c8qef-qbPCywpgtNGIQaYzIQnqv9n8FX1llwruRx28OZp0sUjS9TfODnSawz-0QUBees"/>
+<!-- Scanner Overlays -->
+<div class="absolute inset-0 pointer-events-none">
+<div class="absolute inset-0 border-[30px] md:border-[50px] border-dark/40 glass-blur"></div>
+<div class="absolute inset-[30px] md:inset-[50px] flex items-center justify-center">
+<!-- Corner Brackets (Accent Gold) -->
+<div class="absolute top-0 left-0 w-10 h-10 border-t-4 border-l-4 border-accent rounded-tl-lg"></div>
+<div class="absolute top-0 right-0 w-10 h-10 border-t-4 border-r-4 border-accent rounded-tr-lg"></div>
+<div class="absolute bottom-0 left-0 w-10 h-10 border-b-4 border-l-4 border-accent rounded-bl-lg"></div>
+<div class="absolute bottom-0 right-0 w-10 h-10 border-b-4 border-r-4 border-accent rounded-br-lg"></div>
+<!-- Guide Text (Badge style) -->
+<div class="absolute top-6 px-4 py-1.5 bg-primary/90 text-white text-[10px] tracking-widest uppercase font-bold rounded-badge font-chinese">
+                                FOKUS PADA TEKS HANZI
+                            </div>
+</div>
+</div>
+</div>
+</div>
+<!-- Action Controls -->
+<div class="lg:col-span-4 flex flex-col gap-large w-full">
+<!-- Primary Action (Accent Gold CTA) -->
+<button class="w-full bg-accent text-dark py-8 rounded-button flex flex-col items-center justify-center gap-2 shadow-md hover:brightness-105 active:scale-95 transition-all">
+<span class="material-symbols-outlined text-4xl" style="font-variation-settings: 'FILL' 1;">photo_camera</span>
+<span class="font-bold tracking-widest text-sm">AMBIL GAMBAR</span>
+</button>
+<!-- Gallery Section -->
+<div class="bg-light/10 p-6 rounded-card border border-light/30">
+<div class="flex items-center justify-between mb-4">
+<span class="font-headline text-lg text-dark font-bold">Unggah Galeri</span>
+<span class="material-symbols-outlined text-secondary">image</span>
+</div>
+<p class="text-sm text-on-surface-variant mb-6">Sudah punya foto labelnya? Unggah di sini untuk analisis instan.</p>
+<button class="w-full py-3 px-6 rounded-button bg-secondary text-white font-bold hover:bg-primary transition-colors flex items-center justify-center gap-2 text-sm">
+                        PILIH FILE
+                    </button>
+</div>
+<!-- Safety Protocol Card -->
+<div class="bg-primary/5 p-6 rounded-card border-l-4 border-primary">
+<div class="flex gap-4 items-start">
+<span class="material-symbols-outlined text-primary" style="font-variation-settings: 'FILL' 1;">verified_user</span>
+<div>
+<h4 class="font-headline text-md text-dark font-bold">Protokol Keamanan</h4>
+<p class="text-xs text-on-surface-variant leading-relaxed mt-1">
+                                AI kami mengidentifikasi lebih dari 4.000 senyawa TCM. Pastikan teks terlihat jelas untuk akurasi maksimal.
+                            </p>
+</div>
+</div>
+</div>
+</div>
+</div>
+<!-- Recent Scans Section -->
+<div class="w-full mt-16">
+<div class="flex justify-between items-end mb-8">
+<h3 class="font-headline text-2xl text-dark font-bold">Pencarian Terbaru</h3>
+<a class="text-sm font-bold text-secondary hover:text-primary underline underline-offset-4 uppercase tracking-tighter" href="#">Lihat Semua Riwayat</a>
+</div>
+<div class="grid grid-cols-2 md:grid-cols-4 gap-4">
+<!-- Card 1 -->
+<div class="bg-light/5 aspect-square rounded-card overflow-hidden relative group cursor-pointer border border-light/20">
+<img alt="Hasil pemindaian" class="w-full h-full object-cover group-hover:scale-110 transition-transform duration-500 opacity-70" src="https://lh3.googleusercontent.com/aida-public/AB6AXuAW6DucbVT1jrTA_4QHW1kTyIIlhgQdnuVN09gCnF_tUXaJR6ZHAuXSD4URiMWxq4r_ZmluFM6eFfNFvI6kzyL5maFQ7XwowNrJAfkrd2adIIWuUL6ChcXHWP9LcKqmuA9L1Bv1aCB32bMwZkGPSVyiLQRzQLSIpt1WzJ2tSiJi7asEpdNhjN0cPEfy6-tHbUjP2ankhwgAUIZcOusuepyZOsP0RI9Z0j3dSYTNoFvpyL8J5MExsH6Qk8nVjmhTWlki8e8J0iH_jP8"/>
+<div class="absolute bottom-0 left-0 right-0 p-4 bg-gradient-to-t from-dark/90 to-transparent">
+<p class="text-white text-xs font-bold uppercase tracking-wider">Ren Shen</p>
+<p class="text-white/70 text-[10px]">Terverifikasi 2 jam lalu</p>
+</div>
+</div>
+<!-- Card 2 -->
+<div class="bg-light/5 aspect-square rounded-card overflow-hidden relative group cursor-pointer border border-light/20">
+<img alt="Hasil pemindaian" class="w-full h-full object-cover group-hover:scale-110 transition-transform duration-500 opacity-70" src="https://lh3.googleusercontent.com/aida-public/AB6AXuDZcB4FDPqqSiOB7NFsGTET_-3m110GIUVjFO4aRRibewq5JrIf04KiuOK0Xg0z1iEBqWx1H-cpMQ3AsP9nxNli4jvOsLWTKbB1cllSEGLfBKFAZO1ruP5BowLeyEzaTI-0kWCN2L-_73hKzxsO9DKeeWx_BZCGfa7wl4uncOVv9_vOd2Vov6fiBQi2SLQhpADhBlp3lPVB3_4Ki7hXwPoRVM4APe_EHwZSUh7gMIw2W77GvehVae_Dopztlac7hBy6f-U7h9l6lVc"/>
+<div class="absolute bottom-0 left-0 right-0 p-4 bg-gradient-to-t from-dark/90 to-transparent">
+<p class="text-white text-xs font-bold uppercase tracking-wider">Goji Berry</p>
+<p class="text-white/70 text-[10px]">Terverifikasi 1 hari lalu</p>
+</div>
+</div>
+<!-- Card 3 -->
+<div class="bg-light/5 aspect-square rounded-card overflow-hidden relative group cursor-pointer border border-light/20">
+<img alt="Hasil pemindaian" class="w-full h-full object-cover group-hover:scale-110 transition-transform duration-500 opacity-70" src="https://lh3.googleusercontent.com/aida-public/AB6AXuBuB_nJ_I1xkb3gQjC2cZz-uvFeKTCTLGRX1p7eHd8Plp2N33Z-RG0ERAHR_trmb092Ftn4m3Zcr3ZuLB1jE5uflE33AQ9qr21o7vZpAqvfuMaRZkM2GFEwxv5tUyN0H3jf393r79sMkabBPASmWz00Bu2pNGCrLUv3_xoQtmhq3Vo6iTHdjLswchWsC1y-NPTQCOxwBCZM083azvLgl0ktWuDQSWsuUfl_zmSwDPBO40rY3d43qcnNhzwm-2WP1sJjTIRn8lzUYXI"/>
+<div class="absolute bottom-0 left-0 right-0 p-4 bg-gradient-to-t from-dark/90 to-transparent">
+<p class="text-white text-xs font-bold uppercase tracking-wider">Huang Qi</p>
+<p class="text-white/70 text-[10px]">Terverifikasi 3 hari lalu</p>
+</div>
+</div>
+<!-- Card 4 (Empty State) -->
+<div class="border-2 border-dashed border-light/30 aspect-square rounded-card flex flex-col items-center justify-center gap-2 group hover:bg-light/5 transition-colors cursor-pointer">
+<span class="material-symbols-outlined text-light text-3xl">add_a_photo</span>
+<span class="text-[10px] font-bold text-light uppercase tracking-widest">Pindai Baru</span>
+</div>
+</div>
+</div>
+</main>
+<!-- BottomNavBar -->
+<nav class="fixed bottom-0 left-0 w-full flex justify-around items-center px-4 pb-6 pt-3 bg-white/90 backdrop-blur-xl z-50 rounded-t-card shadow-[0_-8px_24px_rgba(0,0,0,0.05)] border-t border-light/20">
+<button class="flex flex-col items-center justify-center bg-primary text-white rounded-button px-4 py-1.5 transition-transform active:scale-95">
+<span class="material-symbols-outlined" style="font-variation-settings: 'FILL' 1;">photo_camera</span>
+<span class="text-[10px] font-bold uppercase tracking-wider mt-1">Pemindai</span>
+</button>
+<button class="flex flex-col items-center justify-center text-on-surface-variant px-4 py-1.5 hover:text-primary">
+<span class="material-symbols-outlined">history</span>
+<span class="text-[10px] font-bold uppercase tracking-wider mt-1">Riwayat</span>
+</button>
+<button class="flex flex-col items-center justify-center text-on-surface-variant px-4 py-1.5 hover:text-primary">
+<span class="material-symbols-outlined">chat</span>
+<span class="text-[10px] font-bold uppercase tracking-wider mt-1">Konsultasi</span>
+</button>
+<button class="flex flex-col items-center justify-center text-on-surface-variant px-4 py-1.5 hover:text-primary">
+<span class="material-symbols-outlined">dashboard</span>
+<span class="text-[10px] font-bold uppercase tracking-wider mt-1">Admin</span>
+</button>
+</nav>
+</body></html>

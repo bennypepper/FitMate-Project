@@ -1,0 +1,164 @@
+<!DOCTYPE html>
+
+<html lang="id"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<link href="https://fonts.googleapis.com/css2?family=Merriweather:wght@700&amp;family=Inter:wght@400;500;600&amp;family=Noto+Sans+SC:wght@400;700&amp;family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<script id="tailwind-config">
+      tailwind.config = {
+        darkMode: "class",
+        theme: {
+          extend: {
+            colors: {
+              "primary": "#930014",
+              "primary-dark": "#5B000B",
+              "secondary": "#DB4B3A",
+              "accent": "#D4AF37",
+              "outline-variant": "#e2bebb",
+              "surface-container-high": "#ffe4c6",
+              "on-primary": "#ffffff",
+              "surface-container-lowest": "#ffffff",
+              "on-surface": "#2a1800",
+              "background": "#fff8f4",
+              "error-container": "#ffdad6",
+              "on-surface-variant": "#5a403e",
+              "surface": "#fff8f4",
+              "surface-container": "#ffebd6",
+              "surface-container-low": "#fff1e5",
+            },
+            fontFamily: {
+              "headline": ["Merriweather", "serif"],
+              "body": ["Inter", "sans-serif"],
+              "chinese": ["Noto Sans SC", "sans-serif"],
+              "label": ["Inter", "sans-serif"]
+            },
+            borderRadius: {"DEFAULT": "0.125rem", "lg": "0.25rem", "xl": "0.5rem", "full": "0.75rem"},
+          },
+        },
+      }
+    </script>
+<style>
+      .material-symbols-outlined {
+        font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24;
+      }
+      .bg-glass {
+        background: rgba(255, 221, 182, 0.6);
+        backdrop-filter: blur(20px);
+      }
+    </style>
+</head>
+<body class="bg-surface-container-lowest text-on-surface font-body leading-relaxed">
+<header class="bg-[#fcfaf9] dark:bg-[#1a1110] flex justify-between items-center w-full px-6 py-4 max-w-7xl mx-auto docked full-width top-0 z-50">
+<div class="text-2xl font-headline italic text-primary dark:text-[#ffb4ab]">FitMate TCM</div>
+<div class="flex gap-4">
+<button class="material-symbols-outlined text-primary dark:text-[#ffb4ab] hover:bg-[#f2ebe9] dark:hover:bg-[#3d2f2e] transition-colors p-2 rounded-full">account_circle</button>
+<button class="material-symbols-outlined text-primary dark:text-[#ffb4ab] hover:bg-[#f2ebe9] dark:hover:bg-[#3d2f2e] transition-colors p-2 rounded-full">menu</button>
+</div>
+</header>
+<main class="max-w-7xl mx-auto px-6 pt-8 pb-32">
+<div class="mb-12">
+<h2 class="font-headline text-5xl font-bold text-primary tracking-tight mb-2">Hasil Pemindaian</h2>
+<p class="font-body text-on-surface-variant text-lg">Analisis terperinci dari profil suplemen TCM Anda.</p>
+</div>
+<section class="grid grid-cols-1 lg:grid-cols-12 gap-8 items-start">
+<div class="lg:col-span-7 space-y-8">
+<!-- Toxicity Warning -->
+<div class="bg-error-container rounded-xl p-8 border-l-8 border-primary relative overflow-hidden">
+<div class="absolute top-0 right-0 p-4 opacity-10">
+<span class="material-symbols-outlined text-9xl">warning</span>
+</div>
+<div class="relative z-10">
+<h3 class="font-headline text-3xl font-bold text-primary mb-2 uppercase tracking-wide">PERINGATAN TOKSISITAS TERDETEKSI</h3>
+<p class="font-body text-primary-dark text-lg font-medium">Potensi bahaya klinis ditemukan dalam sampel saat ini.</p>
+</div>
+</div>
+<!-- Critical Ingredient Card -->
+<div class="bg-surface-container-low rounded-xl p-8 border border-outline-variant/30">
+<div class="flex flex-col md:flex-row md:items-end justify-between gap-6">
+<div class="flex-1">
+<span class="font-label text-xs font-bold uppercase tracking-widest text-primary block mb-2">BAHAN KRITIS</span>
+<h4 class="font-headline text-4xl text-on-surface italic">Diterpenoid Alkaloids</h4>
+</div>
+<div class="bg-primary-dark px-6 py-3 rounded-xl flex items-center gap-3 shadow-lg shadow-primary/20">
+<span class="material-symbols-outlined text-on-primary" style="font-variation-settings: 'FILL' 1;">heart_broken</span>
+<span class="font-label text-on-primary font-bold uppercase text-sm tracking-tight">KARDIOTOKSIK / RISIKO JANTUNG</span>
+</div>
+</div>
+<div class="mt-8 pt-8 border-t border-outline-variant/30">
+<p class="font-body text-on-surface-variant leading-relaxed text-lg">
+                            Diterpenoid alkaloid adalah senyawa yang sangat beracun yang sering ditemukan dalam spesies <span class="italic">Aconitum</span>. Paparan dapat menyebabkan aritmia jantung yang parah dan kegagalan neurologis. Konsultasi medis segera disarankan sebelum konsumsi lebih lanjut.
+                        </p>
+</div>
+</div>
+<div class="space-y-6">
+<h5 class="font-headline text-2xl font-bold text-on-surface">Bahan-Bahan yang Diekstrak</h5>
+<div class="flex flex-wrap gap-3">
+<span class="px-5 py-2 bg-error-container text-primary font-bold rounded-full text-sm border border-primary/20">Diterpenoid Alkaloids</span>
+<span class="px-5 py-2 bg-surface-container-high text-on-surface-variant font-medium rounded-full text-sm">Panax Ginseng</span>
+<span class="px-5 py-2 bg-surface-container-high text-on-surface-variant font-medium rounded-full text-sm">Astragalus Root</span>
+<span class="px-5 py-2 bg-surface-container-high text-on-surface-variant font-medium rounded-full text-sm">Glycyrrhiza Glabra</span>
+<span class="px-5 py-2 bg-surface-container-high text-on-surface-variant font-medium rounded-full text-sm">Angelica Sinensis</span>
+<span class="px-5 py-2 bg-surface-container-high text-on-surface-variant font-medium rounded-full text-sm">Poria Cocos</span>
+<span class="px-5 py-2 bg-surface-container-high text-on-surface-variant font-medium rounded-full text-sm">Rehmannia Glutinosa</span>
+</div>
+</div>
+</div>
+<div class="lg:col-span-5 space-y-6 lg:sticky lg:top-24">
+<div class="aspect-square w-full rounded-2xl overflow-hidden relative group">
+<img alt="TCM herbs scan" class="w-full h-full object-cover" src="https://lh3.googleusercontent.com/aida-public/AB6AXuBRrMPKgypAR1eIIZH9DGdNlUbxs3u5bmLOl_gMRricrJhw8RkrgzOWNbiL2Gf7cWp57dliM4c0tpsm8HSrKthzlc1koi5L3FRr9CkTB4WA_7aJB7bDzZ_w8GwkKd9veM4_gbuGFXFiSzne9a85eezXJyAzWgWFTeiRda8Sk0VG5PoaIVqTpuq5Vg12Ge-orn89s09rP3gfuI9nVrgUuJVtxW0fgajh6VB3OG8BE1I4wPhqVvVzYk-7IR7e8ywizya55SEOhtNwGyU"/>
+<div class="absolute inset-0 bg-glass flex flex-col items-center justify-center p-8 text-center">
+<div class="w-16 h-16 border-2 border-primary rounded-full flex items-center justify-center mb-4">
+<span class="material-symbols-outlined text-primary text-3xl" style="font-variation-settings: 'FILL' 1;">verified</span>
+</div>
+<h6 class="font-headline text-2xl font-bold text-on-surface mb-2">Verifikasi Klinis</h6>
+<p class="font-body text-sm text-on-surface-variant">AI kami mencocokkan molekul yang dipindai dengan Database Keamanan TCM v4.2</p>
+</div>
+</div>
+<div class="bg-surface-container p-8 rounded-2xl border border-outline-variant/20">
+<h6 class="font-headline text-xl font-bold text-primary mb-4">Tindakan yang Disarankan</h6>
+<ul class="space-y-4">
+<li class="flex gap-4">
+<span class="material-symbols-outlined text-primary" style="font-variation-settings: 'FILL' 1;">do_not_disturb_on</span>
+<p class="font-body text-sm text-on-surface">Segera hentikan konsumsi dari batch spesifik ini.</p>
+</li>
+<li class="flex gap-4">
+<span class="material-symbols-outlined text-primary">clinical_notes</span>
+<p class="font-body text-sm text-on-surface">Simpan laporan digital ini untuk penyedia layanan kesehatan Anda.</p>
+</li>
+<li class="flex gap-4">
+<span class="material-symbols-outlined text-primary">emergency</span>
+<p class="font-body text-sm text-on-surface">Hubungi layanan darurat jika Anda mengalami jantung berdebar.</p>
+</li>
+</ul>
+</div>
+</div>
+</section>
+<!-- CTA Section -->
+<div class="fixed bottom-24 left-0 right-0 px-6 flex justify-center pointer-events-none">
+<button class="pointer-events-auto bg-accent text-primary-dark font-body font-bold text-lg px-12 py-5 rounded-xl shadow-2xl flex items-center gap-4 transition-transform active:scale-95 duration-150 border-b-4 border-primary-dark/20">
+<span class="material-symbols-outlined" style="font-variation-settings: 'FILL' 1;">chat</span>
+                Konsultasi melalui WhatsApp
+            </button>
+</div>
+</main>
+<!-- Navigation -->
+<nav class="fixed bottom-0 left-0 w-full flex justify-around items-center px-4 pb-6 pt-3 bg-[#fcfaf9]/90 dark:bg-[#1a1110]/90 backdrop-blur-xl z-50 rounded-t-3xl border-t border-[#f2ebe9]/50 dark:border-[#2d2120]/50 shadow-[0_-8px_24px_rgba(42,24,0,0.08)]">
+<div class="flex flex-col items-center justify-center text-[#857371] dark:text-[#a08c8a] px-4 py-1 hover:text-primary transition-colors cursor-pointer">
+<span class="material-symbols-outlined">photo_camera</span>
+<span class="text-[11px] font-body font-medium uppercase tracking-wider mt-1">Scanner</span>
+</div>
+<div class="flex flex-col items-center justify-center bg-[#f2ebe9] dark:bg-[#3d2f2e] text-primary dark:text-[#ffb4ab] rounded-xl px-4 py-1 scale-90 transition-transform duration-200">
+<span class="material-symbols-outlined" style="font-variation-settings: 'FILL' 1;">history</span>
+<span class="text-[11px] font-body font-medium uppercase tracking-wider mt-1">Riwayat</span>
+</div>
+<div class="flex flex-col items-center justify-center text-[#857371] dark:text-[#a08c8a] px-4 py-1 hover:text-primary transition-colors cursor-pointer">
+<span class="material-symbols-outlined">chat</span>
+<span class="text-[11px] font-body font-medium uppercase tracking-wider mt-1">Konsul</span>
+</div>
+<div class="flex flex-col items-center justify-center text-[#857371] dark:text-[#a08c8a] px-4 py-1 hover:text-primary transition-colors cursor-pointer">
+<span class="material-symbols-outlined">dashboard</span>
+<span class="text-[11px] font-body font-medium uppercase tracking-wider mt-1">Admin</span>
+</div>
+</nav>
+</body></html>
