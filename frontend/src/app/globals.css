@@ -12,8 +12,10 @@
   --color-surface-container-high: #FFE3E0;
   --color-surface-container-highest: #FFDAD7;
   --color-on-surface: #410006;
+  --color-on-surface-variant: #93000A;
   --color-on-tertiary-fixed: #241A00;
   --color-error: #BA1A1A;
+  --color-error-container: #FFDAD6;
 
   --font-serif: var(--font-newsreader), serif;
   --font-sans: var(--font-inter), sans-serif;
