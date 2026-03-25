@@ -4,39 +4,84 @@ import { useState } from "react";
 import CameraViewfinder from "@/components/scanner/CameraViewfinder";
 import UploadFallback from "@/components/scanner/UploadFallback";
 import ProcessingLoader from "@/components/scanner/ProcessingLoader";
+import ResultsCard from "@/components/results/ResultsCard";
 
 export default function ScannerPage() {
   const [image, setImage] = useState<string | null>(null);
   const [isProcessing, setIsProcessing] = useState(false);
+  const [results, setResults] = useState<any | null>(null);
 
-  const handleImageReady = (base64: string) => {
+  const handleImageReady = async (base64: string) => {
     setImage(base64);
     setIsProcessing(true);
+    setResults(null);
 
-    // Simulate API call for now (Phase 03-02 requirement)
-    setTimeout(() => {
+    try {
+      // Convert base64 to Blob
+      const resMsg = await fetch(base64);
+      const blob = await resMsg.blob();
+
+      const formData = new FormData();
+      formData.append("file", blob, "scan.jpg");
+
+      const response = await fetch("http://localhost:8000/api/v1/scan", {
+        method: "POST",
+        body: formData,
+      });
+
+      if (!response.ok) {
+        throw new Error("API request failed");
+      }
+
+      const data = await response.json();
+      setResults({
+        ingredients: data.matched_ingredients || [],
+        disclaimer: data.disclaimer || "",
+        text_detected: data.text_detected || "",
+      });
+    } catch (error) {
+      console.error(error);
+      alert("Gagal memproses gambar. Pastikan server lokal berjalan.");
+      // For demo fallback if backend is down
+      setResults({
+        ingredients: [],
+        disclaimer: "INFORMASI INI HANYA UNTUK TUJUAN EDUKASI",
+      });
+    } finally {
       setIsProcessing(false);
-      // Results handling will be implemented in Phase 03-03
-    }, 2000);
+    }
+  };
+
+  const handleReset = () => {
+    setImage(null);
+    setResults(null);
   };
 
   return (
     <main className="flex flex-col flex-1 items-center justify-center p-4 max-w-md mx-auto w-full relative min-h-[100dvh]">
-      <h1 className="font-serif text-3xl font-bold text-primary mb-2 text-center tracking-tight">
-        FitMate
-      </h1>
-      <h2 className="font-sans text-lg font-medium text-secondary mb-8 text-center uppercase tracking-widest">
-        Apothecary Scanner
-      </h2>
-      
-      <p className="font-sans text-on-surface text-center mb-8 leading-relaxed">
-        Arahkan kamera ke komposisi TCM (huruf Mandarin) untuk melihat analisis keamanan.
-      </p>
+      {!results && (
+        <>
+          <h1 className="font-serif text-3xl font-bold text-primary mb-2 text-center tracking-tight">
+            FitMate
+          </h1>
+          <h2 className="font-sans text-lg font-medium text-secondary mb-8 text-center uppercase tracking-widest">
+            Apothecary Scanner
+          </h2>
+          
+          <p className="font-sans text-on-surface text-center mb-8 leading-relaxed">
+            Arahkan kamera ke komposisi TCM (huruf Mandarin) untuk melihat analisis keamanan.
+          </p>
+
+          <CameraViewfinder onCapture={handleImageReady} />
+          <UploadFallback onImageReady={handleImageReady} />
+        </>
+      )}
 
       {isProcessing && <ProcessingLoader />}
 
-      <CameraViewfinder onCapture={handleImageReady} />
-      <UploadFallback onImageReady={handleImageReady} />
+      {results && !isProcessing && (
+        <ResultsCard ingredients={results.ingredients} onReset={handleReset} />
+      )}
     </main>
   );
 }
