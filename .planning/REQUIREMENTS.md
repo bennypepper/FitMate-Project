@@ -93,34 +93,34 @@ Which phases cover which requirements. Updated during roadmap creation.
 
 | Requirement | Phase | Status |
 |-------------|-------|--------|
-| SCAN-01 | — | Pending |
-| SCAN-02 | — | Pending |
-| SCAN-03 | — | Pending |
-| SCAN-04 | — | Pending |
-| SAFE-01 | — | Pending |
-| SAFE-02 | — | Pending |
-| SAFE-03 | — | Pending |
-| SAFE-04 | — | Pending |
-| WHAP-01 | — | Pending |
-| WHAP-02 | — | Pending |
-| WHAP-03 | — | Pending |
-| WHAP-04 | — | Pending |
-| DATA-01 | — | Pending |
-| DATA-02 | — | Pending |
-| DATA-03 | — | Pending |
-| DATA-04 | — | Pending |
-| ADMN-01 | — | Pending |
-| ADMN-02 | — | Pending |
-| AUTH-01 | — | Pending |
-| AUTH-02 | — | Pending |
-| PWA-01 | — | Pending |
-| PWA-02 | — | Pending |
-| PWA-03 | — | Pending |
+| SCAN-01 | Phase 3 | Pending |
+| SCAN-02 | Phase 3 | Pending |
+| SCAN-03 | Phase 3 | Pending |
+| SCAN-04 | Phase 2 | Pending |
+| SAFE-01 | Phase 2 | Pending |
+| SAFE-02 | Phase 2 | Pending |
+| SAFE-03 | Phase 2 | Pending |
+| SAFE-04 | Phase 2 | Pending |
+| WHAP-01 | Phase 6 | Pending |
+| WHAP-02 | Phase 4 | Pending |
+| WHAP-03 | Phase 4 | Pending |
+| WHAP-04 | Phase 4 | Pending |
+| DATA-01 | Phase 1 | Pending |
+| DATA-02 | Phase 1 | Pending |
+| DATA-03 | Phase 5 | Pending |
+| DATA-04 | Phase 1 | Pending |
+| ADMN-01 | Phase 5 | Pending |
+| ADMN-02 | Phase 5 | Pending |
+| AUTH-01 | Phase 5 | Pending |
+| AUTH-02 | Phase 5 | Pending |
+| PWA-01 | Phase 6 | Pending |
+| PWA-02 | Phase 3 | Pending |
+| PWA-03 | Phase 3 | Pending |
 
 **Coverage:**
 - v1 requirements: 23 total
-- Mapped to phases: 0
-- Unmapped: 23 ⚠️
+- Mapped to phases: 23
+- Unmapped: 0 ✓
 
 ---
 *Requirements defined: 2026-03-25*
