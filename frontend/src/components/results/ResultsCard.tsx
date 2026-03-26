@@ -66,23 +66,22 @@ export default function ResultsCard({ ingredients, onReset }: ResultsCardProps) 
         </div>
       </section>
 
-      {toxicItems.length > 0 && (
-        <div className="fixed bottom-24 left-0 right-0 px-6 flex justify-center pointer-events-none z-10 w-full">
-          <a
-            href={`https://wa.me/6285161618852?text=${encodeURIComponent(
-              "Halo FitMate! Saya baru scan produk TCM dan ditemukan bahan berbahaya: " +
-                toxicItems.map((item) => item.indonesian_name || item.mandarin_name || item.matched_mandarin).join(", ") +
-                ". Bisa bantu jelaskan risikonya?"
-            )}`}
-            target="_blank"
-            rel="noopener noreferrer"
-            className="pointer-events-auto bg-accent text-dark font-body font-bold text-lg px-8 py-4 md:px-12 md:py-5 rounded-xl shadow-2xl flex items-center gap-4 transition-transform active:scale-95 duration-150 border-b-4 border-dark/20 hover:brightness-105"
-          >
-            <span className="material-symbols-outlined" style={{ fontVariationSettings: "'FILL' 1" }}>chat</span>
-            Konsultasi via WhatsApp
-          </a>
-        </div>
-      )}
+      {/* WhatsApp Button - Always present */}
+      <div className="fixed bottom-24 left-0 right-0 px-6 flex justify-center pointer-events-none z-10 w-full">
+        <a
+          href={`https://wa.me/6285161618852?text=${encodeURIComponent(
+            toxicItems.length > 0 
+              ? "Halo FitMate! Saya baru scan produk TCM dan ditemukan bahan berbahaya: " + toxicItems.map((item) => item.indonesian_name || item.mandarin_name || item.matched_mandarin).join(", ") + ". Bisa bantu jelaskan risikonya?"
+              : "Halo FitMate! Saya ingin berkonsultasi mengenai suplemen TCM ini."
+          )}`}
+          target="_blank"
+          rel="noopener noreferrer"
+          className="pointer-events-auto bg-accent text-dark font-body font-bold text-lg px-8 py-4 md:px-12 md:py-5 rounded-xl shadow-2xl flex items-center gap-4 transition-transform active:scale-95 duration-150 border-b-4 border-dark/20 hover:brightness-105"
+        >
+          <span className="material-symbols-outlined" style={{ fontVariationSettings: "'FILL' 1" }}>chat</span>
+          Konsultasi via WhatsApp
+        </a>
+      </div>
     </div>
   );
 }

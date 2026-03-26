@@ -105,32 +105,7 @@ export default function ScannerPage() {
         </div>
       )}
 
-      {/* Recent Scans Section (Placeholder) */}
-      {!results && !isProcessing && (
-        <div className="w-full mt-16">
-          <div className="flex justify-between items-end mb-8">
-            <h3 className="font-headline text-2xl text-dark font-bold">Pencarian Terbaru</h3>
-            <a className="text-sm font-bold text-secondary hover:text-primary underline underline-offset-4 uppercase tracking-tight" href="#">
-              Lihat Semua Riwayat
-            </a>
-          </div>
-          <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-            {/* Card 1 */}
-            <div className="bg-light/5 aspect-square rounded-card overflow-hidden relative group cursor-pointer border border-light/20">
-              <div className="absolute inset-0 bg-dark/10" />
-              <div className="absolute bottom-0 left-0 right-0 p-4 bg-gradient-to-t from-dark/90 to-transparent">
-                <p className="text-white text-xs font-bold uppercase tracking-wider">Lianhua Qingwen</p>
-                <p className="text-white/70 text-[10px]">Terverifikasi 2 jam lalu</p>
-              </div>
-            </div>
-            {/* Empty State */}
-            <div className="border-2 border-dashed border-light/30 aspect-square rounded-card flex flex-col items-center justify-center gap-2 group hover:bg-light/5 transition-colors cursor-pointer">
-              <span className="material-symbols-outlined text-light text-3xl">add_a_photo</span>
-              <span className="text-[10px] font-bold text-light uppercase tracking-widest">Pindai Baru</span>
-            </div>
-          </div>
-        </div>
-      )}
+
     </main>
   );
 }

@@ -18,9 +18,8 @@ OUTPUT_DIR.mkdir(exist_ok=True)
 
 # SymMap v2.0 public download URLs (verify at http://www.symmap.org/download)
 SYMMAP_URLS = {
-    "herbs": "http://www.symmap.org/static/download/SMHB.xlsx",
-    "ingredients": "http://www.symmap.org/static/download/SMIT.xlsx",
-    "herb_ingredient": "http://www.symmap.org/static/download/SMHG.xlsx",
+    "herbs": "http://www.symmap.org/static/download/V2.0/SymMap%20v2.0%2C%20SMHB%20file.xlsx",
+    "ingredients": "http://www.symmap.org/static/download/V2.0/SymMap%20v2.0%2C%20SMIT%20file.xlsx",
 }
 
 HEADERS = {

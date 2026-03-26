@@ -74,14 +74,14 @@ async def receive_message(request: Request, background_tasks: BackgroundTasks):
             
             # BackgroundTask runs the LLM -> MongoDB -> WhatsApp send pipeline gracefully
             async def process_whatsapp_message(sender: str, text: str):
-                from services.llm_intent import parse_intent
+                from services.llm_intent import parse_intent, generate_chat_reply
                 from database.mongo import get_db
                 from thefuzz import fuzz
                 
                 intent = await parse_intent(text)
                 
-                if intent.get("intent") != "ingredient_inquiry" or not intent.get("ingredient_name"):
-                    reply = "Sorry, I can only help check the safety of Traditional Chinese Medicine ingredients. What ingredient would you like to verify?"
+                if intent.get("intent") == "general_chat" or not intent.get("ingredient_name"):
+                    reply = await generate_chat_reply(text)
                     await whatsapp_client.send_text_message(to_phone=sender, text=reply)
                     return
                 
