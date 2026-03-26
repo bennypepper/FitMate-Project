@@ -105,6 +105,20 @@ export default function ScannerPage() {
         </div>
       )}
 
+      {/* Global WhatsApp Button - Appears only when user hasn't scanned anything */}
+      {!results && (
+        <div className="fixed bottom-24 left-0 right-0 px-6 flex justify-center pointer-events-none z-10 w-full mb-8">
+          <a
+            href={`https://wa.me/6285161618852?text=${encodeURIComponent("Halo FitMate! Saya ingin berkonsultasi mengenai suplemen TCM.")}`}
+            target="_blank"
+            rel="noopener noreferrer"
+            className="pointer-events-auto flex items-center gap-3 bg-accent text-dark font-body font-bold text-base md:text-lg px-8 py-4 rounded-xl shadow-2xl transition-transform hover:scale-105 active:scale-95 border-b-4 border-dark/20 hover:brightness-105"
+          >
+            <span className="material-symbols-outlined" style={{ fontVariationSettings: "'FILL' 1" }}>chat</span>
+            Tanya Chatbot WhatsApp
+          </a>
+        </div>
+      )}
 
     </main>
   );

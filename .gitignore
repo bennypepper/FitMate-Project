@@ -1,3 +1,31 @@
+# Scraper Outputs
 data/scraper/output/
 data/scraper/validated/
 data/scraper/venv/
+
+# Dependencies
+node_modules/
+backend/venv/
+venv/
+
+# Environment Variables & Secrets
+.env
+.env.*
+!.env.example
+credentials/
+
+# Python Artifacts
+__pycache__/
+*.pyc
+.pytest_cache/
+
+# Framework Artifacts
+.next/
+out/
+build/
+dist/
+
+# IDE/System Files
+.vscode/
+.idea/
+.DS_Store
