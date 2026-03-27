@@ -1,4 +1,4 @@
-# Context Handover: FitMate TCM — Sesi Maret 2026 (Sesi 2)
+# Context Handover: FitMate TCM — Sesi Maret 2026 (Sesi 3)
 
 > Dokumen ini adalah kelanjutan dari `CONTEXT_HANDOVER.md` sebelumnya. Berisi semua perubahan yang dilakukan **dalam sesi ini** sehingga agent AI berikutnya dapat langsung melanjutkan tanpa perlu riset ulang.
 
@@ -7,266 +7,167 @@
 ## Status Saat Ini
 
 - **Backend**: Berjalan di `http://localhost:8000` dengan `uvicorn --reload`
-- **Database**: MongoDB lokal, collection `tcm_ingredients` berisi **103 bahan TCM** (berhasil di-seed)
+- **Database**: MongoDB lokal, collection `tcm_ingredients` berisi **103 bahan TCM** (sudah di-seed)
 - **WhatsApp Bot**: Twilio Sandbox aktif (perlu ngrok tunnel yang hidup)
 - **Frontend**: Next.js, berjalan terpisah (biasanya `npm run dev` di `/frontend`)
-- **Git branch**: `main`, semua perubahan sudah di-commit
+- **Git branch**: `main`, commit terakhir: `6d9bd3e`
 
 ---
 
-## Ringkasan Perubahan Sesi Ini (Commit `705358c` & `9783cb7`)
+## Ringkasan Perubahan Sesi Ini (Commit `6d9bd3e`)
 
 ---
 
-## 1. Bug UI — Tombol WhatsApp Duplikat Dihapus
+## 1. Peningkatan Bot — Reply Sadar Kondisi Kesehatan (Health-Aware)
 
-### File: `frontend/src/components/results/ResultsCard.tsx`
+### Masalah yang Diperbaiki
 
-**Masalah:** Halaman hasil scan menampilkan **dua** tombol WhatsApp secara bersamaan:
-1. Green bar besar (fixed, `bottom-24`) yang ada di dalam `ResultsCard.tsx`
-2. FAB circle (fixed, `bottom-6 right-5`) yang ada di `layout.tsx` sebagai komponen global
+Dari screenshot Twilio: ketika user berkata *"saya memiliki riwayat diabetes, apakah minuman tersebut aman?"*, bot membalas dengan template generik yang **sama persis** dengan reply sebelumnya — tidak menyebut diabetes sama sekali. User merasa tidak diacuhkan.
 
-Kedua tombol ini tumpang tindih dan membingungkan.
-
-**Perbaikan:**
-- Dihapus seluruh blok `{/* WhatsApp Button - Always present */}` dari `ResultsCard.tsx`
-- Dihapus `mb-32` bottom margin yang awalnya untuk memberi ruang tombol tersebut
-- `WhatsAppFAB` di `layout.tsx` adalah satu-satunya entry point konsultasi via WhatsApp
+**Root cause:** Route 3 (`ingredient_safety_inquiry`) menggunakan f-string template hardcoded yang tidak pernah membaca ulang pesan user setelah mengekstrak nama bahan. Kondisi kesehatan yang disebutkan user benar-benar dihiraukan.
 
 ---
 
-## 2. Bug Bot — "Maaf, layanan AI sedang tidak tersedia"
+## 2. Fitur Baru — `generate_safety_reply()` di `llm_intent.py`
 
 ### File: `backend/services/llm_intent.py`
 
-**Masalah:** Fungsi `_chat()` memiliki retry logic dengan `_RETRY_BASE_DELAY = 5` detik dan `_MAX_RETRIES = 3`. Total waktu tunggu bisa mencapai **35 detik** (5s + 10s + 20s). Ini melebihi batas toleransi webhook Twilio, menyebabkan semua pesan setelahnya gagal dan bot membalas "layanan tidak tersedia".
+Fungsi baru yang menjadi inti perbaikan:
 
-**Perbaikan:**
-- `_RETRY_BASE_DELAY` diturunkan dari `5` → `2` detik
-- `_MAX_RETRIES` diturunkan dari `3` → `2`
-- Total waktu tunggu maksimum: **8 detik** (2s + 4s)
-- Ditambahkan parameter `timeout` per-call ke fungsi `_chat()` (intent: 12s, reply: 15s)
+```python
+async def generate_safety_reply(
+    ingredient_name: str,
+    db_match: dict | None,
+    safety_verdict: str,        # "safe" | "toxic" | "not_found" — SELALU dari rule-based code
+    user_message: str,          # pesan asli user — mengandung kondisi kesehatan
+    history: list[dict] | None = None,
+) -> str:
+```
+
+**Prinsip kerja:**
+- `safety_verdict` ditentukan **100% oleh kode rule-based** (`_build_safety_verdict()`) berdasarkan field `is_toxic` di MongoDB — LLM tidak pernah menentukan ini
+- LLM hanya menulis bahasa reply yang empatik, anchor ke verdict yang sudah ditetapkan
+- System prompt secara eksplisit memerintahkan LLM untuk menyebut kondisi kesehatan yang disebutkan user (diabetes, hamil, hipertensi, dll.)
+- Jika safe tapi ada kondisi khusus → tetap sarankan konsultasi dokter
+- Jika toxic → tegas tapi sopan, dorong konsultasi segera
+- Panjang reply: 4–6 kalimat + CTA
+
+**Zero-hallucination guarantee tetap terjaga:** LLM tidak bisa mengubah verdict karena verdict adalah string constant yang di-inject ke system prompt sebagai fakta.
 
 ---
 
-## 3. Peningkatan Bot — Sistem 3-Intent Fleksibel
+## 3. Perubahan Route 3 di `whatsapp.py`
+
+### File: `backend/routers/whatsapp.py`
+
+**Sebelumnya:** f-string template hardcoded 3 cabang (not_found / toxic / safe).
+
+**Sekarang:**
+
+```python
+# Rule-based verdict — LLM tidak menyentuh ini
+safety_verdict = _build_safety_verdict(best_match, highest_score, ingredient_name)
+
+# LLM menulis reply empatik yang anchor ke verdict
+llm_reply = await generate_safety_reply(
+    ingredient_name=ingredient_name,
+    db_match=best_match if safety_verdict != "not_found" else None,
+    safety_verdict=safety_verdict,
+    user_message=text,     # ← mengandung kondisi kesehatan user
+    history=history,
+)
+reply = DISCLAIMER + llm_reply
+```
+
+**Fungsi helper baru:**
+```python
+def _build_safety_verdict(best_match, highest_score, ingredient_name) -> str:
+    # Returns "safe" | "toxic" | "not_found"
+    # Pure rule-based, tidak pernah memanggil LLM
+```
+
+---
+
+## 4. Fitur Baru — Welcome Message untuk First-Time User
+
+### File: `backend/routers/whatsapp.py`
+
+Bot sekarang bisa digunakan **langsung via WhatsApp tanpa membuka web app** (standalone consultation channel). User yang bisa baca label bisa langsung konsultasi dengan mengetik nama bahan.
+
+Ketika `_get_history(sender)` kosong (pesan pertama), bot mengirim welcome card sebelum memproses pesan:
+
+```
+Halo! Saya *FitMate* 🌿 — asisten keamanan produk TCM kamu.
+
+Kamu bisa:
+• Ketik nama bahan herbal untuk cek keamanannya
+• Tanya "apakah [bahan] aman untuk [kondisimu]?"
+• Minta info/manfaat bahan TCM apa saja
+
+📋 *Catatan:* Jawaban saya berdasarkan database bahan TCM tervalidasi — bukan pengganti saran medis.
+
+Langsung ketik nama bahan atau produk TCM yang ingin kamu cek! 💊
+```
+
+Welcome message ini hanya muncul **satu kali** (saat history masih kosong).
+
+---
+
+## 5. Fitur Baru — Multi-Ingredient List Detection
+
+### File: `backend/routers/whatsapp.py`
+
+User yang membaca label TCM seringkali ingin cek beberapa bahan sekaligus dengan cara mengetikkan daftar:
+
+```
+lo han guo, akar manis, jahe merah
+```
+
+Bot mendeteksi ini sebagai daftar (≥2 item, dipisah koma/newline, bukan kalimat penuh) dan menjalankan DB lookup untuk setiap bahan, lalu mengembalikan safety card gabungan:
+
+```
+⚕️ *Disclaimer:* Informasi ini bukan pengganti saran medis.
+
+🔍 *Hasil cek 3 bahan:*
+
+✅ *Lo Han Guo / Buah Biksu* — Aman
+✅ *Akar Manis* — Aman
+❓ *Jahe Merah* — Tidak ditemukan di database
+
+Ada bahan lain yang ingin dicek, atau ingin tahu lebih detail? 🌿
+```
+
+Fungsi `_parse_multi_ingredient_list(text)` mendeteksi pola ini dengan heuristik:
+- Tidak ada tanda `?` (bukan kalimat pertanyaan)
+- Panjang total ≤ 20 kata
+- Ada ≥ 2 token setelah split koma/newline
+
+---
+
+## 6. Perbaikan `generate_chat_reply()` untuk Standalone UX
 
 ### File: `backend/services/llm_intent.py`
 
-**Sebelumnya:** Bot hanya memiliki 2 intent: `ingredient_inquiry` dan `general_chat`. Bot terlalu kaku — pertanyaan umum kesehatan sering dibalas generik atau error.
+**Sebelumnya:** Dibatasi keras "2-3 kalimat" — terlalu pendek untuk pertanyaan kompleks atau user yang menyebut kondisi kesehatan.
 
-**Sekarang:** 3 kelas intent:
-
-| Intent | Trigger | Perilaku Bot |
-|--------|---------|--------------|
-| `ingredient_safety_inquiry` | "apakah X berbahaya?", "X aman tidak?", "kontraindikasi X?" | **Strict DB lookup** — tidak ada LLM untuk verdi keamanan. Hasilnya 100% dari database |
-| `ingredient_info_inquiry` | "apa itu X?", "manfaat X?", "X untuk apa?" | DB lookup untuk konteks → LLM generate penjelasan informatif |
-| `general_tcm_chat` | salam, pertanyaan umum kesehatan, off-topic | LLM menjawab singkat (2-3 kalimat) → selalu diakhiri redirect ke TCM |
-
-**Fungsi baru:**
-- `parse_intent(text, history)` — sekarang menerima history percakapan sebagai konteks
-- `generate_chat_reply(text, history)` — menerima history untuk multi-turn
-- `generate_ingredient_info_reply(ingredient_name, db_match, history)` — fungsi baru untuk info intent
-- `_chat(messages, temperature, timeout)` — signature diubah dari `user_content: str` menjadi `messages: list[dict]` untuk mendukung multi-turn OpenRouter API
-
-**Perilaku general_tcm_chat:**
-- Menjawab pertanyaan kesehatan umum (misalnya "apa buah sehat?") dengan singkat
-- **Selalu** mengakhiri dengan: *"Ada produk TCM atau herbal yang ingin kamu cek keamanannya? 🌿"*
-- Ini mengarahkan user kembali ke konteks TCM tanpa memblokir percakapan natural
+**Sekarang:**
+- Batas diubah ke "3–5 kalimat" (lebih panjang jika pertanyaan kompleks atau ada kondisi kesehatan)
+- System prompt secara eksplisit instruksikan LLM untuk **mengakui kondisi kesehatan yang disebutkan user**
+- Menjelaskan kemampuan bot (standalone mode) dalam system prompt
+- Jika pesan pertama (`is_first_message=True`): instruksi tambahan untuk perkenalkan diri
 
 ---
 
-## 4. Fitur Baru Bot — Conversation Memory (Multi-turn)
+## Perbandingan Perilaku Bot
 
-### File: `backend/routers/whatsapp.py`
-
-**Masalah:** Bot sebelumnya stateless — setiap pesan diproses secara independen. Referensi seperti *"bahan itu"*, *"yang tadi"*, *"apakah aman?"* tidak bisa diselesaikan tanpa konteks sebelumnya.
-
-**Solusi:** Per-user conversation history disimpan di `TTLCache`:
-
-```python
-_conversation_store: TTLCache = TTLCache(maxsize=1000, ttl=7200)
-MAX_HISTORY_USER_BUBBLES = 15
-```
-
-**Detail implementasi:**
-- **Kapasitas:** Maks 1000 user berbeda secara bersamaan
-- **Expiry:** 2 jam (`ttl=7200`) sejak pesan terakhir — otomatis dihapus jika tidak aktif
-- **Batas history:** Maks 15 user bubble (+ paired bot reply-nya). Kalau lebih, bubble terlama otomatis di-trim
-- **Fungsi helper:**
-  - `_get_history(phone)` — mengambil history untuk nomor tertentu
-  - `_append_history(phone, role, content)` — menambah pesan dan melakukan trimming
-- **Alur:** History di-load di awal `_process_message()`, dikirim ke `parse_intent()` sebagai context snippet (5 pesan terakhir user), dan ke semua fungsi reply sebagai full `messages[]` array
-- History diupdate setelah user message DAN setelah bot reply
-
-**Efek nyata:**
-- "apakah bahan itu aman?" → `parse_intent()` melihat 5 pesan terakhir user, mengekstrak nama bahan yang dimaksud dari konteks sebelumnya
-- "yang tadi disebutkan" → LLM sudah punya full history, bisa resolve reference
-- Follow-up pertanyaan (dosis, kontraindikasi, dll.) tetap koheren
-
----
-
-## 5. Keamanan — API Rate Limiting pada Scanner
-
-### File: `backend/routers/analyze.py`
-
-```python
-@router.post("/")
-@limiter.limit("5/minute")
-async def analyze_tcm_label(request: Request, ...):
-```
-
-- Endpoint `/api/v1/analyze/` sekarang dibatasi **5 request per menit per IP**
-- Tambahan validasi: file size maksimum **10MB** (sebelumnya tidak ada batas)
-- Parameter `request: Request` ditambahkan (wajib untuk slowapi)
-
-### File: `backend/routers/ocr.py`
-
-```python
-@router.post("/upload")
-@limiter.limit("10/minute")
-async def process_image_ocr(request: Request, ...):
-```
-
-- Endpoint `/api/v1/ocr/upload` dibatasi **10 request per menit per IP**
-- Tambahan validasi file size 10MB
-- Parameter `request: Request` ditambahkan
-
----
-
-## 6. Keamanan — Validasi Signature Webhook Twilio
-
-### File: `backend/routers/whatsapp.py`
-
-```python
-def _validate_twilio_signature(request_url: str, params: dict, signature: str) -> bool:
-    from twilio.request_validator import RequestValidator
-    validator = RequestValidator(settings.TWILIO_AUTH_TOKEN)
-    return validator.validate(request_url, params, signature)
-```
-
-- Setiap webhook request dari Twilio divalidasi dengan header `X-Twilio-Signature`
-- Jika signature tidak cocok → request di-drop silently (return `{"status": "ok"}` tanpa proses)
-- Ini mencegah siapapun menyuntikkan pesan palsu ke webhook `/whatsapp/webhook`
-- URL rekonstruksi mempertimbangkan header `X-Forwarded-Proto` dan `X-Forwarded-Host` untuk kompatibilitas ngrok
-
----
-
-## 7. Keamanan — Security Headers & CORS Diperketat
-
-### File: `backend/main.py`
-
-**Security Headers Middleware baru:**
-```python
-class SecurityHeadersMiddleware(BaseHTTPMiddleware):
-    # Ditambahkan ke semua response:
-    # X-Content-Type-Options: nosniff
-    # X-Frame-Options: DENY
-    # X-XSS-Protection: 1; mode=block
-    # Referrer-Policy: strict-origin-when-cross-origin
-    # Permissions-Policy: camera=(*), microphone=()
-```
-
-**CORS diperketat:**
-- Dihapus `http://localhost:8000` dari allowed origins (port API tidak boleh di-akses browser secara CORS)
-- Allowed origins: `http://localhost:3000` dan `https://fitmate-tcm.vercel.app` saja
-- HTTP methods dikurangi dari `[GET, POST, PUT, DELETE, OPTIONS]` → `[GET, POST, OPTIONS]`
-- Allowed headers dikurangi dari `*` → `["Content-Type", "Authorization"]`
-
-**Endpoint baru:**
-- `GET /health` — health check untuk uptime monitoring
-- Docs URL diubah ke `/api/docs` (lebih tersembunyi)
-
----
-
-## 8. Keamanan — `backend/.env` Dikeluarkan dari Git
-
-**Masalah kritis:** File `backend/.env` sebelumnya **ter-track oleh git** dan berisi:
-- `OPENROUTER_API_KEY=sk-or-v1-...`
-- `TWILIO_ACCOUNT_SID=AC...`
-- `TWILIO_AUTH_TOKEN=...`
-
-**Perbaikan:**
-```bash
-git rm --cached backend/.env
-```
-Baris `backend/.env` ditambahkan ke `.gitignore`. File `.env` **tetap ada di disk** (tidak dihapus), hanya tidak lagi dipush ke GitHub.
-
-> ⚠️ **PENTING UNTUK AGENT BERIKUTNYA:** History git sebelumnya masih mengandung credentials ini. Jika repo ini public atau akan dipush, **rotasikan** OpenRouter API key dan Twilio credentials dari dashboard masing-masing.
-
----
-
-## 9. Config & DB — Perbaikan Settings & Startup Check
-
-### File: `backend/core/config.py`
-
-- Ditambahkan `MONGODB_URL` dan `MONGODB_DB_NAME` sebagai field Pydantic resmi (sebelumnya hanya dibaca langsung dari `os.environ`)
-- Ditambahkan method `validate_security()` yang memanggil warning saat startup jika:
-  - `JWT_SECRET_KEY` adalah nilai default yang lemah
-  - `ADMIN_PASSWORD_HASH` kosong (admin login disabled)
-  - `OPENROUTER_API_KEY` tidak di-set
-
-### File: `backend/database/mongo.py`
-
-- Migrasi dari `os.environ.get(...)` → `settings.MONGODB_URL` / `settings.MONGODB_DB_NAME`
-- Ditambahkan startup check: jika `tcm_ingredients` collection kosong, cetak warning jelas:
-  ```
-  ⚠️ [DB] WARNING: tcm_ingredients collection is EMPTY!
-     Run: python database/seed_100_tcm.py
-  ```
-- Jika berhasil: `✅ [DB] Connected to MongoDB — 103 ingredients in tcm_ingredients`
-
----
-
-## 10. Fitur Baru Frontend — Scan Result Copy-to-WhatsApp
-
-### File: `frontend/src/components/results/ScanResultCopy.tsx` *(baru)*
-
-Komponen baru yang muncul di bawah hasil scan setelah setiap scan berhasil.
-
-**Fungsi:**
-```typescript
-function buildCopyText(ingredients: any[]): string
-// Output contoh:
-// 🔍 *Hasil Scan FitMate:*
-// Bahan yang terdeteksi:
-//
-// ✅ Lo Han Guo / Buah Biksu
-// ❓ Forsythiae Fructus
-// ❓ Lonicerae Japonicae Flos
-//
-// Tolong bantu saya memahami lebih lanjut tentang bahan-bahan di atas...
-```
-
-**UI Elements:**
-1. **Header** — WhatsApp branding dengan ikon hijau
-2. **Preview box** — Menampilkan teks yang akan disalin/dikirim
-3. **"Salin Pesan" button** — Copy ke clipboard, berubah jadi "Tersalin! ✓" (hijau) selama 3 detik, lalu kembali normal
-4. **"Buka di WhatsApp" button** — `<a href="https://wa.me/14155238886?text=...">` dengan pesan pre-filled lengkap
-5. **Instruction text** — *"💡 Salin pesan di atas, lalu kirimkan ke chatbot WhatsApp FitMate untuk konsultasi lebih lanjut tentang hasil scan Anda."*
-
-**Logic:**
-- Ingredient dengan `category === "toxic"` atau `"contraindicated"` → emoji ⚠️
-- `category === "safe"` → emoji ✅
-- Lainnya (unknown) → emoji ❓
-- Nama yang ditampilkan: `indonesian_name` → fallback ke `matched_mandarin` → fallback ke `detected_text`
-
-### File: `frontend/src/components/results/ResultsCard.tsx`
-
-- Import `ScanResultCopy` ditambahkan
-- `<ScanResultCopy ingredients={ingredients} />` dirender setelah `</section>`
-- Subtle hint text di kanan bawah kartu verifikasi: *"💬 Tap tombol WhatsApp di pojok kanan bawah..."*
-
----
-
-## 11. Rate Limiting Bot WhatsApp
-
-### File: `backend/routers/whatsapp.py`
-
-- Diubah dari `TTLCache(maxsize=1000, ttl=60)` dengan batas 10 pesan/60 detik
-- Menjadi `TTLCache(maxsize=1000, ttl=600)` dengan batas **20 pesan per 10 menit**
-- Lebih fair untuk percakapan panjang (tidak memutus conversation ditengah jalan)
-- Cache diberi nama eksplisit: `_rate_limit_cache` (untuk konsistensi dengan `_conversation_store`)
+| Skenario | Sebelum | Setelah |
+|---|---|---|
+| `"Lo Han Guo aman?"` | Template generik | Reply empatik (verdict tetap dari DB) |
+| `"Saya punya diabetes, aman?"` | Verdict saja, diabetes diabaikan | Verdict + **menyebut diabetes** + saran dokter |
+| `"Saya hamil, apakah ginseng aman?"` | Generik, hamil tidak disebut | Verdict + **menyebut kehamilan** + peringatan ekstra |
+| `"Apa itu Lo Han Guo?"` | LLM info reply | Sama (tidak berubah) |
+| Pesan pertama `"halo"` | Nudge generik | **Welcome card** + penjelasan kemampuan bot |
+| `"lo han guo, akar manis, jahe"` | Error / jawaban ngawur | **Multi-ingredient safety card** |
 
 ---
 
@@ -284,11 +185,11 @@ backend/
 ├── routers/
 │   ├── analyze.py          ← Rate limited 5/min, size check 10MB
 │   ├── ocr.py              ← Rate limited 10/min, size check 10MB
-│   ├── whatsapp.py         ← 3-intent routing, conversation memory, Twilio signature validation
+│   ├── whatsapp.py         ← Health-aware replies, welcome msg, multi-ingredient, Twilio sig
 │   ├── admin.py            ← Admin JWT auth (tidak berubah)
 │   └── upload.py           ← Excel/CSV import (tidak berubah)
 ├── services/
-│   ├── llm_intent.py       ← _chat() multi-turn, 3 intent classes, history support
+│   ├── llm_intent.py       ← generate_safety_reply() baru, improved generate_chat_reply()
 │   ├── vision.py           ← OpenRouter multimodal OCR (tidak berubah)
 │   ├── safety.py           ← Fuzzy match OCR vs DB (tidak berubah)
 │   └── whatsapp_service.py ← Twilio client wrapper (tidak berubah)
@@ -302,7 +203,7 @@ frontend/
         │   └── WhatsAppFAB.tsx     ← Global FAB (tidak berubah)
         └── results/
             ├── ResultsCard.tsx     ← Hapus duplicate WA button, tambah ScanResultCopy
-            ├── ScanResultCopy.tsx  ← BARU: copy-to-WhatsApp component
+            ├── ScanResultCopy.tsx  ← Copy-to-WhatsApp component
             ├── ToxicityWarning.tsx ← (tidak berubah)
             └── IngredientList.tsx  ← (tidak berubah)
 ```
@@ -355,11 +256,27 @@ ngrok http 8000
 
 ---
 
+## Test Cases untuk Verifikasi Bot
+
+Kirimkan pesan-pesan berikut ke bot WhatsApp untuk memverifikasi perbaikan:
+
+1. **Pesan pertama** — `"halo"` → harus muncul welcome card dulu, baru reply general
+2. **Safety normal** — `"lo han guo aman?"` → reply empatik dengan verdict DB
+3. **Safety + kondisi** — `"saya punya diabetes, apakah lo han guo aman?"` → **harus menyebut "diabetes"**
+4. **Safety + hamil** — `"saya hamil, apakah ginseng aman?"` → **harus menyebut "hamil"/"kehamilan"**
+5. **Multi-ingredient** — `"lo han guo, akar manis, jahe merah"` → safety card untuk 3 bahan
+6. **Info intent** — `"apa itu lo han guo?"` → informational reply (tidak berubah)
+7. **Multi-turn memory** — kirim `"lo han guo aman?"` lalu `"bahan tadi aman untuk hipertensi?"` → bot harus tahu "bahan tadi" = lo han guo
+
+---
+
 ## Next Steps yang Disarankan
 
-1. **Rotate API keys** — OpenRouter dan Twilio credentials pernah ter-commit ke git. Ganti dari dashboard masing-masing
-2. **JWT secret** — Ganti `JWT_SECRET_KEY` di `.env` sebelum deploy production
-3. **Test conversation memory** — Kirim "lo han guo aman?" → lalu "apakah untuk ibu hamil aman?" → bot seharusnya tetap tahu konteksnya lo han guo
-4. **Test copy button** — Scan produk → lihat tombol "Salin Pesan" dan "Buka di WhatsApp" di bawah hasil
+1. **Test semua test cases** di atas via Twilio sandbox sebelum melanjutkan
+2. **Rotate API keys** — OpenRouter dan Twilio credentials pernah ter-commit ke git. Ganti dari dashboard masing-masing
+3. **JWT secret** — Ganti `JWT_SECRET_KEY` di `.env` sebelum deploy production
+4. **Database expansion** — 103 bahan saat ini. Pertimbangkan menambah data dari BPOM scraper untuk coverage lebih luas
 5. **Vercel deployment** — Frontend siap deploy. Backend perlu EC2/Hostinger dengan domain + HTTPS untuk Twilio webhook
-6. **Database expansion** — 103 bahan saat ini. Pertimbangkan menambah data dari BPOM scraper untuk coverage lebih luas
+6. **Prompt tuning** — Setelah test, mungkin perlu adjust panjang reply atau tone sesuai user feedback
+
+> ⚠️ **PENTING UNTUK AGENT BERIKUTNYA:** History git sebelumnya masih mengandung credentials OpenRouter dan Twilio. Jika repo ini public atau akan dipush, **rotasikan** credentials tersebut dari dashboard masing-masing segera.
