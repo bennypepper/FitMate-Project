@@ -3,7 +3,7 @@
 import { useState, useEffect, useRef, useCallback } from "react";
 import { usePathname } from "next/navigation";
 
-const WA_NUMBER = "6285161618852";
+const WA_NUMBER = "14155238886"; // Twilio WhatsApp Sandbox
 const WA_MESSAGE =
   "Halo FitMate! Saya ingin berkonsultasi mengenai keamanan bahan TCM yang saya pindai.";
 const WA_URL = `https://wa.me/${WA_NUMBER}?text=${encodeURIComponent(WA_MESSAGE)}`;

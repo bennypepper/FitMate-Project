@@ -1,28 +1,37 @@
-import os
 from motor.motor_asyncio import AsyncIOMotorClient
+from core.config import settings
 
-# Load .env explicitly so os.environ picks it up (pydantic-settings does this
-# automatically, but bare os.environ.get() calls do not).
-try:
-    from dotenv import load_dotenv
-    load_dotenv()
-except ImportError:
-    pass  # python-dotenv not installed; rely on env vars set in the shell
 
 class MongoDB:
     client: AsyncIOMotorClient = None
 
+
 db = MongoDB()
 
+
 async def connect_to_mongo():
-    # Safe no-auth fallback matches the local dev .env default
-    uri = os.environ.get("MONGODB_URL", "mongodb://localhost:27017")
-    db.client = AsyncIOMotorClient(uri)
+    db.client = AsyncIOMotorClient(settings.MONGODB_URL)
+    
+    # Verify connection and warn if tcm_ingredients is empty (seed not run)
+    try:
+        database = db.client[settings.MONGODB_DB_NAME]
+        count = await database["tcm_ingredients"].count_documents({})
+        if count == 0:
+            print(
+                "⚠️  [DB] WARNING: tcm_ingredients collection is EMPTY!\n"
+                "   The WhatsApp bot and safety scanner won't find any ingredients.\n"
+                "   Run: python database/seed_100_tcm.py  to populate the database."
+            )
+        else:
+            print(f"✅ [DB] Connected to MongoDB — {count} ingredients in tcm_ingredients")
+    except Exception as e:
+        print(f"⚠️  [DB] Could not verify collection count: {e}")
+
 
 async def close_mongo_connection():
     if db.client:
         db.client.close()
 
+
 def get_db():
-    db_name = os.environ.get("MONGODB_DB_NAME", "fitmate_db")
-    return db.client[db_name]
+    return db.client[settings.MONGODB_DB_NAME]

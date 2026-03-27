@@ -29,3 +29,6 @@ dist/
 .vscode/
 .idea/
 .DS_Store
+
+# Backend secrets
+backend/.env
