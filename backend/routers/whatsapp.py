@@ -2,9 +2,15 @@
 WhatsApp webhook router (Twilio Sandbox).
 
 Intent routing:
-  ingredient_safety_inquiry  → strict DB lookup, no LLM for the verdict
-  ingredient_info_inquiry    → DB lookup + LLM informational reply
+  ingredient_safety_inquiry  → DB verdict (rule-based) + LLM empathetic reply
+  ingredient_info_inquiry    → DB context + LLM informational reply
   general_tcm_chat           → LLM short answer + redirect to TCM context
+
+Standalone use case:
+  Users can consult directly via WhatsApp without ever using the web app.
+  First-time users get a welcome/capabilities message.
+  Bare ingredient names (no question mark) are treated as safety inquiries.
+  Comma-separated ingredient lists get a multi-item safety card.
 
 Conversation memory:
   - Per-phone history stored in TTLCache (expires 2h after last message)
@@ -15,6 +21,7 @@ Security:
   - Twilio webhook signature validation (X-Twilio-Signature header)
   - Per-phone rate limiting via TTLCache (20 messages per 10 minutes)
 """
+import re
 import traceback
 from fastapi import APIRouter, Request, BackgroundTasks, Form
 from services.whatsapp_service import whatsapp_client
@@ -35,6 +42,19 @@ _conversation_store: TTLCache = TTLCache(maxsize=1000, ttl=7200)
 MAX_HISTORY_USER_BUBBLES = 15
 
 DISCLAIMER = "⚕️ *Disclaimer:* Informasi ini bukan pengganti saran medis profesional.\n\n"
+
+WELCOME_MESSAGE = (
+    "Halo! Saya *FitMate* 🌿 — asisten keamanan produk TCM kamu.\n\n"
+    "Kamu bisa:\n"
+    "• Ketik nama bahan herbal untuk cek keamanannya\n"
+    "• Tanya _\"apakah [bahan] aman untuk [kondisimu]?\"_\n"
+    "• Minta info/manfaat bahan TCM apa saja\n\n"
+    "📋 *Catatan:* Jawaban saya berdasarkan database bahan TCM tervalidasi — bukan pengganti saran medis.\n\n"
+    "Langsung ketik nama bahan atau produk TCM yang ingin kamu cek! 💊"
+)
+
+# Minimum number of comma/newline separated tokens to treat as a multi-ingredient list
+_MULTI_INGREDIENT_MIN = 2
 
 
 def _validate_twilio_signature(request_url: str, params: dict, signature: str) -> bool:
@@ -69,6 +89,25 @@ def _append_history(phone: str, role: str, content: str) -> None:
         history = history[cutoff:]
 
     _conversation_store[phone] = history
+
+
+def _parse_multi_ingredient_list(text: str) -> list[str] | None:
+    """
+    Detects if the message is a comma/newline-separated list of ingredient names.
+    Returns a list of ingredient tokens if detected (≥2 items), else None.
+    Only triggers if the message looks like a label list — not a full sentence.
+    """
+    # Skip full sentences (has question mark, or more than ~8 words before a comma)
+    if "?" in text or len(text.split()) > 20:
+        return None
+
+    # Split by comma or newline
+    parts = re.split(r"[,\n]+", text.strip())
+    parts = [p.strip() for p in parts if p.strip() and len(p.strip()) > 1]
+
+    if len(parts) >= _MULTI_INGREDIENT_MIN:
+        return parts
+    return None
 
 
 @router.post("/webhook")
@@ -151,11 +190,24 @@ async def _fuzzy_lookup(ingredient_name: str, db) -> tuple[dict | None, int]:
     return best_match, highest_score
 
 
+def _build_safety_verdict(best_match: dict | None, highest_score: int, ingredient_name: str) -> str:
+    """
+    Determines safety verdict string based purely on DB data. LLM never touches this.
+    Returns: "safe" | "toxic" | "not_found"
+    """
+    if not best_match or highest_score < 70:
+        return "not_found"
+    if best_match.get("is_toxic", False):
+        return "toxic"
+    return "safe"
+
+
 async def _process_message(sender: str, text: str):
     from services.llm_intent import (
         parse_intent,
         generate_chat_reply,
         generate_ingredient_info_reply,
+        generate_safety_reply,
     )
     from database.mongo import get_db
 
@@ -164,18 +216,42 @@ async def _process_message(sender: str, text: str):
 
         # Load this user's conversation history for context
         history = _get_history(sender)
-        print(f"[Bot] History length: {len(history)} messages")
+        is_first_message = len(history) == 0
+        print(f"[Bot] History length: {len(history)} messages, first_message={is_first_message}")
 
+        # ── Welcome message for first-time users ─────────────────────────────
+        # Send the welcome card BEFORE processing the first actual message
+        # so the user understands the bot's capabilities.
+        if is_first_message:
+            _append_history(sender, "assistant", WELCOME_MESSAGE)
+            await whatsapp_client.send_text_message(to_phone=sender, text=WELCOME_MESSAGE)
+            # Small courtesy pause so the two messages don't arrive at exactly the same time
+            import asyncio
+            await asyncio.sleep(1)
+
+        db = get_db()
+        reply = ""
+
+        # ── Multi-ingredient list detection ──────────────────────────────────
+        # Check if message is a bare comma-separated label list before running intent classifier
+        ingredient_list = _parse_multi_ingredient_list(text)
+        if ingredient_list and len(ingredient_list) >= _MULTI_INGREDIENT_MIN:
+            print(f"[Bot] Multi-ingredient list detected: {ingredient_list}")
+            _append_history(sender, "user", text)
+            reply = await _handle_multi_ingredient(ingredient_list, text, history, db, generate_safety_reply)
+            if reply:
+                _append_history(sender, "assistant", reply)
+                await whatsapp_client.send_text_message(to_phone=sender, text=reply)
+            return
+
+        # ── Single ingredient / general flow ─────────────────────────────────
         intent = await parse_intent(text, history=history)
         intent_type = intent.get("intent", "general_tcm_chat")
         ingredient_name = (intent.get("ingredient_name") or "").strip()
         print(f"[Bot] Intent: {intent_type}, ingredient: '{ingredient_name}'")
 
-        # Record the user's message in history BEFORE processing
+        # Record the user's message in history BEFORE generating reply
         _append_history(sender, "user", text)
-
-        db = get_db()
-        reply = ""
 
         # ────────────────────────────────────────────────────────────────────
         # ROUTE 1: general_tcm_chat — LLM short answer + TCM redirect
@@ -193,42 +269,25 @@ async def _process_message(sender: str, text: str):
             reply = await generate_ingredient_info_reply(ingredient_name, db_match, history=history)
 
         # ────────────────────────────────────────────────────────────────────
-        # ROUTE 3: ingredient_safety_inquiry — STRICT DB lookup, no LLM verdict
+        # ROUTE 3: ingredient_safety_inquiry
+        # DB verdict is RULE-BASED (never LLM). LLM only writes the language.
         # ────────────────────────────────────────────────────────────────────
         else:
             best_match, highest_score = await _fuzzy_lookup(ingredient_name.lower(), db)
 
-            if not best_match or highest_score < 70:
-                reply = (
-                    f"{DISCLAIMER}"
-                    f"❓ Bahan *{ingredient_name}* tidak ditemukan dalam database kami.\n"
-                    "Coba ketik nama dalam bahasa Indonesia, Mandarin, atau Pinyin.\n\n"
-                    "Kamu juga bisa scan label produk TCM langsung di aplikasi FitMate! 📱"
-                )
-            elif best_match.get("is_toxic", False):
-                level = best_match.get("toxicity_level", "tidak diketahui")
-                organ = best_match.get("target_organ") or "Tidak diketahui"
-                desc = best_match.get("description") or "Tidak ada detail tambahan."
-                contraindications = best_match.get("contraindications", "")
-                reply = (
-                    f"{DISCLAIMER}"
-                    f"⚠️ *Peringatan — {best_match.get('indonesian_name', ingredient_name)}*\n"
-                    f"Tingkat toksisitas: *{level}*\n"
-                    f"Organ target: {organ}\n"
-                    f"Catatan: {desc}"
-                )
-                if contraindications:
-                    reply += f"\nKontraindikasi: {contraindications}"
-                reply += "\n\n🏥 Segera konsultasikan dengan apoteker atau dokter."
-            else:
-                desc = best_match.get("description") or "Tidak ada catatan tambahan."
-                indonesian_name = best_match.get("indonesian_name", ingredient_name)
-                reply = (
-                    f"{DISCLAIMER}"
-                    f"✅ *{indonesian_name}* tergolong aman berdasarkan database kami.\n"
-                    f"Catatan: {desc}\n\n"
-                    "Ingin memeriksa bahan lain? Ketik nama bahanya atau scan label produk di aplikasi! 🌿"
-                )
+            # Determine verdict purely by DB rules — LLM cannot change this
+            safety_verdict = _build_safety_verdict(best_match, highest_score, ingredient_name)
+            print(f"[Bot] Safety verdict: {safety_verdict} (score={highest_score})")
+
+            # LLM writes an empathetic reply anchored to the verdict
+            llm_reply = await generate_safety_reply(
+                ingredient_name=ingredient_name,
+                db_match=best_match if safety_verdict != "not_found" else None,
+                safety_verdict=safety_verdict,
+                user_message=text,
+                history=history,
+            )
+            reply = DISCLAIMER + llm_reply
 
         # Record bot's reply in history
         if reply:
@@ -247,3 +306,62 @@ async def _process_message(sender: str, text: str):
             await whatsapp_client.send_text_message(to_phone=sender, text=error_reply)
         except Exception as send_err:
             print(f"[Bot ERROR] Cannot send error message: {send_err}")
+
+
+async def _handle_multi_ingredient(
+    ingredient_list: list[str],
+    original_text: str,
+    history: list[dict],
+    db,
+    generate_safety_reply,
+) -> str:
+    """
+    Handles a comma-separated list of ingredients (e.g. from reading a label).
+    Runs DB lookup for each item and returns a combined safety card.
+    """
+    results = []
+    found_any = False
+
+    for name in ingredient_list[:6]:  # cap at 6 to avoid timeout
+        best_match, score = await _fuzzy_lookup(name.lower(), db)
+        safety_verdict = _build_safety_verdict(best_match, score, name)
+        display_name = (
+            best_match.get("indonesian_name", name) if best_match and score >= 70 else name
+        )
+
+        if safety_verdict == "toxic":
+            emoji = "⚠️"
+            verdict_text = "BERBAHAYA"
+            found_any = True
+        elif safety_verdict == "safe":
+            emoji = "✅"
+            verdict_text = "Aman"
+            found_any = True
+        else:
+            emoji = "❓"
+            verdict_text = "Tidak ditemukan di database"
+
+        results.append(f"{emoji} *{display_name}* — {verdict_text}")
+
+    if not results:
+        return (
+            f"{DISCLAIMER}"
+            "❓ Tidak ada bahan yang ditemukan dalam database kami.\n"
+            "Coba ketik satu nama bahan per pesan dengan nama Indonesia, Mandarin, atau Pinyin."
+        )
+
+    lines = "\n".join(results)
+    reply = (
+        f"{DISCLAIMER}"
+        f"🔍 *Hasil cek {len(results)} bahan:*\n\n"
+        f"{lines}\n\n"
+    )
+
+    if any("⚠️" in r for r in results):
+        reply += "⚠️ Ada bahan yang dikategorikan berbahaya. Segera konsultasikan dengan dokter atau apoteker.\n\n"
+
+    if not found_any:
+        reply += "Beberapa bahan tidak ditemukan di database kami. Coba ketik satu per satu untuk hasil lebih akurat.\n\n"
+
+    reply += "Ada bahan lain yang ingin dicek, atau ingin tahu lebih detail tentang salah satunya? 🌿"
+    return reply

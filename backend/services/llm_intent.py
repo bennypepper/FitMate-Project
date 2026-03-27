@@ -5,11 +5,11 @@ Uses google/gemini-2.5-flash-lite for fast response and medical inference.
 Intent classes
 --------------
   ingredient_safety_inquiry  — user asking if ingredient/brand is safe/toxic/contraindicated
-                              → ALWAYS DB-grounded; LLM never fabricates a safety verdict
+                              → DB verdict is ALWAYS rule-based; LLM only writes the reply language
   ingredient_info_inquiry    — user asking what an ingredient is, benefits, uses
                               → LLM answers using DB context if available
   general_tcm_chat           — greetings, general health/TCM questions, off-topic
-                              → LLM answers shortly, then redirects to TCM context
+                              → LLM answers, explains bot capabilities if first interaction
 
 Conversation history is passed to all chat functions so the LLM can resolve
 references like "bahan itu", "yang tadi", "apakah aman?", etc.
@@ -132,14 +132,18 @@ async def parse_intent(message_text: str, history: list[dict] | None = None) -> 
         "'yang tadi', 'itu', etc.\n\n"
         "1. ingredient_safety_inquiry — asking whether an ingredient/brand/product is safe, toxic, "
         "dangerous, has side effects, is contraindicated, or suitable for a health condition.\n"
-        "   Example: 'apakah ginseng berbahaya?', 'lo han guo aman tidak?', 'bahan tadi aman?'\n\n"
+        "   Also classify here if user types JUST an ingredient name (like 'lo han guo') with no question.\n"
+        "   Example: 'apakah ginseng berbahaya?', 'lo han guo aman tidak?', 'bahan tadi aman?', 'lo han guo'\n\n"
         "2. ingredient_info_inquiry — asking what an ingredient is, its benefits, uses, history "
         "(NOT specifically about safety/toxicity).\n"
         "   Example: 'apa itu ginseng?', 'lo han guo untuk apa?', 'apa manfaat jahe merah?'\n\n"
-        "3. general_tcm_chat — greetings, general health questions, statements, off-topic.\n"
+        "3. general_tcm_chat — greetings, general health questions, statements, off-topic, "
+        "or messages that do NOT mention a specific ingredient name.\n"
         "   Example: 'halo!', 'buah apa yang sehat?', 'okay', 'terima kasih'\n\n"
         "IMPORTANT: If the user refers to 'bahan itu', 'yang tadi', or similar vague references, "
         "extract the actual ingredient name from the context above.\n\n"
+        "IMPORTANT: A message with a COMMA-SEPARATED LIST of ingredients (e.g. 'lo han guo, akar manis, jahe') "
+        "should be classified as ingredient_safety_inquiry. Set ingredient_name to the full list as one string.\n\n"
         "Respond ONLY with valid JSON, no markdown, no explanation:\n"
         '  {"intent": "ingredient_safety_inquiry", "ingredient_name": "NAME"}\n'
         '  {"intent": "ingredient_info_inquiry",   "ingredient_name": "NAME"}\n'
@@ -167,23 +171,151 @@ async def parse_intent(message_text: str, history: list[dict] | None = None) -> 
         return {"intent": "general_tcm_chat", "ingredient_name": None}
 
 
+async def generate_safety_reply(
+    ingredient_name: str,
+    db_match: dict | None,
+    safety_verdict: str,
+    user_message: str,
+    history: list[dict] | None = None,
+) -> str:
+    """
+    Generates a human, empathetic safety reply grounded in the DB verdict.
+
+    CRITICAL: safety_verdict is determined purely by rule-based code (never LLM).
+    The LLM only writes the surrounding language — it CANNOT change the verdict.
+
+    Parameters:
+        ingredient_name  — ingredient queried
+        db_match         — full DB document (may be None)
+        safety_verdict   — "safe" | "toxic" | "not_found"  (set by caller, not LLM)
+        user_message     — raw user text (may contain health conditions)
+        history          — conversation history for multi-turn context
+    """
+    # Build DB context block
+    if db_match:
+        db_context = (
+            f"Indonesian name: {db_match.get('indonesian_name', ingredient_name)}\n"
+            f"Mandarin: {db_match.get('mandarin_name', '-')}\n"
+            f"Latin: {db_match.get('latin_name', '-')}\n"
+            f"Description: {db_match.get('description', 'Tidak tersedia')}\n"
+        )
+        if db_match.get("is_toxic"):
+            db_context += (
+                f"Toxicity level: {db_match.get('toxicity_level', 'tidak diketahui')}\n"
+                f"Target organ: {db_match.get('target_organ', 'tidak diketahui')}\n"
+                f"Contraindications: {db_match.get('contraindications', 'tidak ada data')}\n"
+            )
+        else:
+            db_context += f"Contraindications: {db_match.get('contraindications', 'tidak ada data khusus')}\n"
+    else:
+        db_context = "Bahan ini tidak ditemukan dalam database kami."
+
+    # Verdict instruction — the LLM MUST reproduce this verdict faithfully
+    verdict_instructions = {
+        "safe": (
+            "Verdict dari database: AMAN (safe). "
+            "Sampaikan bahwa bahan ini tergolong aman berdasarkan database kami. "
+            "Jika user menyebut kondisi kesehatan (diabetes, hamil, hipertensi, dll.), "
+            "akui kondisi tersebut dan jelaskan bahwa meskipun aman secara umum, "
+            "tetap perlu berkonsultasi dengan dokter/apoteker mengingat kondisi spesifik mereka."
+        ),
+        "toxic": (
+            "Verdict dari database: BERBAHAYA / TOKSIK. "
+            "Sampaikan dengan tegas bahwa bahan ini dikategorikan berbahaya atau toksik "
+            "berdasarkan database kami. Jika user menyebut kondisi kesehatan, "
+            "tekankan bahwa risikonya lebih besar untuk kondisi tersebut."
+        ),
+        "not_found": (
+            "Verdict dari database: TIDAK DITEMUKAN. "
+            "Sampaikan bahwa bahan ini tidak ada dalam database kami sehingga kami tidak bisa "
+            "memberikan penilaian keamanan yang terverifikasi. "
+            "Sarankan untuk mencoba nama lain (Indonesia, Mandarin, atau Latin)."
+        ),
+    }.get(safety_verdict, "Verdict tidak diketahui.")
+
+    system = (
+        "Kamu adalah FitMate, asisten keamanan produk TCM yang ramah dan empatik.\n\n"
+        f"=== DATA DARI DATABASE ===\n{db_context}\n"
+        f"=== INSTRUKSI VERDICT ===\n{verdict_instructions}\n\n"
+        "=== INSTRUKSI PENULISAN REPLY ===\n"
+        "- Balas dalam bahasa Indonesia yang hangat dan empatik\n"
+        "- WAJIB sebutkan kondisi kesehatan yang disebutkan user (diabetes, hamil, hipertensi, dll.) "
+        "jika ada — jangan abaikan kondisi ini\n"
+        "- Sampaikan verdict keamanan dengan jelas berdasarkan data DB di atas\n"
+        "- Jika bahan AMAN tapi user punya kondisi khusus: tetap sarankan konsultasi dokter\n"
+        "- Jika bahan TOKSIK: tegas namun tetap sopan, dorong konsultasi segera\n"
+        "- Jangan fabrikasi klaim keamanan di luar data DB yang diberikan\n"
+        "- Panjang reply: 4–6 kalimat, tidak lebih\n"
+        "- JANGAN tulis ulang disclaimer — itu akan ditambahkan secara terpisah\n"
+        "- Akhiri dengan: 'Ada bahan TCM lain yang ingin dicek? Ketik saja namanya! 🌿'\n"
+        f"\nPesan user: {user_message}"
+    )
+
+    messages: list[dict] = [{"role": "system", "content": system}]
+    if history:
+        # Only last 6 messages for context, not to bloat the prompt
+        messages.extend(history[-6:])
+    messages.append({"role": "user", "content": user_message})
+
+    try:
+        return (await _chat(messages, temperature=0.4, timeout=15.0)).strip()
+    except Exception as e:
+        print(f"[OpenRouter] generate_safety_reply error: {e}")
+        # Fallback to simple template if LLM fails
+        if safety_verdict == "toxic":
+            name = db_match.get("indonesian_name", ingredient_name) if db_match else ingredient_name
+            return (
+                f"⚠️ *{name}* dikategorikan berbahaya/toksik berdasarkan database kami.\n"
+                "Segera konsultasikan dengan dokter atau apoteker. 🏥"
+            )
+        elif safety_verdict == "safe":
+            name = db_match.get("indonesian_name", ingredient_name) if db_match else ingredient_name
+            return (
+                f"✅ *{name}* tergolong aman berdasarkan database kami.\n"
+                "Tetap konsultasikan dengan dokter untuk kondisi spesifikmu. "
+                "Ada bahan lain yang ingin dicek? 🌿"
+            )
+        else:
+            return (
+                f"❓ Bahan *{ingredient_name}* tidak ditemukan dalam database kami.\n"
+                "Coba ketik nama dalam bahasa Indonesia, Mandarin, atau Pinyin. "
+                "Ada bahan lain yang ingin dicek? 🌿"
+            )
+
+
 async def generate_chat_reply(message_text: str, history: list[dict] | None = None) -> str:
     """
-    Generates a short conversational reply for general/health questions.
+    Generates a conversational reply for general/health questions.
     Passes full conversation history for multi-turn coherence.
-    Always ends by steering the user toward TCM product/ingredient questions.
+
+    For first-time users (empty history), can explain bot capabilities.
+    Always steers the user toward TCM ingredient questions.
     """
+    is_first_message = not history
+
     system = (
-        "You are FitMate, a friendly assistant for a Traditional Chinese Medicine (TCM) safety app. "
-        "Rules:\n"
-        "- Reply in the SAME language the user used (Indonesian or English)\n"
-        "- Keep your answer SHORT — max 2-3 sentences\n"
-        "- You CAN answer general health/nutrition/lifestyle questions briefly\n"
-        "- You CANNOT diagnose diseases or prescribe treatments for specific conditions\n"
-        "- At the end of EVERY reply, ask ONE question to guide the user toward TCM:\n"
-        "  Indonesian: 'Ada produk TCM atau herbal yang ingin kamu cek keamanannya? 🌿'\n"
-        "  English: 'Is there a TCM product or herb you'd like me to check? 🌿'\n"
-        "  (use the same language as the rest of your reply)"
+        "Kamu adalah FitMate, asisten keamanan produk TCM yang ramah dan membantu. "
+        "FitMate bisa digunakan langsung via WhatsApp — user tidak perlu membuka aplikasi web.\n\n"
+        "Kemampuan FitMate:\n"
+        "• Cek keamanan bahan herbal/TCM\n"
+        "• Menjawab apakah suatu bahan aman untuk kondisi kesehatan tertentu\n"
+        "• Memberikan info/manfaat umum bahan TCM\n\n"
+        "Aturan:\n"
+        "- Balas dalam bahasa yang sama dengan user (Indonesia atau Inggris)\n"
+        "- Jika user menyebut kondisi kesehatan (diabetes, hamil, dll.), AKUI kondisi itu dalam balasanmu\n"
+        "- Kamu BOLEH menjawab pertanyaan kesehatan/nutrisi umum secara singkat\n"
+        "- Kamu TIDAK BISA mendiagnosis penyakit atau meresepkan obat\n"
+        "- Panjang reply: 3–5 kalimat (lebih panjang jika user punya pertanyaan kompleks atau kondisi kesehatan)\n"
+    )
+    if is_first_message:
+        system += (
+            "- Ini adalah pesan PERTAMA user — perkenalkan dirimu singkat dan jelaskan apa yang bisa kamu bantu\n"
+        )
+    system += (
+        "- Di akhir reply, tanyakan apakah ada bahan TCM yang ingin dicek:\n"
+        "  Indonesia: 'Ada bahan TCM atau produk herbal yang ingin kamu cek keamanannya? 🌿'\n"
+        "  Inggris: 'Is there a TCM ingredient or herbal product you\\'d like me to check? 🌿'\n"
+        "  (gunakan bahasa yang sama dengan balasanmu)"
     )
 
     messages: list[dict] = [{"role": "system", "content": system}]
@@ -196,7 +328,8 @@ async def generate_chat_reply(message_text: str, history: list[dict] | None = No
     except Exception as e:
         print(f"[OpenRouter] generate_chat_reply error: {e}")
         return (
-            "Halo! Saya FitMate 😊 Ada produk TCM atau herbal yang ingin kamu cek keamanannya? 🌿"
+            "Halo! Saya FitMate 😊 Saya bisa membantu mengecek keamanan bahan-bahan TCM.\n"
+            "Ada bahan TCM atau produk herbal yang ingin kamu cek keamanannya? 🌿"
         )
 
 
@@ -223,21 +356,22 @@ async def generate_ingredient_info_reply(
         db_context = "This ingredient was not found in our database — provide general TCM knowledge only."
 
     system = (
-        "You are FitMate, a knowledgeable TCM assistant. "
-        "Use the database context to ground your answer. Do NOT fabricate safety/toxicity claims.\n\n"
-        f"Ingredient: {ingredient_name}\n"
+        "Kamu adalah FitMate, asisten TCM yang berpengetahuan. "
+        "Gunakan konteks database untuk menjawab. Jangan fabrikasi klaim keamanan/toksisitas.\n\n"
+        f"Bahan: {ingredient_name}\n"
         f"{db_context}\n\n"
-        "Instructions:\n"
-        "- Reply in Indonesian\n"
-        "- Explain what this ingredient is, uses, and general benefits in 3-4 sentences\n"
-        "- If safety data exists in the DB, mention it briefly\n"
-        "- End with: 'Ingin tahu apakah bahan ini aman untuk kondisimu? Kirimkan nama produk TCM-nya! 🌿'\n"
-        "- Keep total reply under 150 words"
+        "Instruksi:\n"
+        "- Balas dalam bahasa Indonesia\n"
+        "- Jelaskan apa bahan ini, kegunaannya, dan manfaat umum dalam 3–4 kalimat\n"
+        "- Jika ada data keamanan dari DB, sebutkan secara singkat\n"
+        "- Akhiri dengan: 'Ingin tahu apakah bahan ini aman untuk kondisimu? "
+        "Ketik saja: \"apakah [nama bahan] aman untuk [kondisimu]?\" 🌿'\n"
+        "- Maksimal 180 kata"
     )
 
     messages: list[dict] = [{"role": "system", "content": system}]
     if history:
-        messages.extend(history)
+        messages.extend(history[-6:])
     messages.append({"role": "user", "content": f"Ceritakan tentang {ingredient_name}"})
 
     try:
@@ -247,5 +381,5 @@ async def generate_ingredient_info_reply(
         name = db_match.get("indonesian_name", ingredient_name) if db_match else ingredient_name
         return (
             f"Maaf, saya tidak dapat memuat info lengkap tentang *{name}* saat ini.\n"
-            "Ingin cek keamanannya? Kirimkan nama produk TCM-nya! 🌿"
+            "Ingin cek keamanannya? Ketik: \"apakah [nama bahan] aman?\" 🌿"
         )
