@@ -1,10 +1,10 @@
 from pydantic_settings import BaseSettings, SettingsConfigDict
 
 class Settings(BaseSettings):
-    # Meta / WhatsApp Cloud API
-    WHATSAPP_TOKEN: str = ""
-    WHATSAPP_PHONE_NUMBER_ID: str = ""
-    WHATSAPP_VERIFY_TOKEN: str = "fitmate_webhook_hub_secret"
+    # Twilio WhatsApp Sandbox
+    TWILIO_ACCOUNT_SID: str = ""
+    TWILIO_AUTH_TOKEN: str = ""
+    TWILIO_WHATSAPP_FROM: str = "+14155238886"  # Shared sandbox number
     
     # Gemini API
     GEMINI_API_KEY: str = ""

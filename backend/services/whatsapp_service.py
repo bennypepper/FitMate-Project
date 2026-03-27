@@ -1,29 +1,35 @@
 import httpx
 from core.config import settings
+from twilio.rest import Client
 
 class WhatsAppClient:
+    """
+    Sends WhatsApp messages via Twilio Sandbox.
+    Sandbox sender: whatsapp:+14155238886
+    """
     def __init__(self):
-        self.base_url = f"https://graph.facebook.com/v19.0/{settings.WHATSAPP_PHONE_NUMBER_ID}/messages"
-        self.headers = {
-            "Authorization": f"Bearer {settings.WHATSAPP_TOKEN}",
-            "Content-Type": "application/json"
-        }
+        self.twilio = Client(settings.TWILIO_ACCOUNT_SID, settings.TWILIO_AUTH_TOKEN)
+        self.from_number = f"whatsapp:{settings.TWILIO_WHATSAPP_FROM}"
 
     async def send_text_message(self, to_phone: str, text: str):
-        payload = {
-            "messaging_product": "whatsapp",
-            "to": to_phone,
-            "type": "text",
-            "text": {"body": text}
-        }
+        """
+        to_phone: raw phone number string e.g. '+628xxxxxxxxxx'
+        Twilio requires the 'whatsapp:' prefix on both sides.
+        """
+        # Normalise — Twilio sends 'whatsapp:+628...' as From; strip prefix if present
+        clean_to = to_phone.replace("whatsapp:", "")
         
-        async with httpx.AsyncClient() as client:
-            response = await client.post(
-                self.base_url,
-                headers=self.headers,
-                json=payload
+        # Twilio client is synchronous — run in a thread to avoid blocking the event loop
+        import asyncio
+        loop = asyncio.get_event_loop()
+        message = await loop.run_in_executor(
+            None,
+            lambda: self.twilio.messages.create(
+                from_=self.from_number,
+                to=f"whatsapp:{clean_to}",
+                body=text,
             )
-            response.raise_for_status()
-            return response.json()
+        )
+        return {"sid": message.sid, "status": message.status}
 
 whatsapp_client = WhatsAppClient()

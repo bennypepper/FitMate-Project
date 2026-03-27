@@ -1,7 +1,7 @@
 import type { Metadata } from "next";
 import { Inter, Newsreader, Noto_Sans_SC } from "next/font/google";
 import TopAppBar from "@/components/layout/TopAppBar";
-import BottomNavBar from "@/components/layout/BottomNavBar";
+import WhatsAppFAB from "@/components/layout/WhatsAppFAB";
 import "./globals.css";
 
 const inter = Inter({
@@ -45,7 +45,7 @@ export default function RootLayout({
       <body className="font-body bg-background text-on-surface min-h-screen flex flex-col">
         <TopAppBar />
         {children}
-        <BottomNavBar />
+        <WhatsAppFAB />
         <script
           dangerouslySetInnerHTML={{
             __html: `

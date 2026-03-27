@@ -50,7 +50,7 @@ export default function AdminLoginPage() {
           <form onSubmit={handleSubmit} className="space-y-5">
             {/* Username */}
             <div>
-              <label className="font-sans text-xs font-bold uppercase tracking-wider text-on-surface-variant">
+              <label htmlFor="admin-username" className="font-sans text-xs font-bold uppercase tracking-wider text-on-surface-variant">
                 Username
               </label>
               <input
@@ -58,7 +58,7 @@ export default function AdminLoginPage() {
                 type="text"
                 value={username}
                 onChange={(e) => setUsername(e.target.value)}
-                className="mt-2 w-full bg-surface-container px-4 py-3 rounded-xl font-sans text-sm text-on-surface placeholder:text-on-surface-variant/50 focus:outline-none focus:bg-surface-container-high transition-colors"
+                className="mt-2 w-full bg-surface-container px-4 py-3 rounded-xl font-sans text-sm text-on-surface placeholder:text-on-surface-variant/50 focus:outline-none focus:ring-2 focus:ring-primary focus:bg-surface-container-high transition-all"
                 placeholder="admin"
                 required
                 autoComplete="username"
@@ -67,7 +67,7 @@ export default function AdminLoginPage() {
 
             {/* Password */}
             <div>
-              <label className="font-sans text-xs font-bold uppercase tracking-wider text-on-surface-variant">
+              <label htmlFor="admin-password" className="font-sans text-xs font-bold uppercase tracking-wider text-on-surface-variant">
                 Password
               </label>
               <input
@@ -75,7 +75,7 @@ export default function AdminLoginPage() {
                 type="password"
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
-                className="mt-2 w-full bg-surface-container px-4 py-3 rounded-xl font-sans text-sm text-on-surface placeholder:text-on-surface-variant/50 focus:outline-none focus:bg-surface-container-high transition-colors"
+                className="mt-2 w-full bg-surface-container px-4 py-3 rounded-xl font-sans text-sm text-on-surface placeholder:text-on-surface-variant/50 focus:outline-none focus:ring-2 focus:ring-primary focus:bg-surface-container-high transition-all"
                 placeholder="••••••••"
                 required
                 autoComplete="current-password"
