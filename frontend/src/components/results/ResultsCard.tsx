@@ -1,6 +1,7 @@
 import React from "react";
 import ToxicityWarning from "./ToxicityWarning";
 import IngredientList from "./IngredientList";
+import ScanResultCopy from "./ScanResultCopy";
 
 interface ResultsCardProps {
   ingredients: any[];
@@ -108,6 +109,9 @@ export default function ResultsCard({ ingredients, onReset }: ResultsCardProps) 
           </p>
         </div>
       </section>
+
+      {/* Copy-to-WhatsApp section — always shown after scan */}
+      <ScanResultCopy ingredients={ingredients} />
     </div>
   );
 }
