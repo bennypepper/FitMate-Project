@@ -51,13 +51,18 @@ app.add_exception_handler(RateLimitExceeded, _rate_limit_exceeded_handler)
 # Security headers on all responses
 app.add_middleware(SecurityHeadersMiddleware)
 
+import os
+
 # CORS — explicit origin allowlist only
 # localhost:3000 for local dev, Vercel for production
-# ngrok URLs are dynamic; add yours to .env ALLOWED_ORIGINS if needed
 ALLOWED_ORIGINS = [
     "http://localhost:3000",
     "https://fitmate-tcm.vercel.app",
 ]
+
+env_origin = os.environ.get("FRONTEND_URL")
+if env_origin and env_origin not in ALLOWED_ORIGINS:
+    ALLOWED_ORIGINS.append(env_origin)
 
 app.add_middleware(
     CORSMiddleware,
