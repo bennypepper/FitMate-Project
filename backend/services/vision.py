@@ -34,11 +34,14 @@ async def extract_and_translate_text(image_bytes: bytes) -> list[dict]:
 
     prompt = (
         "You are a TCM (Traditional Chinese Medicine) ingredient extractor. "
-        "Look at this product label image and extract ALL ingredient names listed in the composition section. "
+        "Look at this product label image and extract ALL ingredient names listed. "
+        "1. Prioritize extracting from the formal 'composition' or 'ingredients' section if visible. "
+        "2. IF NO composition section exists (e.g. it is just the front cover of a box), "
+        "extract the main herbal product name or prominent herbal names visible (e.g. 'Tian Wang Bu Xin Dan' or 'Golden Throat Lozenges'). "
         "Include Chinese (Hanzi), Pinyin, Latin, Indonesian, and English names if visible. "
-        "Return ONLY a JSON array of strings — one ingredient per string. "
-        "Example: [\"Ginseng\", \"当归\", \"Radix Astragali\", \"Lo Han Guo\"] "
-        "If you cannot find any ingredients, return an empty array: [] "
+        "Return ONLY a JSON array of strings — one extracted text per string. "
+        "Example: [\"Ginseng\", \"当归\", \"Radix Astragali\", \"Golden Throat\"] "
+        "If you cannot find any text at all, return an empty array: [] "
         "Do NOT include markdown code fences, do NOT include any explanation."
     )
 
