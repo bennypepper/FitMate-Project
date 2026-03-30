@@ -181,10 +181,35 @@ _HEALTH_KEYWORDS_PATTERN = re.compile(
     re.IGNORECASE,
 )
 
+# ── Conversational Whitelist ──────────────────────────────────────────────────
+# Matches greetings, bot-identity questions, apologies, and basic agreement words.
+# These are ON-TOPIC for natural chat flow and must NOT be penalised.
+_CONVERSATIONAL_WHITELIST = re.compile(
+    r"(?i)(\bsiapa\s+(kamu|anda|elo|lo|lu)\b"
+    r"|\b(kamu|anda|elo|lo|lu)\s+siapa\b"
+    r"|\bapa\s+itu\s+(fitmate|fit\s*mate)\b"
+    r"|\bfitmate\s+(itu\s+apa|adalah|apa)\b"
+    r"|\b(kamu|anda)\s+(bisa|dapat|mampu)\s+(apa|ngapain|bantu)\b"
+    r"|\bapa\s+yang\s+(bisa|dapat)\s+(kamu|anda|kamu\s+lakukan)\b"
+    r"|\b(halo|hai|hello|hi|hey|selamat\s+(pagi|siang|malam|sore)|assalamu|salam)\b"
+    r"|\b(makasih|terimakasih|terima\s+kasih|thanks|thank\s+you)\b"
+    r"|\b(oke|ok|okay|okey|oke\s+deh|baik|siap|siyap|sip|noted)\b"
+    r"|\b(ngerti|paham|mengerti|oh\s+gitu|ohh|iya|ya)\b"
+    r"|\b(maaf|maap|sorry|sori|ampun|punten)\b)",
+    re.IGNORECASE,
+)
+
 
 def is_health_related(text: str) -> bool:
-    """Returns True if the message contains health/TCM-related keywords."""
-    return bool(_HEALTH_KEYWORDS_PATTERN.search(text))
+    """
+    Returns True if the message is on-topic — either health/TCM-related
+    or a natural conversational filler/greeting (e.g. "siapa kamu", "halo", "maaf").
+    Both categories should NOT be counted against the off-topic throttle.
+    """
+    return bool(
+        _HEALTH_KEYWORDS_PATTERN.search(text)
+        or _CONVERSATIONAL_WHITELIST.search(text)
+    )
 
 
 # ── Public API ─────────────────────────────────────────────────────────────────

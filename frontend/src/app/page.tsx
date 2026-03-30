@@ -31,7 +31,12 @@ export default function ScannerPage() {
       });
 
       if (!response.ok) {
-        throw new Error("API request failed");
+        let detail = `Server error ${response.status}`;
+        try {
+          const errData = await response.json();
+          detail = errData.detail || detail;
+        } catch {}
+        throw new Error(detail);
       }
 
       const data = await response.json();

@@ -11,13 +11,10 @@ def run():
     b64 = base64.b64encode(img_bytes).decode('utf-8')
 
     prompt = (
-        'You are a TCM ingredient extractor. Look at the image and extract the ingredient names list. '
-        'Return ONLY a JSON array of strings — one ingredient per string. Example: ["Ginseng", "Honey"]. '
-        'If none, return []. Do NOT include markdown code fences, do NOT include any explanation.'
+        'Read all the text visible on this packaging. Transcribe it exactly.'
     )
 
     models = [
-        'google/gemini-2.0-flash-lite-001',
         'google/gemini-3.1-flash-lite-preview'
     ]
 
@@ -45,7 +42,7 @@ def run():
             r = httpx.post('https://openrouter.ai/api/v1/chat/completions', headers=headers, json=payload, timeout=45.0)
             data = r.json()
             if 'choices' in data:
-                print("Output:", data['choices'][0]['message']['content'])
+                print("Output:\n", data['choices'][0]['message']['content'])
             else:
                 print("Error payload:", data)
         except Exception as e:

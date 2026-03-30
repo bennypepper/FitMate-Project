@@ -15,7 +15,7 @@ class Settings(BaseSettings):
 
     # OpenRouter - OCR
     OPENROUTER_OCR_API_KEY: str = ""
-    OPENROUTER_OCR_MODEL: str = "qwen/qwen3.5-flash-02-23"
+    OPENROUTER_OCR_MODEL: str = "google/gemini-3.1-flash-lite-preview"
 
     # OpenRouter - Chatbot
     OPENROUTER_CHATBOT_API_KEY: str = ""
