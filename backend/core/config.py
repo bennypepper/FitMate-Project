@@ -13,9 +13,13 @@ class Settings(BaseSettings):
     TWILIO_AUTH_TOKEN: str = ""
     TWILIO_WHATSAPP_FROM: str = "+14155238886"  # Shared sandbox number
 
-    # OpenRouter (gemini-2.5-flash-lite for multimodal/medical context support)
-    OPENROUTER_API_KEY: str = ""
-    OPENROUTER_MODEL: str = "google/gemini-2.5-flash-lite"
+    # OpenRouter - OCR
+    OPENROUTER_OCR_API_KEY: str = ""
+    OPENROUTER_OCR_MODEL: str = "qwen/qwen3.5-flash-02-23"
+
+    # OpenRouter - Chatbot
+    OPENROUTER_CHATBOT_API_KEY: str = ""
+    OPENROUTER_CHATBOT_MODEL: str = "google/gemini-3.1-flash-lite-preview"
 
     # JWT Admin Authentication
     JWT_SECRET_KEY: str = "change-me-in-production-min-32-chars"
@@ -51,8 +55,11 @@ class Settings(BaseSettings):
         if not self.ADMIN_PASSWORD_HASH:
             print("⚠️  [SECURITY] WARNING: ADMIN_PASSWORD_HASH is not set — admin login is disabled.")
 
-        if not self.OPENROUTER_API_KEY:
-            print("⚠️  [CONFIG] WARNING: OPENROUTER_API_KEY is not set — chatbot and OCR will fail.")
+        if not self.OPENROUTER_OCR_API_KEY:
+            print("⚠️  [CONFIG] WARNING: OPENROUTER_OCR_API_KEY is not set — OCR will fail.")
+
+        if not self.OPENROUTER_CHATBOT_API_KEY:
+            print("⚠️  [CONFIG] WARNING: OPENROUTER_CHATBOT_API_KEY is not set — chatbot will fail.")
 
 
 settings = Settings()

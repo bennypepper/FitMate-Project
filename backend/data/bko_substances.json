@@ -1,0 +1,414 @@
+{
+  "_meta": {
+    "description": "BKO (Bahan Kimia Obat) substances commonly found illegally in TCM/herbal products.",
+    "sources": ["BPOM Indonesia 2023-2024", "FDA Tainted Products Database", "NIH/PubMed research"],
+    "last_updated": "2026-03-30",
+    "version": "1.0"
+  },
+  "categories": [
+    {
+      "id": "corticosteroid",
+      "name": "Corticosteroids",
+      "name_id": "Kortikosteroid",
+      "common_product_claim": "pegal linu, nyeri sendi, rematik, asam urat",
+      "substances": [
+        {
+          "generic_name": "Dexamethasone",
+          "display_name_id": "Deksametason",
+          "risk_summary_id": "Sindrom Cushing, penekanan kelenjar adrenal, osteoporosis, gangguan imun",
+          "aliases": ["dexamethasone", "deksametasone", "deksametason", "dexamethason", "kortikoroid kuat"]
+        },
+        {
+          "generic_name": "Prednisone",
+          "display_name_id": "Prednison",
+          "risk_summary_id": "Penekanan imun, memperparah diabetes, hipertensi, osteoporosis",
+          "aliases": ["prednisone", "prednison", "prednizon"]
+        },
+        {
+          "generic_name": "Prednisolone",
+          "display_name_id": "Prednisolon",
+          "risk_summary_id": "Efek serupa prednison, gangguan hormon jangka panjang",
+          "aliases": ["prednisolone", "prednisolon", "prednisolon asetat"]
+        },
+        {
+          "generic_name": "Betamethasone",
+          "display_name_id": "Betametason",
+          "risk_summary_id": "Steroid sangat kuat, gangguan hormonal serius",
+          "aliases": ["betamethasone", "betametason", "betamethasone valerate"]
+        },
+        {
+          "generic_name": "Triamcinolone",
+          "display_name_id": "Triamsinolon",
+          "risk_summary_id": "Penekanan kelenjar adrenal, kelemahan otot",
+          "aliases": ["triamcinolone", "triamsinolon", "triamcinolon"]
+        },
+        {
+          "generic_name": "Methylprednisolone",
+          "display_name_id": "Metilprednisolon",
+          "risk_summary_id": "Miopati steroid, gangguan metabolisme berat",
+          "aliases": ["methylprednisolone", "metilprednisolon", "metilprednisolone", "methyl prednisolone"]
+        },
+        {
+          "generic_name": "Hydrocortisone",
+          "display_name_id": "Hidrokortison",
+          "risk_summary_id": "Berbahaya bila dikonsumsi oral tanpa pengawasan dokter",
+          "aliases": ["hydrocortisone", "hidrokortison", "hidrokortizon"]
+        },
+        {
+          "generic_name": "Budesonide",
+          "display_name_id": "Budesonid",
+          "risk_summary_id": "Efek sistemik pada dosis tinggi, penekanan kelenjar adrenal",
+          "aliases": ["budesonide", "budesonid", "budezonid"]
+        }
+      ]
+    },
+    {
+      "id": "pde5_inhibitor",
+      "name": "PDE5 Inhibitors (Sexual Enhancement)",
+      "name_id": "Penambah Vitalitas Seksual Ilegal",
+      "common_product_claim": "stamina pria, vitalitas, kuat, tahan lama",
+      "substances": [
+        {
+          "generic_name": "Sildenafil",
+          "display_name_id": "Sildenafil (Viagra)",
+          "risk_summary_id": "Hipotensi fatal bila dikombinasikan dengan nitrat, serangan jantung",
+          "aliases": ["sildenafil", "sidenafil", "sildenafil sitrat", "sildenafil citrate", "viagra", "vigra"]
+        },
+        {
+          "generic_name": "Tadalafil",
+          "display_name_id": "Tadalafil (Cialis)",
+          "risk_summary_id": "Efek lebih lama (36 jam), risiko kardiovaskular serius bila tanpa pengawasan",
+          "aliases": ["tadalafil", "tadalafil 5mg", "tadalafil 20mg", "cialis"]
+        },
+        {
+          "generic_name": "Vardenafil",
+          "display_name_id": "Vardenafil (Levitra)",
+          "risk_summary_id": "Hipotensi, aritmia jantung",
+          "aliases": ["vardenafil", "levitra"]
+        },
+        {
+          "generic_name": "Avanafil",
+          "display_name_id": "Avanafil",
+          "risk_summary_id": "PDE5 inhibitor generasi baru, risiko kardiovaskular",
+          "aliases": ["avanafil", "stendra"]
+        },
+        {
+          "generic_name": "Sulfoaildenafil",
+          "display_name_id": "Sulfoaildenafil (Analog Sildenafil)",
+          "risk_summary_id": "Analogi sildenafil tidak berlisensi, tidak ada data keamanan klinis",
+          "aliases": ["sulfoaildenafil", "sulfosildenafil"]
+        },
+        {
+          "generic_name": "Acetildenafil",
+          "display_name_id": "Acetildenafil (Analog Sildenafil)",
+          "risk_summary_id": "Ditemukan di produk herbal Indonesia, belum ada uji keamanan",
+          "aliases": ["acetildenafil", "asetildenafil", "acetildenafil"]
+        },
+        {
+          "generic_name": "Homosildenafil",
+          "display_name_id": "Homosildenafil (Analog Sildenafil)",
+          "risk_summary_id": "Analog struktural sildenafil, tidak diizinkan regulasi manapun",
+          "aliases": ["homosildenafil", "homo sildenafil"]
+        }
+      ]
+    },
+    {
+      "id": "weight_loss",
+      "name": "Weight Loss / Anorectics",
+      "name_id": "Obat Pelangsing Berbahaya",
+      "common_product_claim": "pelangsing, diet, turun berat badan, detoks",
+      "substances": [
+        {
+          "generic_name": "Sibutramine",
+          "display_name_id": "Sibutramin",
+          "risk_summary_id": "DITARIK GLOBAL — serangan jantung, stroke, kematian. Sangat sering ditemukan BPOM di produk pelangsing Indonesia",
+          "aliases": ["sibutramine", "sibutramin", "sibutramine hcl", "sibutramine hydrochloride"]
+        },
+        {
+          "generic_name": "Fenfluramine",
+          "display_name_id": "Fenfluramin",
+          "risk_summary_id": "Ditarik dari pasar — kerusakan katup jantung, hipertensi pulmonal",
+          "aliases": ["fenfluramine", "fenfluramin", "fenfluramina"]
+        },
+        {
+          "generic_name": "DMAA",
+          "display_name_id": "DMAA (1,3-Dimetilamilamin)",
+          "risk_summary_id": "Stroke hemoragik, serangan jantung, kematian",
+          "aliases": ["dmaa", "1,3-dmaa", "dimethylamylamine", "methylhexanamine", "dimetilamilamin"]
+        },
+        {
+          "generic_name": "Dinitrophenol",
+          "display_name_id": "DNP (Dinitrophenol)",
+          "risk_summary_id": "SANGAT BERBAHAYA — banyak kematian global, meningkatkan metabolisme secara berbahaya, hipertermia fatal",
+          "aliases": ["dnp", "dinitrophenol", "dinitrofenol", "2,4-dinitrophenol"]
+        },
+        {
+          "generic_name": "Amphetamine",
+          "display_name_id": "Amfetamin",
+          "risk_summary_id": "Narkotika, sangat adiktif, hipertensi, psikosis",
+          "aliases": ["amphetamine", "amfetamin", "amfetamine", "amphetamin"]
+        },
+        {
+          "generic_name": "Ephedrine",
+          "display_name_id": "Efedrin",
+          "risk_summary_id": "Risiko kardiovaskular serius bila tidak terpantau — serangan jantung, stroke",
+          "aliases": ["ephedrine", "efedrin", "ephedrin", "efedrina"]
+        },
+        {
+          "generic_name": "Phenylpropanolamine",
+          "display_name_id": "Fenilpropanolamin (PPA)",
+          "risk_summary_id": "Ditarik — stroke hemoragik, terutama pada wanita",
+          "aliases": ["phenylpropanolamine", "fenilpropanolamin", "ppa", "norephedrine", "norephrine"]
+        },
+        {
+          "generic_name": "Phenolphthalein",
+          "display_name_id": "Fenolftalein",
+          "risk_summary_id": "Ditarik — karsinogenik, kerusakan hati dan ginjal",
+          "aliases": ["phenolphthalein", "fenolftalein", "phenolphtalein"]
+        },
+        {
+          "generic_name": "Lorcaserin",
+          "display_name_id": "Lorkaserin",
+          "risk_summary_id": "Ditarik FDA 2020 — risiko kanker",
+          "aliases": ["lorcaserin", "lorkaserin", "belviq"]
+        }
+      ]
+    },
+    {
+      "id": "nsaid_analgesic",
+      "name": "NSAIDs & Analgesics",
+      "name_id": "Anti-nyeri & Anti-inflamasi Resep",
+      "common_product_claim": "nyeri, pegal, rematik, asam urat, arthritis",
+      "substances": [
+        {
+          "generic_name": "Diclofenac",
+          "display_name_id": "Diklofenak",
+          "risk_summary_id": "Perdarahan saluran cerna, kerusakan ginjal dan jantung",
+          "aliases": ["diclofenac", "diklofenak", "diclofenac sodium", "diclofenac potassium", "sodium diklofenak"]
+        },
+        {
+          "generic_name": "Indomethacin",
+          "display_name_id": "Indometasin",
+          "risk_summary_id": "Toksisitas GI dan ginjal yang sangat parah",
+          "aliases": ["indomethacin", "indometasin", "indometacin", "indomethacine"]
+        },
+        {
+          "generic_name": "Phenylbutazone",
+          "display_name_id": "Fenilbutazon",
+          "risk_summary_id": "Anemia aplastik, ditarik dari kebanyakan negara, sangat berbahaya",
+          "aliases": ["phenylbutazone", "fenilbutazon", "phenylbutazon"]
+        },
+        {
+          "generic_name": "Piroxicam",
+          "display_name_id": "Piroksikam",
+          "risk_summary_id": "Perdarahan GI, kerusakan ginjal, obat keras",
+          "aliases": ["piroxicam", "piroksikam", "piroxikam"]
+        },
+        {
+          "generic_name": "Meloxicam",
+          "display_name_id": "Meloksikam",
+          "risk_summary_id": "Risiko ginjal dan jantung, hanya boleh dengan resep dokter",
+          "aliases": ["meloxicam", "meloksikam", "meloxikam"]
+        },
+        {
+          "generic_name": "Ketoprofen",
+          "display_name_id": "Ketoprofen",
+          "risk_summary_id": "Perdarahan GI, berbahaya tanpa resep dalam produk herbal",
+          "aliases": ["ketoprofen", "ketofen", "ketoprophen"]
+        },
+        {
+          "generic_name": "Mefenamic acid",
+          "display_name_id": "Asam Mefenamat",
+          "risk_summary_id": "Risiko GI dan ginjal bila tidak terpantau",
+          "aliases": ["mefenamic acid", "asam mefenamat", "mefenamic", "mefenamate", "ponstan"]
+        },
+        {
+          "generic_name": "Tramadol",
+          "display_name_id": "Tramadol",
+          "risk_summary_id": "Opioid — sangat adiktif, depresi pernapasan, kejang",
+          "aliases": ["tramadol", "tramal", "tramadol hcl", "tramadol hydrochloride"]
+        },
+        {
+          "generic_name": "Codeine",
+          "display_name_id": "Kodein",
+          "risk_summary_id": "Opioid — adiktif, depresi pernapasan terutama pada anak",
+          "aliases": ["codeine", "kodein", "codein", "codeine phosphate"]
+        }
+      ]
+    },
+    {
+      "id": "antidiabetic",
+      "name": "Antidiabetic Agents",
+      "name_id": "Obat Antidiabetes Tersembunyi",
+      "common_product_claim": "gula darah, diabetes, pankreas, insulin alami",
+      "substances": [
+        {
+          "generic_name": "Glibenclamide",
+          "display_name_id": "Glibenklamid",
+          "risk_summary_id": "Hipoglikemia berat — sangat berbahaya untuk lansia dan pasien ginjal lemah",
+          "aliases": ["glibenclamide", "glibenklamid", "glyburide", "glibenclamid"]
+        },
+        {
+          "generic_name": "Glipizide",
+          "display_name_id": "Glipizid",
+          "risk_summary_id": "Hipoglikemia, hanya aman dengan pengawasan ketat",
+          "aliases": ["glipizide", "glipizid", "glucotrol"]
+        },
+        {
+          "generic_name": "Gliquidone",
+          "display_name_id": "Glikuidon",
+          "risk_summary_id": "Hipoglikemia, sulfonilrea generasi 2",
+          "aliases": ["gliquidone", "glikuidon", "gliquidon"]
+        },
+        {
+          "generic_name": "Glimepiride",
+          "display_name_id": "Glimepirid",
+          "risk_summary_id": "Hipoglikemia, terutama berbahaya bila tersembunyi dalam herbal",
+          "aliases": ["glimepiride", "glimepirid", "amaryl"]
+        },
+        {
+          "generic_name": "Metformin",
+          "display_name_id": "Metformin",
+          "risk_summary_id": "Asidosis laktat fatal bila tersembunyi tanpa label dan untuk kondisi yang salah",
+          "aliases": ["metformin", "metformin hcl", "metformin hydrochloride", "glucophage"]
+        },
+        {
+          "generic_name": "Rosiglitazone",
+          "display_name_id": "Rosiglitazon",
+          "risk_summary_id": "Risiko gagal jantung, sebagian besar ditarik dari pasar global",
+          "aliases": ["rosiglitazone", "rosiglitazon", "avandia"]
+        },
+        {
+          "generic_name": "Acarbose",
+          "display_name_id": "Akarbosa",
+          "risk_summary_id": "Gangguan GI serius bila dosis tidak terkontrol",
+          "aliases": ["acarbose", "akarbosa", "glucobay"]
+        }
+      ]
+    },
+    {
+      "id": "sedative_psychotropic",
+      "name": "Sedatives / Anxiolytics / Psychotropics",
+      "name_id": "Sedatif & Psikotropika",
+      "common_product_claim": "stres, tidur, tenang, relaksasi",
+      "substances": [
+        {
+          "generic_name": "Diazepam",
+          "display_name_id": "Diazepam (Valium)",
+          "risk_summary_id": "Ketergantungan tinggi, depresi SSP, overdosis fatal",
+          "aliases": ["diazepam", "valium", "diazepan"]
+        },
+        {
+          "generic_name": "Alprazolam",
+          "display_name_id": "Alprazolam (Xanax)",
+          "risk_summary_id": "Sangat adiktif, depresi napas, gejala putus obat serius",
+          "aliases": ["alprazolam", "xanax", "alp", "alprazolam 0.5", "alprazolam 1mg"]
+        },
+        {
+          "generic_name": "Lorazepam",
+          "display_name_id": "Lorazepam",
+          "risk_summary_id": "Depresi SSP, ketergantungan, tidak aman dikombinasikan sembarangan",
+          "aliases": ["lorazepam", "ativan", "lorazepam 1mg"]
+        },
+        {
+          "generic_name": "Nitrazepam",
+          "display_name_id": "Nitrazepam",
+          "risk_summary_id": "Sedasi berlebihan, ketergantungan",
+          "aliases": ["nitrazepam", "mogadon"]
+        },
+        {
+          "generic_name": "Clonazepam",
+          "display_name_id": "Klonazepam",
+          "risk_summary_id": "Risiko kejang saat berhenti, ketergantungan serius",
+          "aliases": ["clonazepam", "klonazepam", "rivotril", "klonopin"]
+        },
+        {
+          "generic_name": "Phenobarbital",
+          "display_name_id": "Fenobarbital",
+          "risk_summary_id": "Jendela terapeutik sempit, overdosis fatal, ketergantungan",
+          "aliases": ["phenobarbital", "fenobarbital", "phenobarbitone", "luminal"]
+        },
+        {
+          "generic_name": "Zolpidem",
+          "display_name_id": "Zolpidem",
+          "risk_summary_id": "Ketergantungan, perilaku tidur berbahaya",
+          "aliases": ["zolpidem", "ambien", "stilnox"]
+        }
+      ]
+    },
+    {
+      "id": "other_controlled",
+      "name": "Anabolic Steroids, Diuretics & Other Controlled Substances",
+      "name_id": "Steroid Anabolik, Diuretik & Zat Terlarang Lainnya",
+      "common_product_claim": "stamina, kekuatan, massa otot, detoks, tekanan darah",
+      "substances": [
+        {
+          "generic_name": "Testosterone",
+          "display_name_id": "Testosteron",
+          "risk_summary_id": "Gangguan hormonal serius, kardiovaskular, hati",
+          "aliases": ["testosterone", "testosteron", "testosterone propionate", "testosterone enanthate"]
+        },
+        {
+          "generic_name": "Stanozolol",
+          "display_name_id": "Stanozolol",
+          "risk_summary_id": "Hepatotoksik, virilisasi, pelanggaran doping",
+          "aliases": ["stanozolol", "winstrol", "stanazol"]
+        },
+        {
+          "generic_name": "Methandienone",
+          "display_name_id": "Metandienon (Dianabol)",
+          "risk_summary_id": "Sangat hepatotoksik, gangguan hormonal permanent",
+          "aliases": ["methandienone", "metandienon", "dianabol", "methandrostenolone", "dbol"]
+        },
+        {
+          "generic_name": "Nandrolone",
+          "display_name_id": "Nandrolon",
+          "risk_summary_id": "Kerusakan hati, gangguan hormonal, kardiovaskular",
+          "aliases": ["nandrolone", "nandrolon", "deca durabolin", "nandrolone decanoate"]
+        },
+        {
+          "generic_name": "Furosemide",
+          "display_name_id": "Furosemid",
+          "risk_summary_id": "Ketidakseimbangan elektrolit berbahaya, dehidrasi berat, aritmia",
+          "aliases": ["furosemide", "furosemid", "furosemida", "frusemide", "lasix"]
+        },
+        {
+          "generic_name": "Hydrochlorothiazide",
+          "display_name_id": "Hidroklorotiazid",
+          "risk_summary_id": "Deplesi elektrolit, berbahaya bila tidak terlabel dalam produk herbal",
+          "aliases": ["hydrochlorothiazide", "hidroklorotiazid", "hctz", "hydrochlorot"]
+        },
+        {
+          "generic_name": "Chloramphenicol",
+          "display_name_id": "Kloramfenikol",
+          "risk_summary_id": "Anemia aplastik fatal, penekanan sumsum tulang belakang",
+          "aliases": ["chloramphenicol", "kloramfenikol", "chloramfenicol"]
+        },
+        {
+          "generic_name": "Cyproheptadine",
+          "display_name_id": "Siproheptadin",
+          "risk_summary_id": "Digunakan untuk menambah nafsu makan secara tersembunyi, efek antihistamin berlebihan",
+          "aliases": ["cyproheptadine", "siproheptadin", "periactin"]
+        },
+        {
+          "generic_name": "Promethazine",
+          "display_name_id": "Prometazin",
+          "risk_summary_id": "Depresi SSP, overdosis berbahaya",
+          "aliases": ["promethazine", "prometazin", "phenergan"]
+        },
+        {
+          "generic_name": "Theophylline",
+          "display_name_id": "Teofilin",
+          "risk_summary_id": "Jendela terapeutik sangat sempit, overdosis menyebabkan kejang dan aritmia",
+          "aliases": ["theophylline", "teofilin", "theophyllin"]
+        },
+        {
+          "generic_name": "Chlorpheniramine",
+          "display_name_id": "Klorfeniramina",
+          "risk_summary_id": "Antihistamin yang disembunyikan, efek sedasi kuat",
+          "aliases": ["chlorpheniramine", "klorfeniramina", "ctm", "chlorfeniramina"]
+        }
+      ]
+    }
+  ]
+}

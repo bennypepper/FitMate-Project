@@ -28,10 +28,12 @@ Security:
 import re
 import asyncio
 import traceback
-from fastapi import APIRouter, Request, BackgroundTasks, Form
+from fastapi import APIRouter, Request, BackgroundTasks, Form, Depends
+from pydantic import BaseModel
 from services.whatsapp_service import whatsapp_client
 from cachetools import TTLCache
 from core.config import settings
+from database.mongo import get_db
 
 router = APIRouter(prefix="/whatsapp", tags=["whatsapp"])
 
@@ -278,11 +280,14 @@ async def _process_message(sender: str, text: str):
                     user_message=text,
                     history=history,
                 )
+                # Safeguard against LLM heavily hallucinating its own disclaimers
+                llm_reply = re.sub(r"(?i)(?:⚕️\s*)?(?:\*?Disclaimer\*?:?)\s*.*?(?:\n+|$)", "", llm_reply).strip()
                 reply = DISCLAIMER + llm_reply
 
         # ── Send reply and record in history ──────────────────────────────────
         if reply:
-            _append_history(sender, "assistant", reply)
+            clean_reply_for_history = reply.replace(DISCLAIMER, "").strip()
+            _append_history(sender, "assistant", clean_reply_for_history)
             await whatsapp_client.send_text_message(to_phone=sender, text=reply)
 
     except Exception as e:
@@ -350,3 +355,81 @@ async def _handle_multi_ingredient(ingredient_list: list[str], db) -> str:
 
     reply += "Ada yang ingin kamu tahu lebih lanjut tentang salah satunya? 🌿"
     return reply
+
+
+class TestChatRequest(BaseModel):
+    sender: str = "test_user"
+    message: str
+    model: str | None = None
+
+
+@router.post("/test-chat")
+async def test_chat(req: TestChatRequest, db=Depends(get_db)):
+    """
+    Test endpoint to bypass Twilio sandbox limits.
+    Acts like the real webhook but returns JSON instead of relying on Twilio API.
+    """
+    from services.llm_intent import (
+        parse_intent,
+        generate_chat_reply,
+        generate_ingredient_info_reply,
+        generate_safety_reply,
+    )
+
+    sender = req.sender
+    text = req.message
+    model_override = req.model
+
+    history = _get_history(sender)
+
+    welcome_sent = False
+    if sender not in _welcomed_set:
+        _welcomed_set.add(sender)
+        _append_history(sender, "assistant", WELCOME_MESSAGE)
+        welcome_sent = True
+
+    reply = ""
+
+    intent = await parse_intent(text, history=history, model=model_override)
+    intent_type = intent.get("intent", "general_tcm_chat")
+    ingredient_name = (intent.get("ingredient_name") or "").strip()
+
+    _append_history(sender, "user", text)
+
+    if intent_type == "general_tcm_chat" or not ingredient_name:
+        reply = await generate_chat_reply(text, history=history, model=model_override)
+    elif intent_type == "ingredient_info_inquiry":
+        best_match, score = await _fuzzy_lookup(ingredient_name.lower(), db)
+        db_match = best_match if (best_match and score >= 65) else None
+        reply = await generate_ingredient_info_reply(ingredient_name, db_match, history=history, model=model_override)
+    else:
+        if _is_multi_ingredient(ingredient_name):
+            ingredient_list = _split_ingredient_list(ingredient_name)
+            reply = await _handle_multi_ingredient(ingredient_list, db)
+        else:
+            best_match, highest_score = await _fuzzy_lookup(ingredient_name.lower(), db)
+            safety_verdict = _build_safety_verdict(best_match, highest_score)
+
+            llm_reply = await generate_safety_reply(
+                ingredient_name=ingredient_name,
+                db_match=best_match if safety_verdict != "not_found" else None,
+                safety_verdict=safety_verdict,
+                user_message=text,
+                history=history,
+                model=model_override,
+            )
+            llm_reply = re.sub(r"(?i)(?:⚕️\s*)?(?:\*?Disclaimer\*?:?)\s*.*?(?:\n+|$)", "", llm_reply).strip()
+            reply = DISCLAIMER + llm_reply
+
+    if reply:
+        clean_reply_for_history = reply.replace(DISCLAIMER, "").strip()
+        _append_history(sender, "assistant", clean_reply_for_history)
+
+    return {
+        "status": "success",
+        "intent": intent_type,
+        "ingredient_extracted": ingredient_name,
+        "welcome_sent": welcome_sent,
+        "welcome_message": WELCOME_MESSAGE if welcome_sent else None,
+        "reply": reply
+    }

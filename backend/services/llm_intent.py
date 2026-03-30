@@ -21,14 +21,14 @@ from core.config import settings
 
 OPENROUTER_BASE_URL = "https://openrouter.ai/api/v1/chat/completions"
 
-if not settings.OPENROUTER_API_KEY:
+if not settings.OPENROUTER_CHATBOT_API_KEY:
     raise RuntimeError(
-        "OPENROUTER_API_KEY is not set in .env. "
+        "OPENROUTER_CHATBOT_API_KEY is not set in .env. "
         "Add it to backend/.env and restart the server."
     )
 
 _HEADERS = {
-    "Authorization": f"Bearer {settings.OPENROUTER_API_KEY}",
+    "Authorization": f"Bearer {settings.OPENROUTER_CHATBOT_API_KEY}",
     "Content-Type": "application/json",
     "HTTP-Referer": "https://fitmate-tcm.vercel.app",
     "X-Title": "FitMate TCM Safety Scanner",
@@ -43,6 +43,7 @@ async def _chat(
     messages: list[dict],
     temperature: float = 0.4,
     timeout: float = 15.0,
+    model: str | None = None,
 ) -> str:
     """
     Calls OpenRouter /chat/completions with a messages array (supports multi-turn).
@@ -50,7 +51,7 @@ async def _chat(
     Retries on 429 / 5xx with exponential backoff.
     """
     payload = {
-        "model": settings.OPENROUTER_MODEL,
+        "model": model or settings.OPENROUTER_CHATBOT_MODEL,
         "messages": messages,
         "temperature": temperature,
     }
@@ -104,7 +105,7 @@ def _build_context_snippet(history: list[dict], n_user_bubbles: int = 5) -> str:
     return "\n".join(f"- {m}" for m in recent)
 
 
-async def parse_intent(message_text: str, history: list[dict] | None = None) -> dict:
+async def parse_intent(message_text: str, history: list[dict] | None = None, model: str | None = None) -> dict:
     """
     Parses a raw WhatsApp message into structured intent.
     The LLM also normalizes/translates foreign ingredient names to Indonesian/English/Pinyin.
@@ -168,6 +169,7 @@ async def parse_intent(message_text: str, history: list[dict] | None = None) -> 
             [{"role": "user", "content": prompt}],
             temperature=0.0,
             timeout=12.0,
+            model=model,
         )
         result_text = result_text.strip().lstrip("```json").lstrip("```").rstrip("```").strip()
         result = json.loads(result_text)
@@ -188,6 +190,7 @@ async def generate_safety_reply(
     safety_verdict: str,
     user_message: str,
     history: list[dict] | None = None,
+    model: str | None = None,
 ) -> str:
     """
     Generates a warm, empathetic safety reply grounded in the DB verdict.
@@ -262,7 +265,7 @@ async def generate_safety_reply(
     messages.append({"role": "user", "content": user_message})
 
     try:
-        return (await _chat(messages, temperature=0.5, timeout=15.0)).strip()
+        return (await _chat(messages, temperature=0.5, timeout=15.0, model=model)).strip()
     except Exception as e:
         print(f"[OpenRouter] generate_safety_reply error: {e}")
         # Simple fallback
@@ -287,7 +290,7 @@ async def generate_safety_reply(
             )
 
 
-async def generate_chat_reply(message_text: str, history: list[dict] | None = None) -> str:
+async def generate_chat_reply(message_text: str, history: list[dict] | None = None, model: str | None = None) -> str:
     """
     Generates a warm, helpful conversational reply.
     Acknowledges health conditions. Steers toward TCM naturally, not robotically.
@@ -316,7 +319,7 @@ async def generate_chat_reply(message_text: str, history: list[dict] | None = No
     messages.append({"role": "user", "content": message_text})
 
     try:
-        return (await _chat(messages, temperature=0.6, timeout=15.0)).strip()
+        return (await _chat(messages, temperature=0.6, timeout=15.0, model=model)).strip()
     except Exception as e:
         print(f"[OpenRouter] generate_chat_reply error: {e}")
         return (
@@ -329,6 +332,7 @@ async def generate_ingredient_info_reply(
     ingredient_name: str,
     db_match: dict | None,
     history: list[dict] | None = None,
+    model: str | None = None,
 ) -> str:
     """
     Generates an informational reply about a TCM ingredient.
@@ -366,7 +370,7 @@ async def generate_ingredient_info_reply(
     messages.append({"role": "user", "content": f"Ceritakan tentang {ingredient_name}"})
 
     try:
-        return (await _chat(messages, temperature=0.5, timeout=15.0)).strip()
+        return (await _chat(messages, temperature=0.5, timeout=15.0, model=model)).strip()
     except Exception as e:
         print(f"[OpenRouter] generate_ingredient_info_reply error: {e}")
         name = db_match.get("indonesian_name", ingredient_name) if db_match else ingredient_name

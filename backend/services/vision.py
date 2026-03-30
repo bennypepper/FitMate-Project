@@ -27,7 +27,7 @@ async def extract_and_translate_text(image_bytes: bytes) -> list[dict]:
     )
 
     payload = {
-        "model": settings.OPENROUTER_MODEL,
+        "model": settings.OPENROUTER_OCR_MODEL,
         "messages": [
             {
                 "role": "user",
@@ -41,7 +41,7 @@ async def extract_and_translate_text(image_bytes: bytes) -> list[dict]:
     }
 
     headers = {
-        "Authorization": f"Bearer {settings.OPENROUTER_API_KEY}",
+        "Authorization": f"Bearer {settings.OPENROUTER_OCR_API_KEY}",
         "Content-Type": "application/json",
         "HTTP-Referer": "https://fitmate-tcm.vercel.app",
         "X-Title": "FitMate TCM Safety Scanner",
