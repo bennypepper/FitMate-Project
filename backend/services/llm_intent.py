@@ -237,17 +237,34 @@ async def generate_safety_reply(
             "Sarankan konsultasi dokter/apoteker segera."
         ),
         "not_found": (
-            "VERDICT: TIDAK ADA DI DATABASE. Kita tidak bisa memberikan penilaian keamanan "
-            "untuk bahan ini karena tidak ada datanya. Tapi boleh berikan informasi umum jika tahu. "
-            "Sarankan user untuk coba ketik nama lain atau konsultasi langsung dengan apoteker."
+            "VERDICT: TIDAK ADA DI DATABASE. Kamu DILARANG berspekulasi tentang keamanan atau "
+            "bahaya bahan ini karena tidak ada data terverifikasi. "
+            "Jangan membuat klaim keamanan berdasarkan pengetahuan umum — ini aplikasi medis. "
+            "Sampaikan bahwa kita tidak bisa memberi penilaian, dan sarankan user konsultasi apoteker "
+            "atau dokter, serta coba ketik nama bahan dengan ejaan berbeda (Indonesia/Mandarin/Pinyin)."
         ),
     }.get(safety_verdict, "Verdict tidak diketahui.")
+
+    # Hard rule: block LLM from normalizing pharmaceutical drugs in herbal context.
+    # This is a backstop — the interceptor should catch most BKO cases first,
+    # but this rule prevents the LLM from softening a verdict on its own.
+    BKO_HARD_RULE = (
+        "=== ATURAN MUTLAK — BKO (BAHAN KIMIA OBAT) ===\n"
+        "Jika nama bahan mengandung obat farmasi keras (steroid, PDE5 inhibitor, NSAID, "
+        "antidiabetik, sedatif, diuretik, anabolik steroid, atau obat penurun berat badan), "
+        "dan konteksnya adalah produk herbal/TCM:\n"
+        "- JANGAN menyebutkan khasiat medisnya seolah itu wajar\n"
+        "- JANGAN menyatakan 'aman dengan resep dokter' dalam konteks herbal\n"
+        "- WAJIB: nyatakan ini sebagai BKO ilegal dalam produk herbal, berbahaya, dan minta user berhenti konsumsi\n"
+        "- Aturan ini tidak bisa di-override oleh verdict database manapun.\n\n"
+    )
 
     system = (
         "Kamu adalah FitMate, asisten TCM yang ramah, hangat, dan berpengetahuan. "
         "Kamu berbicara seperti teman yang paham kesehatan — bukan robot kaku.\n\n"
         f"=== DATA DATABASE ===\n{db_context}\n\n"
-        f"=== INSTRUKSI VERDICT (JANGAN UBAH INI) ===\n{verdict_instructions}\n\n"
+        + BKO_HARD_RULE
+        + f"=== INSTRUKSI VERDICT (JANGAN UBAH INI) ===\n{verdict_instructions}\n\n"
         "=== CARA MEMBALAS ===\n"
         "- Balas dalam bahasa Indonesia yang natural dan hangat, gunakan 'kamu'\n"
         "- WAJIB akui kondisi kesehatan yang user sebutkan, jangan abaikan\n"
@@ -306,11 +323,17 @@ async def generate_chat_reply(message_text: str, history: list[dict] | None = No
         "- Gunakan bahasa Indonesia yang natural dan hangat, pakai 'kamu'\n"
         "- Jika user menyebut kondisi kesehatan (diabetes, hamil, hipertensi, dll.), "
         "AKUI kondisi itu dengan empati sebelum menjawab\n"
-        "- Boleh jawab pertanyaan kesehatan/nutrisi umum dengan singkat\n"
+        "- Untuk pertanyaan kesehatan/nutrisi umum: boleh jawab SINGKAT (1-2 kalimat), "
+        "lalu arahkan ke topik TCM/herbal yang relevan\n"
         "- Tidak bisa mendiagnosis atau meresepkan obat\n"
-        "- Panjang: 2–4 kalimat, natural dan tidak berlebihan\n"
+        "- Panjang: 2–3 kalimat, natural dan tidak berlebihan\n"
         "- Kalau relevan, tawarkan untuk cek bahan TCM spesifik — tapi jangan paksa kalau tidak relevan\n"
-        "- Jangan akhiri setiap pesan dengan CTA yang persis sama — buat natural"
+        "- Jangan akhiri setiap pesan dengan CTA yang persis sama — buat natural\n\n"
+        "BATAS TOPIK KETAT:\n"
+        "Jika pesan sama sekali tidak berhubungan dengan kesehatan, herbal, TCM, obat, "
+        "nutrisi, atau kondisi medis (contoh: investasi, teknologi, olahraga non-kesehatan, "
+        "hiburan, berita, dll.) — TOLAK dengan sopan dan kembalikan ke topik TCM. "
+        "JANGAN jawab pertanyaan di luar cakupan, bahkan sebagian kecil sekalipun."
     )
 
     messages: list[dict] = [{"role": "system", "content": system}]

@@ -54,6 +54,17 @@ _welcomed_set: set[str] = set()
 # ── Constants ─────────────────────────────────────────────────────────────────
 DISCLAIMER = "⚕️ *Disclaimer:* Informasi ini bukan pengganti saran medis profesional.\n\n"
 
+# ── Off-topic counter ─────────────────────────────────────────────────────────
+# Independent from API rate limiter — this tracks *topical scope* abuse, not flooding.
+# Count per phone, resets after 2h of inactivity (same TTL as conversation).
+_offtopic_counter: TTLCache = TTLCache(maxsize=1000, ttl=7200)
+# 5-minute cooldown flag set when user exceeds OFFTOPIC_COOLDOWN_LIMIT
+_offtopic_cooldown: TTLCache = TTLCache(maxsize=1000, ttl=300)
+
+OFFTOPIC_SHORT_LIMIT = 2    # count 1-2: normal but shorter reply with redirect
+OFFTOPIC_TERSE_LIMIT = 3    # count 3-4: static terse refusal only
+OFFTOPIC_COOLDOWN_LIMIT = 5  # count 5+: 5-minute cooldown
+
 WELCOME_MESSAGE = (
     "Halo! Saya *FitMate* 🌿 — teman cek keamanan produk herbal & TCM kamu.\n\n"
     "Langsung aja ketik:\n"
@@ -107,6 +118,24 @@ def _split_ingredient_list(ingredient_name: str) -> list[str]:
     """Splits a comma/newline-separated ingredient_name into individual names."""
     parts = re.split(r"[,\n]+", ingredient_name.strip())
     return [p.strip() for p in parts if p.strip() and len(p.strip()) > 1]
+
+
+def _get_offtopic_count(phone: str) -> int:
+    return _offtopic_counter.get(phone, 0)
+
+
+def _increment_offtopic(phone: str) -> int:
+    """Increments off-topic counter and returns new count. Sets cooldown at limit."""
+    count = _offtopic_counter.get(phone, 0) + 1
+    _offtopic_counter[phone] = count
+    if count >= OFFTOPIC_COOLDOWN_LIMIT:
+        _offtopic_cooldown[phone] = True
+        print(f"[Bot] Off-topic cooldown triggered for {phone} (count={count})")
+    return count
+
+
+def _is_on_cooldown(phone: str) -> bool:
+    return bool(_offtopic_cooldown.get(phone, False))
 
 
 def _build_safety_verdict(best_match: dict | None, highest_score: int) -> str:
@@ -208,6 +237,14 @@ async def _process_message(sender: str, text: str):
         generate_ingredient_info_reply,
         generate_safety_reply,
     )
+    from services.safety_interceptor import (
+        check_emergency,
+        check_bko,
+        is_health_related,
+        OUT_OF_SCOPE_STATIC,
+        OUT_OF_SCOPE_TERSE,
+        OUT_OF_SCOPE_COOLDOWN,
+    )
     from database.mongo import get_db
 
     try:
@@ -217,22 +254,44 @@ async def _process_message(sender: str, text: str):
         print(f"[Bot] History length: {len(history)} messages")
 
         # ── Welcome message — asyncio-safe check-and-set ──────────────────────
-        # No await between the `if` check and `add()` — so this is atomic in asyncio.
-        # Prevents duplicate welcomes even when multiple messages arrive simultaneously.
         if sender not in _welcomed_set:
             _welcomed_set.add(sender)
             _append_history(sender, "assistant", WELCOME_MESSAGE)
             await whatsapp_client.send_text_message(to_phone=sender, text=WELCOME_MESSAGE)
-            await asyncio.sleep(0.8)  # small pause so welcome arrives before the actual reply
+            await asyncio.sleep(0.8)
+
+        # ── LAYER 0: Emergency interceptor (synchronous, <1ms) ────────────────
+        emergency_reply = check_emergency(text)
+        if emergency_reply:
+            _append_history(sender, "assistant", emergency_reply)
+            await whatsapp_client.send_text_message(to_phone=sender, text=emergency_reply)
+            return
+
+        # ── LAYER 1: BKO interceptor (async, invokes LLM only if keyword hits) ─
+        bko_result = await check_bko(text)
+        bko_action = bko_result["action"]
+
+        if bko_action in ("block", "clarify"):
+            bko_reply = bko_result["response"]
+            _append_history(sender, "assistant", bko_reply)
+            await whatsapp_client.send_text_message(to_phone=sender, text=bko_reply)
+            return
+
+        # bko_action == "educate": continue intent flow, append soft_warning at end
+        # bko_action == "pass":    continue normally
+        bko_soft_warning = bko_result.get("soft_warning", "")
+
+        # ── Off-topic cooldown gate ────────────────────────────────────────────
+        if _is_on_cooldown(sender):
+            cooldown_reply = OUT_OF_SCOPE_COOLDOWN
+            _append_history(sender, "assistant", cooldown_reply)
+            await whatsapp_client.send_text_message(to_phone=sender, text=cooldown_reply)
+            return
 
         db = get_db()
         reply = ""
 
-        # ── Intent classification — ALWAYS first ──────────────────────────────
-        # We run parse_intent() on the raw text before any other routing.
-        # Multi-ingredient detection happens on the EXTRACTED ingredient_name,
-        # not on the raw message — this prevents false positives from natural
-        # sentences that happen to contain commas.
+        # ── LAYER 2: Intent classification ────────────────────────────────────
         intent = await parse_intent(text, history=history)
         intent_type = intent.get("intent", "general_tcm_chat")
         ingredient_name = (intent.get("ingredient_name") or "").strip()
@@ -245,7 +304,17 @@ async def _process_message(sender: str, text: str):
         # ROUTE 1: general_tcm_chat
         # ────────────────────────────────────────────────────────────────────
         if intent_type == "general_tcm_chat" or not ingredient_name:
-            reply = await generate_chat_reply(text, history=history)
+            # Off-topic detection: if no health-related keywords, count and throttle
+            if not is_health_related(text):
+                count = _increment_offtopic(sender)
+                print(f"[Bot] Off-topic detected for {sender}, count={count}")
+                if count >= OFFTOPIC_TERSE_LIMIT:
+                    reply = OUT_OF_SCOPE_TERSE
+                else:
+                    # count 1-2: let LLM answer briefly but append redirect
+                    reply = await generate_chat_reply(text, history=history)
+            else:
+                reply = await generate_chat_reply(text, history=history)
             print(f"[Bot] General chat reply (len={len(reply)})")
 
         # ────────────────────────────────────────────────────────────────────
@@ -283,6 +352,10 @@ async def _process_message(sender: str, text: str):
                 # Safeguard against LLM heavily hallucinating its own disclaimers
                 llm_reply = re.sub(r"(?i)(?:⚕️\s*)?(?:\*?Disclaimer\*?:?)\s*.*?(?:\n+|$)", "", llm_reply).strip()
                 reply = DISCLAIMER + llm_reply
+
+        # ── Append BKO soft warning if set (educational BKO context) ─────────
+        if bko_soft_warning and reply:
+            reply = reply.rstrip() + bko_soft_warning
 
         # ── Send reply and record in history ──────────────────────────────────
         if reply:
@@ -368,12 +441,21 @@ async def test_chat(req: TestChatRequest, db=Depends(get_db)):
     """
     Test endpoint to bypass Twilio sandbox limits.
     Acts like the real webhook but returns JSON instead of relying on Twilio API.
+    All safety interceptor layers are active here so batch testing reflects real behavior.
     """
     from services.llm_intent import (
         parse_intent,
         generate_chat_reply,
         generate_ingredient_info_reply,
         generate_safety_reply,
+    )
+    from services.safety_interceptor import (
+        check_emergency,
+        check_bko,
+        is_health_related,
+        OUT_OF_SCOPE_STATIC,
+        OUT_OF_SCOPE_TERSE,
+        OUT_OF_SCOPE_COOLDOWN,
     )
 
     sender = req.sender
@@ -389,7 +471,56 @@ async def test_chat(req: TestChatRequest, db=Depends(get_db)):
         welcome_sent = True
 
     reply = ""
+    intercepted_by = None
 
+    # ── LAYER 0: Emergency interceptor ────────────────────────────────────────
+    emergency_reply = check_emergency(text)
+    if emergency_reply:
+        _append_history(sender, "assistant", emergency_reply)
+        return {
+            "status": "success",
+            "intent": "EMERGENCY",
+            "ingredient_extracted": None,
+            "welcome_sent": welcome_sent,
+            "welcome_message": WELCOME_MESSAGE if welcome_sent else None,
+            "intercepted_by": "emergency",
+            "reply": emergency_reply,
+        }
+
+    # ── LAYER 1: BKO interceptor ──────────────────────────────────────────────
+    bko_result = await check_bko(text)
+    bko_action = bko_result["action"]
+
+    if bko_action in ("block", "clarify"):
+        bko_reply = bko_result["response"]
+        _append_history(sender, "assistant", bko_reply)
+        return {
+            "status": "success",
+            "intent": "BKO_INTERCEPTED",
+            "ingredient_extracted": None,
+            "welcome_sent": welcome_sent,
+            "welcome_message": WELCOME_MESSAGE if welcome_sent else None,
+            "intercepted_by": bko_action,
+            "reply": bko_reply,
+        }
+
+    bko_soft_warning = bko_result.get("soft_warning", "")
+
+    # ── Off-topic cooldown gate ────────────────────────────────────────────────
+    if _is_on_cooldown(sender):
+        cooldown_reply = OUT_OF_SCOPE_COOLDOWN
+        _append_history(sender, "assistant", cooldown_reply)
+        return {
+            "status": "success",
+            "intent": "OFFTOPIC_COOLDOWN",
+            "ingredient_extracted": None,
+            "welcome_sent": welcome_sent,
+            "welcome_message": WELCOME_MESSAGE if welcome_sent else None,
+            "intercepted_by": "offtopic_cooldown",
+            "reply": cooldown_reply,
+        }
+
+    # ── Intent classification ─────────────────────────────────────────────────
     intent = await parse_intent(text, history=history, model=model_override)
     intent_type = intent.get("intent", "general_tcm_chat")
     ingredient_name = (intent.get("ingredient_name") or "").strip()
@@ -397,7 +528,16 @@ async def test_chat(req: TestChatRequest, db=Depends(get_db)):
     _append_history(sender, "user", text)
 
     if intent_type == "general_tcm_chat" or not ingredient_name:
-        reply = await generate_chat_reply(text, history=history, model=model_override)
+        if not is_health_related(text):
+            count = _increment_offtopic(sender)
+            if count >= OFFTOPIC_TERSE_LIMIT:
+                reply = OUT_OF_SCOPE_TERSE
+                intercepted_by = f"offtopic_terse_count_{count}"
+            else:
+                reply = await generate_chat_reply(text, history=history, model=model_override)
+                intercepted_by = f"offtopic_warned_count_{count}"
+        else:
+            reply = await generate_chat_reply(text, history=history, model=model_override)
     elif intent_type == "ingredient_info_inquiry":
         best_match, score = await _fuzzy_lookup(ingredient_name.lower(), db)
         db_match = best_match if (best_match and score >= 65) else None
@@ -421,6 +561,10 @@ async def test_chat(req: TestChatRequest, db=Depends(get_db)):
             llm_reply = re.sub(r"(?i)(?:⚕️\s*)?(?:\*?Disclaimer\*?:?)\s*.*?(?:\n+|$)", "", llm_reply).strip()
             reply = DISCLAIMER + llm_reply
 
+    # ── Append BKO soft warning if set ───────────────────────────────────────
+    if bko_soft_warning and reply:
+        reply = reply.rstrip() + bko_soft_warning
+
     if reply:
         clean_reply_for_history = reply.replace(DISCLAIMER, "").strip()
         _append_history(sender, "assistant", clean_reply_for_history)
@@ -431,5 +575,6 @@ async def test_chat(req: TestChatRequest, db=Depends(get_db)):
         "ingredient_extracted": ingredient_name,
         "welcome_sent": welcome_sent,
         "welcome_message": WELCOME_MESSAGE if welcome_sent else None,
-        "reply": reply
+        "intercepted_by": intercepted_by,
+        "reply": reply,
     }
