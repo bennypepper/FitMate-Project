@@ -2,6 +2,10 @@ import base64
 import json
 import httpx
 import sys
+import os
+from dotenv import load_dotenv
+
+load_dotenv()
 
 img_path = r'C:\Users\Benny Pepper\OneDrive - Ma Chung University\College Docs\PKM\assets\test_tcm\golden_throat_lozenges_golden_th.jpg'
 
@@ -36,7 +40,7 @@ def run():
             'temperature': 0.1,
         }
         headers = {
-            'Authorization': 'Bearer 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',
+            'Authorization': f'Bearer {os.getenv("OPENROUTER_OCR_API_KEY", "")}',
             'Content-Type': 'application/json',
             'HTTP-Referer': 'https://fitmate.com'
         }

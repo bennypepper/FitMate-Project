@@ -2,7 +2,13 @@ import os
 import sys
 from huggingface_hub import HfApi
 
-TOKEN = "REDACTED"
+import os
+from dotenv import load_dotenv
+load_dotenv()
+TOKEN = os.getenv("HF_TOKEN", "")
+if not TOKEN:
+    print("❌ HF_TOKEN not set. Add HF_TOKEN=hf_... to backend/.env before deploying.")
+    sys.exit(1)
 REPO_ID = "benedictpepper/fitmate-api"
 
 print("🔥 Inisialisasi HuggingFace API...")
