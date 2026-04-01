@@ -27,9 +27,9 @@ export default function AdminSidebar() {
   return (
     <>
       {/* ── Desktop Sidebar ── */}
-      <aside className="hidden lg:flex flex-col h-screen sticky top-0 w-72 bg-surface border-r border-light/50">
+      <aside className="hidden lg:flex flex-col h-screen max-h-[100dvh] sticky top-0 w-72 bg-surface border-r border-light/50">
         {/* Brand */}
-        <div className="p-8">
+        <div className="p-6 pb-2">
           <h1 className="font-headline text-xl text-primary font-bold">Admin Console</h1>
           <p className="font-body text-xs text-on-surface-variant opacity-70 mt-1">
             FitMate TCM Systems
@@ -37,7 +37,7 @@ export default function AdminSidebar() {
         </div>
 
         {/* Nav Links */}
-        <nav className="flex-1 mt-4">
+        <nav className="flex-1 mt-4 overflow-y-auto">
           <ul className="space-y-1">
             {navItems.map((item) => (
               <li key={item.href} className="px-4">
@@ -58,8 +58,8 @@ export default function AdminSidebar() {
         </nav>
 
         {/* User + Logout */}
-        <div className="p-8 border-t border-light/50">
-          <div className="flex items-center gap-3 mb-6">
+        <div className="p-6 border-t border-light/50 mt-auto">
+          <div className="flex items-center gap-3 mb-4">
             <div className="w-10 h-10 rounded-full bg-light flex items-center justify-center flex-shrink-0">
               <span className="material-symbols-outlined text-primary text-base">
                 admin_panel_settings
@@ -119,3 +119,4 @@ export default function AdminSidebar() {
     </>
   );
 }
+

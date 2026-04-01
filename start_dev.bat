@@ -10,7 +10,7 @@ docker-compose up -d
 echo.
 echo [2/4] Starting FastAPI Backend...
 echo     ^> http://localhost:8000
-start "FitMate Backend" cmd /k "cd backend && python -m uvicorn main:app --reload --port 8000"
+start "FitMate Backend" cmd /k "cd backend && call venv\Scripts\activate.bat && python -m uvicorn main:app --reload --port 8000"
 
 echo.
 echo [3/4] Starting Next.js Frontend...
