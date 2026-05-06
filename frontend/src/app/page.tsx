@@ -18,7 +18,6 @@ export default function ScannerPage() {
     setResults(null);
 
     try {
-      // Convert base64 to Blob
       const resMsg = await fetch(base64);
       const blob = await resMsg.blob();
 
@@ -40,7 +39,6 @@ export default function ScannerPage() {
       }
 
       const data = await response.json();
-      // Backend returns: { status, ocr_blocks, safety_analysis: {toxic, contraindicated, safe, unknown}, disclaimer }
       const sa = data.safety_analysis || {};
       const allIngredients = [
         ...(sa.toxic || []).map((i: any) => ({ ...i, category: "toxic", is_toxic: true })),
@@ -109,8 +107,6 @@ export default function ScannerPage() {
           <ResultsCard ingredients={results.ingredients} onReset={handleReset} />
         </div>
       )}
-
-
 
     </main>
   );

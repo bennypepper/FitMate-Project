@@ -14,16 +14,12 @@ import io
 import csv
 import openpyxl
 
-# Required fields — rows missing any of these are invalid
 REQUIRED_COLUMNS = {"mandarin_name", "indonesian_name", "is_toxic", "source_reference"}
 
-# Valid toxicity levels (from TCMIngredient schema)
 VALID_TOXICITY_LEVELS = {"low", "moderate", "high", "unknown"}
 
-# is_toxic coercion maps
 TRUTHY_VALUES = {"true", "1", "yes", "ya", "benar"}
 FALSY_VALUES = {"false", "0", "no", "tidak", "salah"}
-
 
 def parse_file(file_bytes: bytes, filename: str) -> list[dict]:
     """
@@ -40,12 +36,10 @@ def parse_file(file_bytes: bytes, filename: str) -> list[dict]:
             f"Format file tidak didukung: '{filename}'. Gunakan .xlsx atau .csv"
         )
 
-
 def _parse_xlsx(file_bytes: bytes) -> list[dict]:
     wb = openpyxl.load_workbook(io.BytesIO(file_bytes), data_only=True)
     sheet = wb.active
 
-    # Row 1 = headers
     headers = []
     for cell in sheet[1]:
         val = cell.value
@@ -54,7 +48,7 @@ def _parse_xlsx(file_bytes: bytes) -> list[dict]:
     rows = []
     for row in sheet.iter_rows(min_row=2, values_only=True):
         if all(v is None for v in row):
-            continue  # skip blank rows
+            continue
         row_dict = {}
         for col_idx, value in enumerate(row):
             if col_idx < len(headers) and headers[col_idx]:
@@ -63,9 +57,8 @@ def _parse_xlsx(file_bytes: bytes) -> list[dict]:
 
     return rows
 
-
 def _parse_csv(file_bytes: bytes) -> list[dict]:
-    # utf-8-sig handles BOM bytes added by Windows Excel CSV export
+
     try:
         text = file_bytes.decode("utf-8-sig")
     except UnicodeDecodeError:
@@ -81,11 +74,10 @@ def _parse_csv(file_bytes: bytes) -> list[dict]:
             for k, v in row.items()
             if k
         }
-        if any(v for v in normalized.values()):  # skip empty rows
+        if any(v for v in normalized.values()):
             rows.append(normalized)
 
     return rows
-
 
 def validate_row(row: dict, row_number: int) -> list[dict]:
     """
@@ -95,17 +87,14 @@ def validate_row(row: dict, row_number: int) -> list[dict]:
     """
     errors = []
 
-    # mandarin_name — required, non-empty
     mandarin = row.get("mandarin_name")
     if not mandarin or str(mandarin).strip() == "":
         errors.append({"field": "mandarin_name", "message": "Nama Mandarin wajib diisi"})
 
-    # indonesian_name — required
     indonesian = row.get("indonesian_name")
     if not indonesian or str(indonesian).strip() == "":
         errors.append({"field": "indonesian_name", "message": "Nama Indonesia wajib diisi"})
 
-    # is_toxic — required, must be a true/false-like value
     is_toxic_raw = str(row.get("is_toxic", "")).strip().lower()
     if is_toxic_raw not in TRUTHY_VALUES and is_toxic_raw not in FALSY_VALUES:
         errors.append({
@@ -116,7 +105,6 @@ def validate_row(row: dict, row_number: int) -> list[dict]:
             ),
         })
 
-    # source_reference — required, non-placeholder
     source = str(row.get("source_reference", "")).strip().lower()
     if not source or source in ("", "unknown", "none", "-", "n/a"):
         errors.append({
@@ -124,7 +112,6 @@ def validate_row(row: dict, row_number: int) -> list[dict]:
             "message": "Referensi sumber wajib diisi (contoh: SymMap ID atau nomor BPOM)",
         })
 
-    # toxicity_level — optional, but if present must be a valid enum value
     toxicity_level = str(row.get("toxicity_level", "")).strip().lower()
     if toxicity_level and toxicity_level not in VALID_TOXICITY_LEVELS:
         errors.append({
@@ -136,7 +123,6 @@ def validate_row(row: dict, row_number: int) -> list[dict]:
         })
 
     return errors
-
 
 def normalize_row(row: dict) -> dict:
     """
@@ -168,7 +154,6 @@ def normalize_row(row: dict) -> dict:
         "validated_by": "pharmacy_team",
     }
 
-
 def validate_all_rows(rows: list[dict]) -> tuple[list[dict], list[dict]]:
     """
     Validate all rows. Returns (valid_normalized_rows, error_summaries).
@@ -183,7 +168,7 @@ def validate_all_rows(rows: list[dict]) -> tuple[list[dict], list[dict]]:
         row_errors = validate_row(row, i)
         if row_errors:
             error_summaries.append({
-                "row": i + 2,  # +2: row 1 is headers in Excel
+                "row": i + 2,
                 "errors": row_errors,
             })
         else:

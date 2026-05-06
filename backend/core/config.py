@@ -2,31 +2,26 @@ import os
 import warnings
 from pydantic_settings import BaseSettings, SettingsConfigDict
 
-
 class Settings(BaseSettings):
-    # MongoDB
+
     MONGODB_URL: str = "mongodb://localhost:27017"
     MONGODB_DB_NAME: str = "fitmate_db"
 
-    # Twilio WhatsApp Sandbox
     TWILIO_ACCOUNT_SID: str = ""
     TWILIO_AUTH_TOKEN: str = ""
-    TWILIO_WHATSAPP_FROM: str = "+14155238886"  # Shared sandbox number
+    TWILIO_WHATSAPP_FROM: str = "+14155238886"
 
-    # OpenRouter - OCR
     OPENROUTER_OCR_API_KEY: str = ""
     OPENROUTER_OCR_MODEL: str = "google/gemini-3.1-flash-lite-preview"
 
-    # OpenRouter - Chatbot
     OPENROUTER_CHATBOT_API_KEY: str = ""
     OPENROUTER_CHATBOT_MODEL: str = "google/gemini-3.1-flash-lite-preview"
 
-    # JWT Admin Authentication
     JWT_SECRET_KEY: str = "change-me-in-production-min-32-chars"
     JWT_ALGORITHM: str = "HS256"
     JWT_EXPIRE_HOURS: int = 8
     ADMIN_USERNAME: str = "admin"
-    ADMIN_PASSWORD_HASH: str = ""  # bcrypt hash — set in .env, never plaintext
+    ADMIN_PASSWORD_HASH: str = ""
 
     model_config = SettingsConfigDict(
         env_file=".env",
@@ -61,7 +56,6 @@ class Settings(BaseSettings):
         if not self.OPENROUTER_CHATBOT_API_KEY:
             print("⚠️  [CONFIG] WARNING: OPENROUTER_CHATBOT_API_KEY is not set — chatbot will fail.")
 
-
 settings = Settings()
-# Run security checks at import time so they appear in server startup logs
+
 settings.validate_security()

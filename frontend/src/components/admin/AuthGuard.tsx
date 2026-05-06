@@ -19,7 +19,6 @@ export default function AuthGuard({ children }: AuthGuardProps) {
   const pathname = usePathname();
 
   useEffect(() => {
-    // The login page itself doesn't need auth protection
     if (pathname === "/admin/login") {
       setAuthorized(true);
       return;

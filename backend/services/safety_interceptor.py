@@ -26,14 +26,10 @@ import json
 import asyncio
 from pathlib import Path
 
-
-# ── Load BKO data at import time ──────────────────────────────────────────────
 _BKO_DATA_PATH = Path(__file__).parent.parent / "data" / "bko_substances.json"
 
-# Maps lowercase alias → {"display_name_id", "risk_summary_id", "category_id", "category_name_id"}
 _BKO_ALIAS_MAP: dict[str, dict] = {}
 _BKO_PATTERN: re.Pattern | None = None
-
 
 def _load_bko_data() -> None:
     global _BKO_PATTERN, _BKO_ALIAS_MAP
@@ -63,7 +59,7 @@ def _load_bko_data() -> None:
                     all_aliases.append(re.escape(key))
 
     if all_aliases:
-        # Sort by length descending so longer aliases match first (e.g. "sildenafil sitrat" before "sildenafil")
+
         all_aliases.sort(key=len, reverse=True)
         _BKO_PATTERN = re.compile(
             r"(?i)(?<!\w)(" + "|".join(all_aliases) + r")(?!\w)"
@@ -72,11 +68,8 @@ def _load_bko_data() -> None:
     else:
         print("[Interceptor] ⚠️  BKO alias list is empty — check bko_substances.json")
 
-
 _load_bko_data()
 
-
-# ── Emergency keywords ─────────────────────────────────────────────────────────
 _EMERGENCY_PHRASES = [
     r"nyeri dada", r"sakit dada", r"dada nyeri", r"dada sakit",
     r"sesak napas", r"sesak nafas", r"sulit bernapas", r"susah napas", r"sulit nafas",
@@ -106,8 +99,6 @@ EMERGENCY_RESPONSE = (
     "Keselamatanmu adalah prioritas utama._ ❤️"
 )
 
-
-# ── Static BKO responses ───────────────────────────────────────────────────────
 def _build_bko_warning(substance_info: dict) -> str:
     name = substance_info["display_name_id"]
     risk = substance_info["risk_summary_id"]
@@ -124,7 +115,6 @@ def _build_bko_warning(substance_info: dict) -> str:
         f"⚕️ _Ini adalah informasi keselamatan berbasis regulasi, bukan saran medis personal._"
     )
 
-
 def _build_bko_soft_warning(substance_info: dict) -> str:
     """Appended to educational/general replies when BKO detected but context is not product-specific."""
     name = substance_info["display_name_id"]
@@ -135,7 +125,6 @@ def _build_bko_soft_warning(substance_info: dict) -> str:
         f"*Keberadaannya dalam produk herbal atau TCM adalah ilegal* dan merupakan tanda pemalsuan berbahaya. "
         f"Jika kamu menemukan bahan ini pada label produk herbal, segera hentikan konsumsi dan laporkan ke BPOM (1500-533)."
     )
-
 
 CLARIFICATION_RESPONSE = (
     "Hmm, saya mendeteksi nama bahan kimia obat di pesanmu, tapi saya kurang yakin konteksnya. 🤔\n\n"
@@ -167,8 +156,6 @@ OUT_OF_SCOPE_COOLDOWN = (
     "_FitMate hanya melayani pertanyaan keamanan bahan herbal dan TCM._"
 )
 
-
-# ── Health-related keyword check (for off-topic detection) ────────────────────
 _HEALTH_KEYWORDS_PATTERN = re.compile(
     r"(?i)\b(sehat|sakit|penyakit|obat|herbal|tcm|jamu|bahan|vitamin|suplemen|"
     r"kondisi|dokter|apoteker|hamil|menyusui|diabetes|hipertensi|kolesterol|"
@@ -181,9 +168,6 @@ _HEALTH_KEYWORDS_PATTERN = re.compile(
     re.IGNORECASE,
 )
 
-# ── Conversational Whitelist ──────────────────────────────────────────────────
-# Matches greetings, bot-identity questions, apologies, and basic agreement words.
-# These are ON-TOPIC for natural chat flow and must NOT be penalised.
 _CONVERSATIONAL_WHITELIST = re.compile(
     r"(?i)(\bsiapa\s+(kamu|anda|elo|lo|lu)\b"
     r"|\b(kamu|anda|elo|lo|lu)\s+siapa\b"
@@ -199,7 +183,6 @@ _CONVERSATIONAL_WHITELIST = re.compile(
     re.IGNORECASE,
 )
 
-
 def is_health_related(text: str) -> bool:
     """
     Returns True if the message is on-topic — either health/TCM-related
@@ -211,9 +194,6 @@ def is_health_related(text: str) -> bool:
         or _CONVERSATIONAL_WHITELIST.search(text)
     )
 
-
-# ── Public API ─────────────────────────────────────────────────────────────────
-
 def check_emergency(text: str) -> str | None:
     """
     Synchronous emergency keyword check.
@@ -224,7 +204,6 @@ def check_emergency(text: str) -> str | None:
         print(f"[Interceptor] 🚨 Emergency keyword triggered in: '{text[:60]}...'")
         return EMERGENCY_RESPONSE
     return None
-
 
 async def check_bko(text: str) -> dict:
     """
@@ -265,12 +244,11 @@ async def check_bko(text: str) -> dict:
             "soft_warning": _build_bko_soft_warning(substance_info),
         }
     else:
-        # AMBIGUOUS — ask for clarification rather than making assumptions
+
         return {
             "action": "clarify",
             "response": CLARIFICATION_RESPONSE,
         }
-
 
 async def _bko_context_llm_check(text: str, substance_name: str) -> str:
     """
@@ -295,7 +273,7 @@ async def _bko_context_llm_check(text: str, substance_name: str) -> str:
     )
 
     try:
-        # Lazy import to avoid circular import and import-time failures
+
         from services.llm_intent import _chat
 
         result = await _chat(
@@ -303,7 +281,7 @@ async def _bko_context_llm_check(text: str, substance_name: str) -> str:
             temperature=0.0,
             timeout=8.0,
         )
-        result = result.strip().upper().split()[0]  # take first word only
+        result = result.strip().upper().split()[0]
         if result in ("YES", "NO", "AMBIGUOUS"):
             return result
         print(f"[Interceptor] Unexpected BKO context reply: '{result}' — defaulting to AMBIGUOUS")

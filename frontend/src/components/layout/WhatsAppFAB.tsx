@@ -3,15 +3,14 @@
 import { useState, useEffect, useRef, useCallback } from "react";
 import { usePathname } from "next/navigation";
 
-const WA_NUMBER = "14155238886"; // Twilio WhatsApp Sandbox
+const WA_NUMBER = "14155238886";
 const WA_MESSAGE =
   "Halo FitMate! Saya ingin berkonsultasi mengenai keamanan bahan TCM yang saya pindai.";
 const WA_URL = `https://wa.me/${WA_NUMBER}?text=${encodeURIComponent(WA_MESSAGE)}`;
 
-// Bounce animation: 300ms start, 650ms duration → done at ~950ms
 const BOUNCE_DELAY_MS = 300;
 const BOUNCE_DURATION_MS = 650;
-const BOUNCE_DONE_MS = BOUNCE_DELAY_MS + BOUNCE_DURATION_MS + 100; // +100ms safety buffer
+const BOUNCE_DONE_MS = BOUNCE_DELAY_MS + BOUNCE_DURATION_MS + 100;
 
 const WaIcon = ({ size = 22 }: { size?: number }) => (
   <svg
@@ -35,10 +34,8 @@ export default function WhatsAppFAB() {
   if (pathname?.startsWith("/admin")) return null;
 
   useEffect(() => {
-    // Trigger bounce
     const bounceTimer = setTimeout(() => setBounceReady(true), BOUNCE_DELAY_MS);
 
-    // Show nudge pill only AFTER bounce is fully done
     const nudgeShow = setTimeout(() => setNudgeOpen(true), BOUNCE_DONE_MS);
     const nudgeHide = setTimeout(() => setNudgeOpen(false), BOUNCE_DONE_MS + 4000);
 
@@ -49,7 +46,6 @@ export default function WhatsAppFAB() {
     };
   }, []);
 
-  // Hover with travel-grace so cursor can move from FAB → card
   const handleFabEnter = useCallback(() => {
     if (leaveTimer.current) clearTimeout(leaveTimer.current);
     setCardOpen(true);
@@ -64,7 +60,6 @@ export default function WhatsAppFAB() {
     if (leaveTimer.current) clearTimeout(leaveTimer.current);
   }, []);
 
-  // Mobile: tap FAB to toggle full card
   const handleFabClick = (e: React.MouseEvent) => {
     if (window.matchMedia("(hover: none)").matches) {
       e.preventDefault();

@@ -19,29 +19,20 @@ from utils.auth import verify_password, create_access_token, get_current_admin
 
 router = APIRouter(prefix="/api/v1/admin", tags=["admin"])
 
-# Use app.state.limiter (configured in main.py) to avoid circular import
 limiter = Limiter(key_func=get_remote_address)
-
-
-# --- Request/Response Models ---
 
 class LoginRequest(BaseModel):
     username: str
     password: str
 
-
 class TokenResponse(BaseModel):
     access_token: str
     token_type: str = "bearer"
-
 
 class StatsResponse(BaseModel):
     total_ingredients: int
     toxic_count: int
     safe_count: int
-
-
-# --- Public Endpoints ---
 
 @router.post("/login", response_model=TokenResponse)
 @limiter.limit("5/minute")
@@ -50,14 +41,13 @@ async def login(request: Request, credentials: LoginRequest):
     Admin login. Rate limited to 5 attempts per minute.
     Returns JWT on success, 401 on invalid credentials.
     """
-    # Validate username
+
     if credentials.username != settings.ADMIN_USERNAME:
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,
             detail="Username atau password salah",
         )
 
-    # Guard: if ADMIN_PASSWORD_HASH not configured in .env, refuse login
     if not settings.ADMIN_PASSWORD_HASH:
         raise HTTPException(
             status_code=status.HTTP_503_SERVICE_UNAVAILABLE,
@@ -73,14 +63,10 @@ async def login(request: Request, credentials: LoginRequest):
     token = create_access_token(subject=credentials.username)
     return TokenResponse(access_token=token)
 
-
-# --- Protected Endpoints ---
-
 @router.get("/me")
 async def get_me(admin: str = Depends(get_current_admin)):
     """Verify token is valid. Returns admin username."""
     return {"username": admin, "role": "admin"}
-
 
 @router.get("/stats", response_model=StatsResponse)
 async def get_stats(admin: str = Depends(get_current_admin)):
@@ -93,7 +79,6 @@ async def get_stats(admin: str = Depends(get_current_admin)):
         toxic_count=toxic,
         safe_count=total - toxic,
     )
-
 
 @router.get("/ingredients")
 async def list_ingredients(
@@ -124,7 +109,7 @@ async def list_ingredients(
 
     ingredients = []
     async for doc in cursor:
-        doc["_id"] = str(doc["_id"])  # serialize ObjectId to string
+        doc["_id"] = str(doc["_id"])
         ingredients.append(doc)
 
     return {

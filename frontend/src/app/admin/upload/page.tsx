@@ -53,7 +53,6 @@ export default function UploadPage() {
     const res = await fetch(url, {
       method: "POST",
       headers: { Authorization: `Bearer ${token}` },
-      // NO Content-Type header — browser sets multipart/form-data boundary
       body,
     });
     if (res.status === 401) {
@@ -157,7 +156,7 @@ export default function UploadPage() {
         "text/csv": [".csv"],
         "application/csv": [".csv"],
       },
-      maxSize: 10 * 1024 * 1024, // 10MB
+      maxSize: 10 * 1024 * 1024,
       maxFiles: 1,
       disabled:
         uploadState === "validating" || uploadState === "importing",

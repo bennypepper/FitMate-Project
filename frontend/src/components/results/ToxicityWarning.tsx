@@ -9,7 +9,7 @@ export default function ToxicityWarning({ ingredients }: ToxicityWarningProps) {
   const toxicItems = ingredients.filter((item) => item.is_toxic);
 
   if (toxicItems.length === 0) {
-    return null; // Safe state handled in ResultsCard's suggested actions
+    return null;
   }
 
   return (
@@ -51,7 +51,7 @@ export default function ToxicityWarning({ ingredients }: ToxicityWarningProps) {
                 </span>
               </div>
             </div>
-            
+
             <div className="mt-8 pt-8 border-t border-light/30">
               <p className="font-body text-on-surface-variant leading-relaxed text-lg">
                 {item.severity_warning || item.description || "Terdapat temuan toksisitas atau kontraindikasi tinggi yang berisiko klinis. Konsultasi medis segera disarankan sebelum konsumsi lebih lanjut."}

@@ -175,11 +175,10 @@ async def run_tests():
     print(f"   Model: {len(MODELS)} | Pertanyaan: {len(QUESTIONS)} | Total API Calls: {len(MODELS) * len(QUESTIONS)}")
     print("=========================================================\n")
     print("Mengingatkan: Pastikan FastAPI Server (main.py) sudah berjalan.")
-    
+
     timestamp = datetime.now().strftime('%Y%m%d_%H%M%S')
     filename = f"evaluasi_model_{timestamp}.csv"
-    
-    # Save to CSV
+
     with open(filename, mode='w', newline='', encoding='utf-8') as f:
         writer = csv.writer(f)
         writer.writerow([
@@ -188,40 +187,39 @@ async def run_tests():
             "Actual Intent (Sistem)", "Actual Extracted Ingredient", 
             "Actual Reply (Model)", "Score (1-4)", "Catatan Evaluator"
         ])
-        
+
         async with httpx.AsyncClient(timeout=45.0) as client:
             row_num = 1
             for model in MODELS:
                 print(f"\n[🚀] MENGUJI MODEL: {model}")
                 print("-" * 55)
-                
+
                 for q in QUESTIONS:
-                    # Menggunakan ID sender unik per pertanyaan & per model 
-                    # agar konteks memori ditiadakan antara satu skenario dengan skenario lain
+
                     secure_model_name = model.replace('/', '_')
                     unique_sender_id = f"eval_{secure_model_name}_{q['id']}"
-                    
+
                     payload = {
                         "sender": unique_sender_id,
                         "message": q["prompt"],
                         "model": model
                     }
-                    
+
                     print(f"  ➜ [{q['id']}] {q['prompt'][:35]}... ", end="", flush=True)
-                    
+
                     try:
                         start_time = time.time()
                         response = await client.post(URL, json=payload)
                         elapsed = time.time() - start_time
-                        
+
                         if response.status_code == 200:
                             data = response.json()
                             actual_intent = data.get("intent", "")
                             actual_ingredient = data.get("ingredient_extracted", "")
                             actual_reply = data.get("reply", "")
-                            
+
                             print(f"✅ ({elapsed:.1f}s)")
-                            
+
                             writer.writerow([
                                 row_num, q["id"], q["category"], model,
                                 f"{elapsed:.2f}", q["prompt"], q["expected"],
@@ -236,7 +234,7 @@ async def run_tests():
                                 "ERROR", "ERROR",
                                 f"HTTP {response.status_code}: {response.text}", "", ""
                             ])
-                    
+
                     except Exception as e:
                         elapsed_err = (time.time() - start_time) if 'start_time' in locals() else 0.0
                         print(f"❌ (Error: {str(e)[:40]}...)")
@@ -246,9 +244,9 @@ async def run_tests():
                             "ERROR", "ERROR",
                             f"Exception: {str(e)}", "", ""
                         ])
-                    
+
                     row_num += 1
-                    # Jeda logis untuk mencegah rate limiting dari OpenRouter API
+
                     await asyncio.sleep(1.0)
 
     print(f"\n=========================================================")

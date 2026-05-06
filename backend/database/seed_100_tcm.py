@@ -6,7 +6,6 @@ import sys
 import os
 from pathlib import Path
 
-# Fix python path for direct script execution
 sys.path.insert(0, str(Path(__file__).parent.parent.parent))
 
 import asyncio
@@ -15,7 +14,6 @@ from backend.database.mongodb import get_db, create_indexes
 from backend.database.schemas import TCMIngredient
 from motor.motor_asyncio import AsyncIOMotorClient
 
-# List of 100 popular TCM items format: (mandarin, pinyin, indonesian, english, is_toxic, tox_level, organ, desc, source)
 POPULAR_TCM = [
     ("罗汉果", "Luo Han Guo", "Lo Han Guo / Buah Biksu", "Monk Fruit", False, "unknown", "Paru-paru", "Suplemen herbal pereda tenggorokan dan batuk", "BPOM-TI"),
     ("片仔癀", "Pien Tze Huang", "Pien Tze Huang", "Pien Tze Huang", False, "unknown", "Hati", "Pereda radang dan infeksi pasca operasi", "BPOM-TI"),
@@ -124,15 +122,14 @@ async def seed_data():
     client = AsyncIOMotorClient(os.getenv("MONGODB_URL", "mongodb://localhost:27017"))
     db = client.get_database(os.getenv("MONGODB_DB_NAME", "fitmate_db"))
     collection = db["tcm_ingredients"]
-    
-    # ensure db exists
+
     await collection.create_index("mandarin_name", unique=True)
-    
+
     inserted = 0
     errors = 0
     for item in POPULAR_TCM:
         mandarin, pinyin, indo, eng, is_toxic, tox_level, org, desc, ref = item
-        
+
         record = {
             "mandarin_name": mandarin,
             "pinyin_name": pinyin,
@@ -145,7 +142,7 @@ async def seed_data():
             "source_reference": ref,
             "validated_by": "direct_seed"
         }
-        
+
         try:
             ingredient = TCMIngredient(**record)
             await collection.update_one(
@@ -157,7 +154,7 @@ async def seed_data():
         except ValidationError as e:
             print(f"Error on {indo}: {e}")
             errors += 1
-            
+
     print(f"Done database seeding. Inserted/Updated {inserted} records. Errors: {errors}.")
 
 if __name__ == "__main__":

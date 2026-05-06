@@ -34,10 +34,8 @@ _HEADERS = {
     "X-Title": "FitMate TCM Safety Scanner",
 }
 
-# 2 retries × 2s/4s delays = ≤8s max — fits within Twilio webhook window
 _MAX_RETRIES = 2
-_RETRY_BASE_DELAY = 2  # seconds
-
+_RETRY_BASE_DELAY = 2
 
 async def _chat(
     messages: list[dict],
@@ -90,7 +88,6 @@ async def _chat(
 
     raise last_err or Exception("OpenRouter: all retries exhausted")
 
-
 def _build_context_snippet(history: list[dict], n_user_bubbles: int = 5) -> str:
     """
     Returns the last N user messages from history as a plain-text context snippet.
@@ -103,7 +100,6 @@ def _build_context_snippet(history: list[dict], n_user_bubbles: int = 5) -> str:
     if not recent:
         return ""
     return "\n".join(f"- {m}" for m in recent)
-
 
 async def parse_intent(message_text: str, history: list[dict] | None = None, model: str | None = None) -> dict:
     """
@@ -183,7 +179,6 @@ async def parse_intent(message_text: str, history: list[dict] | None = None, mod
         print(f"[OpenRouter] parse_intent error: {e}")
         return {"intent": "general_tcm_chat", "ingredient_name": None}
 
-
 async def generate_safety_reply(
     ingredient_name: str,
     db_match: dict | None,
@@ -205,7 +200,7 @@ async def generate_safety_reply(
         user_message     — raw user text (may contain health conditions)
         history          — conversation history for multi-turn context
     """
-    # Build DB context block
+
     if db_match:
         db_context = (
             f"Nama Indonesia: {db_match.get('indonesian_name', ingredient_name)}\n"
@@ -222,7 +217,6 @@ async def generate_safety_reply(
     else:
         db_context = "Bahan tidak ditemukan dalam database kami."
 
-    # Verdict instruction — LLM MUST deliver this verdict faithfully
     verdict_instructions = {
         "safe": (
             "VERDICT: AMAN. Bahan ini tergolong aman berdasarkan database kami. "
@@ -245,9 +239,6 @@ async def generate_safety_reply(
         ),
     }.get(safety_verdict, "Verdict tidak diketahui.")
 
-    # Hard rule: block LLM from normalizing pharmaceutical drugs in herbal context.
-    # This is a backstop — the interceptor should catch most BKO cases first,
-    # but this rule prevents the LLM from softening a verdict on its own.
     BKO_HARD_RULE = (
         "=== ATURAN MUTLAK — BKO (BAHAN KIMIA OBAT) ===\n"
         "Jika nama bahan mengandung obat farmasi keras (steroid, PDE5 inhibitor, NSAID, "
@@ -285,7 +276,7 @@ async def generate_safety_reply(
         return (await _chat(messages, temperature=0.5, timeout=15.0, model=model)).strip()
     except Exception as e:
         print(f"[OpenRouter] generate_safety_reply error: {e}")
-        # Simple fallback
+
         if safety_verdict == "toxic":
             name = db_match.get("indonesian_name", ingredient_name) if db_match else ingredient_name
             return (
@@ -305,7 +296,6 @@ async def generate_safety_reply(
                 "Coba ketik dengan nama Indonesia, Mandarin, atau Pinyin-nya — "
                 "mungkin ada di sana. 🌿"
             )
-
 
 async def generate_chat_reply(message_text: str, history: list[dict] | None = None, model: str | None = None) -> str:
     """
@@ -349,7 +339,6 @@ async def generate_chat_reply(message_text: str, history: list[dict] | None = No
             "Hai! Saya FitMate 😊 Bisa bantu cek keamanan bahan herbal atau TCM yang ingin kamu ketahui. "
             "Ketik saja nama bahannya! 🌿"
         )
-
 
 async def generate_ingredient_info_reply(
     ingredient_name: str,

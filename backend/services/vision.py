@@ -6,7 +6,6 @@ from core.config import settings
 
 OPENROUTER_BASE_URL = "https://openrouter.ai/api/v1/chat/completions"
 
-
 async def extract_and_translate_text(image_bytes: bytes) -> list[dict]:
     """
     Extracts TCM ingredient names from an image using a multimodal LLM via OpenRouter.
@@ -20,10 +19,8 @@ async def extract_and_translate_text(image_bytes: bytes) -> list[dict]:
             {"text": "当归", "bounding_box": [{"x": 10, "y": 40}, {"x": 50, "y": 40}, {"x": 50, "y": 60}, {"x": 10, "y": 60}]},
         ]
 
-    # Convert image to base64
     b64_img = base64.b64encode(image_bytes).decode("utf-8")
 
-    # Detect media type from magic bytes
     media_type = "image/jpeg"
     if image_bytes[:4] == b"\x89PNG":
         media_type = "image/png"
@@ -71,13 +68,11 @@ async def extract_and_translate_text(image_bytes: bytes) -> list[dict]:
         response.raise_for_status()
         data = response.json()
 
-    # OpenRouter sometimes returns HTTP 200 with {"error": {...}} on upstream failures
     if "error" in data:
         error_msg = data["error"].get("message", "Unknown upstream error")
         print(f"[Vision] OpenRouter upstream error: {error_msg}")
         raise RuntimeError(f"Vision API upstream error: {error_msg}")
 
-    # Guard: choices array might be missing if model returns empty
     choices = data.get("choices")
     if not choices:
         print("[Vision] No choices in OpenRouter response:", str(data)[:200])
@@ -88,7 +83,6 @@ async def extract_and_translate_text(image_bytes: bytes) -> list[dict]:
         print("[Vision] Empty content from model")
         return []
 
-    # Strip any accidental markdown fences the model might add
     content = content.strip()
     for fence in ("```json", "```"):
         if content.startswith(fence):
@@ -106,7 +100,6 @@ async def extract_and_translate_text(image_bytes: bytes) -> list[dict]:
         print(f"[Vision] Failed to decode JSON from model response: {content[:200]}")
         ingredients_list = []
 
-    # Map into the dict format expected by the routers
     results = []
     for ing in ingredients_list:
         if isinstance(ing, str) and ing.strip():

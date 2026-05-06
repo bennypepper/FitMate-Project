@@ -18,9 +18,8 @@ from database.mongo import get_db
 
 router = APIRouter(prefix="/api/v1/admin/upload", tags=["admin-upload"])
 
-MAX_FILE_SIZE = 10 * 1024 * 1024  # 10 MB
+MAX_FILE_SIZE = 10 * 1024 * 1024
 ALLOWED_EXTENSIONS = {".xlsx", ".csv"}
-
 
 def _check_extension(file: UploadFile) -> None:
     """Validate uploaded file has an allowed extension."""
@@ -33,7 +32,6 @@ def _check_extension(file: UploadFile) -> None:
                 "Gunakan .xlsx atau .csv"
             ),
         )
-
 
 @router.post("/validate")
 async def validate_upload(
@@ -78,7 +76,6 @@ async def validate_upload(
         "filename": file.filename,
     }
 
-
 @router.post("/import")
 async def import_upload(
     file: UploadFile = File(...),
@@ -122,16 +119,16 @@ async def import_upload(
     for row_data in valid_rows:
         try:
             result = await db.tcm_ingredients.update_one(
-                {"mandarin_name": row_data["mandarin_name"]},  # natural key
+                {"mandarin_name": row_data["mandarin_name"]},
                 {"$set": row_data},
                 upsert=True,
             )
             if result.upserted_id:
-                imported_count += 1  # new document inserted
+                imported_count += 1
             else:
-                updated_count += 1  # existing document updated
+                updated_count += 1
         except Exception:
-            failed_count += 1  # individual row failure — continue processing
+            failed_count += 1
 
     total_processed = imported_count + updated_count + failed_count
     message = (

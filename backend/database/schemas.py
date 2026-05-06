@@ -9,7 +9,6 @@ from pydantic import BaseModel, Field, field_validator
 from typing import Optional, Literal
 from datetime import datetime
 
-
 class TCMIngredient(BaseModel):
     """Schema for tcm_ingredients collection."""
     mandarin_name: str = Field(..., min_length=1, description="Mandarin name (required)")
@@ -28,7 +27,7 @@ class TCMIngredient(BaseModel):
     @field_validator("mandarin_name")
     @classmethod
     def must_contain_chinese(cls, v: str) -> str:
-        # Allow Mandarin or Latin names — pharmacy team validates
+
         return v.strip()
 
     @field_validator("source_reference")
@@ -37,7 +36,6 @@ class TCMIngredient(BaseModel):
         if not v or v.strip() in ("", "unknown", "none"):
             raise ValueError("source_reference is mandatory — every ingredient must trace to SymMap or BPOM")
         return v.strip()
-
 
 class SafetyRule(BaseModel):
     """Schema for safety_rules collection."""

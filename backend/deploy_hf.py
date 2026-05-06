@@ -54,7 +54,7 @@ if os.path.exists(env_path):
                 key, val = line.split("=", 1)
                 key = key.strip()
                 val = val.strip()
-                # Hindari upload error jika user tidak hapus pesan error
+
                 if "YOUR-PASSWORD" in val or "huggingspace token" in line:
                     continue
                 try:

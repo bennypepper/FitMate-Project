@@ -9,24 +9,19 @@ Run after seed.py to confirm database meets Phase 1 success criteria:
 
 from backend.database.mongodb import get_db
 
-
 def validate_seed() -> dict:
     db = get_db()
 
-    # Count total ingredients
     total = db["tcm_ingredients"].count_documents({})
     toxic = db["tcm_ingredients"].count_documents({"is_toxic": True})
     safe = db["tcm_ingredients"].count_documents({"is_toxic": False})
 
-    # Check required fields
     missing_mandarin = db["tcm_ingredients"].count_documents({"mandarin_name": {"$in": [None, ""]}})
     missing_indonesian = db["tcm_ingredients"].count_documents({"indonesian_name": {"$in": [None, ""]}})
     missing_source = db["tcm_ingredients"].count_documents({"source_reference": {"$in": [None, ""]}})
 
-    # Count safety rules
     rules_count = db["safety_rules"].count_documents({})
 
-    # Sample record check
     sample = db["tcm_ingredients"].find_one({"is_toxic": True})
 
     results = {
@@ -62,7 +57,6 @@ def validate_seed() -> dict:
         print(f"\n[PASS] All validation checks passed — database ready for Phase 2")
     results["passed"] = passed
     return results
-
 
 if __name__ == "__main__":
     validate_seed()

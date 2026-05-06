@@ -37,7 +37,7 @@ export default function ScanResultCopy({ ingredients }: ScanResultCopyProps) {
   const [copied, setCopied] = useState(false);
 
   const copyText = buildCopyText(ingredients);
-  const waNumber = "14155238886"; // Twilio sandbox
+  const waNumber = "14155238886";
   const waUrl = `https://wa.me/${waNumber}?text=${encodeURIComponent(copyText)}`;
 
   const handleCopy = async () => {
@@ -46,7 +46,6 @@ export default function ScanResultCopy({ ingredients }: ScanResultCopyProps) {
       setCopied(true);
       setTimeout(() => setCopied(false), 3000);
     } catch {
-      // Fallback for browsers that block clipboard API
       const textarea = document.createElement("textarea");
       textarea.value = copyText;
       textarea.style.position = "fixed";

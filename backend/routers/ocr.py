@@ -17,12 +17,12 @@ async def process_image_ocr(
     """
     if not file.content_type or not file.content_type.startswith("image/"):
         raise HTTPException(status_code=400, detail="File must be an image")
-    
+
     try:
         content = await file.read()
         if len(content) > 10 * 1024 * 1024:
             raise HTTPException(status_code=413, detail="Image too large. Maximum size is 10MB.")
-        
+
         results = await extract_and_translate_text(content)
         return {
             "status": "success",

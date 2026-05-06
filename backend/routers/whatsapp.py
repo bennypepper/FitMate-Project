@@ -37,33 +37,23 @@ from database.mongo import get_db
 
 router = APIRouter(prefix="/whatsapp", tags=["whatsapp"])
 
-# ── Rate limiting ─────────────────────────────────────────────────────────────
 _rate_limit_cache: TTLCache = TTLCache(maxsize=1000, ttl=600)
 RATE_LIMIT_MAX = 20
 
-# ── Conversation history ──────────────────────────────────────────────────────
-# Expires after 2h of inactivity. Each value: list[{"role", "content"}]
 _conversation_store: TTLCache = TTLCache(maxsize=1000, ttl=7200)
 MAX_HISTORY_USER_BUBBLES = 15
 
-# ── Welcome tracking ──────────────────────────────────────────────────────────
-# Simple set — checked and written without any await in between (asyncio-safe).
-# Resets on server restart (acceptable; welcome message is low-stakes).
 _welcomed_set: set[str] = set()
 
-# ── Constants ─────────────────────────────────────────────────────────────────
 DISCLAIMER = "⚕️ *Disclaimer:* Informasi ini bukan pengganti saran medis profesional.\n\n"
 
-# ── Off-topic counter ─────────────────────────────────────────────────────────
-# Independent from API rate limiter — this tracks *topical scope* abuse, not flooding.
-# Count per phone, resets after 2h of inactivity (same TTL as conversation).
 _offtopic_counter: TTLCache = TTLCache(maxsize=1000, ttl=7200)
-# 5-minute cooldown flag set when user exceeds OFFTOPIC_COOLDOWN_LIMIT
+
 _offtopic_cooldown: TTLCache = TTLCache(maxsize=1000, ttl=300)
 
-OFFTOPIC_SHORT_LIMIT = 2    # count 1-2: normal but shorter reply with redirect
-OFFTOPIC_TERSE_LIMIT = 3    # count 3-4: static terse refusal only
-OFFTOPIC_COOLDOWN_LIMIT = 5  # count 5+: 5-minute cooldown
+OFFTOPIC_SHORT_LIMIT = 2  
+OFFTOPIC_TERSE_LIMIT = 3  
+OFFTOPIC_COOLDOWN_LIMIT = 5
 
 WELCOME_MESSAGE = (
     "Halo! Saya *FitMate* 🌿 — teman cek keamanan produk herbal & TCM kamu.\n\n"
@@ -75,7 +65,6 @@ WELCOME_MESSAGE = (
     "Kalau ada yang urgent, tetap konsultasi dokter dulu! 💊"
 )
 
-
 def _validate_twilio_signature(request_url: str, params: dict, signature: str) -> bool:
     """Validates X-Twilio-Signature to prevent spoofed webhook calls."""
     try:
@@ -86,10 +75,8 @@ def _validate_twilio_signature(request_url: str, params: dict, signature: str) -
         print(f"[Twilio] Signature validation error: {e}")
         return False
 
-
 def _get_history(phone: str) -> list[dict]:
     return list(_conversation_store.get(phone, []))
-
 
 def _append_history(phone: str, role: str, content: str) -> None:
     history = _get_history(phone)
@@ -99,7 +86,6 @@ def _append_history(phone: str, role: str, content: str) -> None:
         cutoff = user_indices[-MAX_HISTORY_USER_BUBBLES]
         history = history[cutoff:]
     _conversation_store[phone] = history
-
 
 def _is_multi_ingredient(ingredient_name: str) -> bool:
     """
@@ -113,16 +99,13 @@ def _is_multi_ingredient(ingredient_name: str) -> bool:
     parts = [p.strip() for p in parts if p.strip() and len(p.strip()) > 1]
     return len(parts) >= 2
 
-
 def _split_ingredient_list(ingredient_name: str) -> list[str]:
     """Splits a comma/newline-separated ingredient_name into individual names."""
     parts = re.split(r"[,\n]+", ingredient_name.strip())
     return [p.strip() for p in parts if p.strip() and len(p.strip()) > 1]
 
-
 def _get_offtopic_count(phone: str) -> int:
     return _offtopic_counter.get(phone, 0)
-
 
 def _increment_offtopic(phone: str) -> int:
     """Increments off-topic counter and returns new count. Sets cooldown at limit."""
@@ -133,10 +116,8 @@ def _increment_offtopic(phone: str) -> int:
         print(f"[Bot] Off-topic cooldown triggered for {phone} (count={count})")
     return count
 
-
 def _is_on_cooldown(phone: str) -> bool:
     return bool(_offtopic_cooldown.get(phone, False))
-
 
 def _build_safety_verdict(best_match: dict | None, highest_score: int) -> str:
     """
@@ -149,7 +130,6 @@ def _build_safety_verdict(best_match: dict | None, highest_score: int) -> str:
         return "toxic"
     return "safe"
 
-
 @router.post("/webhook")
 async def receive_message(
     request: Request,
@@ -159,7 +139,7 @@ async def receive_message(
     To: str = Form(default=""),
     MessageSid: str = Form(default=""),
 ):
-    # ── Twilio signature validation ───────────────────────────────────────────
+
     twilio_signature = request.headers.get("X-Twilio-Signature", "")
     form_data = await request.form()
     params = dict(form_data)
@@ -173,14 +153,12 @@ async def receive_message(
             print(f"[Twilio] ⚠️  Invalid signature from {request.client.host} — rejected")
             return {"status": "ok"}
 
-    # ── Extract fields ────────────────────────────────────────────────────────
     sender_phone = From.replace("whatsapp:", "").strip()
     message_text = Body.strip()
 
     if not sender_phone or not message_text:
         return {"status": "ok"}
 
-    # ── Rate limiting ─────────────────────────────────────────────────────────
     count = _rate_limit_cache.get(sender_phone, 0)
     if count >= RATE_LIMIT_MAX:
         print(f"[Bot] Rate limit hit for {sender_phone}")
@@ -189,7 +167,6 @@ async def receive_message(
 
     background_tasks.add_task(_process_message, sender_phone, message_text)
     return {"status": "ok"}
-
 
 async def _fuzzy_lookup(ingredient_name: str, db) -> tuple[dict | None, int]:
     """
@@ -229,7 +206,6 @@ async def _fuzzy_lookup(ingredient_name: str, db) -> tuple[dict | None, int]:
     print(f"[Bot] Best match for '{ingredient_name}': {matched_name} (score={highest_score})")
     return best_match, highest_score
 
-
 async def _process_message(sender: str, text: str):
     from services.llm_intent import (
         parse_intent,
@@ -253,21 +229,18 @@ async def _process_message(sender: str, text: str):
         history = _get_history(sender)
         print(f"[Bot] History length: {len(history)} messages")
 
-        # ── Welcome message — asyncio-safe check-and-set ──────────────────────
         if sender not in _welcomed_set:
             _welcomed_set.add(sender)
             _append_history(sender, "assistant", WELCOME_MESSAGE)
             await whatsapp_client.send_text_message(to_phone=sender, text=WELCOME_MESSAGE)
             await asyncio.sleep(0.8)
 
-        # ── LAYER 0: Emergency interceptor (synchronous, <1ms) ────────────────
         emergency_reply = check_emergency(text)
         if emergency_reply:
             _append_history(sender, "assistant", emergency_reply)
             await whatsapp_client.send_text_message(to_phone=sender, text=emergency_reply)
             return
 
-        # ── LAYER 1: BKO interceptor (async, invokes LLM only if keyword hits) ─
         bko_result = await check_bko(text)
         bko_action = bko_result["action"]
 
@@ -277,11 +250,8 @@ async def _process_message(sender: str, text: str):
             await whatsapp_client.send_text_message(to_phone=sender, text=bko_reply)
             return
 
-        # bko_action == "educate": continue intent flow, append soft_warning at end
-        # bko_action == "pass":    continue normally
         bko_soft_warning = bko_result.get("soft_warning", "")
 
-        # ── Off-topic cooldown gate ────────────────────────────────────────────
         if _is_on_cooldown(sender):
             cooldown_reply = OUT_OF_SCOPE_COOLDOWN
             _append_history(sender, "assistant", cooldown_reply)
@@ -291,53 +261,40 @@ async def _process_message(sender: str, text: str):
         db = get_db()
         reply = ""
 
-        # ── LAYER 2: Intent classification ────────────────────────────────────
         intent = await parse_intent(text, history=history)
         intent_type = intent.get("intent", "general_tcm_chat")
         ingredient_name = (intent.get("ingredient_name") or "").strip()
         print(f"[Bot] Intent: {intent_type}, ingredient: '{ingredient_name}'")
 
-        # Record user message in history
         _append_history(sender, "user", text)
 
-        # ────────────────────────────────────────────────────────────────────
-        # ROUTE 1: general_tcm_chat
-        # ────────────────────────────────────────────────────────────────────
         if intent_type == "general_tcm_chat" or not ingredient_name:
-            # Off-topic detection: if no health-related keywords, count and throttle
+
             if not is_health_related(text):
                 count = _increment_offtopic(sender)
                 print(f"[Bot] Off-topic detected for {sender}, count={count}")
                 if count >= OFFTOPIC_TERSE_LIMIT:
                     reply = OUT_OF_SCOPE_TERSE
                 else:
-                    # count 1-2: let LLM answer briefly but append redirect
+
                     reply = await generate_chat_reply(text, history=history)
             else:
                 reply = await generate_chat_reply(text, history=history)
             print(f"[Bot] General chat reply (len={len(reply)})")
 
-        # ────────────────────────────────────────────────────────────────────
-        # ROUTE 2: ingredient_info_inquiry
-        # ────────────────────────────────────────────────────────────────────
         elif intent_type == "ingredient_info_inquiry":
             best_match, score = await _fuzzy_lookup(ingredient_name.lower(), db)
             db_match = best_match if (best_match and score >= 65) else None
             reply = await generate_ingredient_info_reply(ingredient_name, db_match, history=history)
 
-        # ────────────────────────────────────────────────────────────────────
-        # ROUTE 3: ingredient_safety_inquiry
-        # Check if it's a multi-ingredient list (comma-separated ingredient_name)
-        # THEN do single or batch lookup.
-        # ────────────────────────────────────────────────────────────────────
         else:
             if _is_multi_ingredient(ingredient_name):
-                # ── Multi-ingredient batch lookup ─────────────────────────
+
                 ingredient_list = _split_ingredient_list(ingredient_name)
                 print(f"[Bot] Multi-ingredient list: {ingredient_list}")
                 reply = await _handle_multi_ingredient(ingredient_list, db)
             else:
-                # ── Single ingredient safety lookup ───────────────────────
+
                 best_match, highest_score = await _fuzzy_lookup(ingredient_name.lower(), db)
                 safety_verdict = _build_safety_verdict(best_match, highest_score)
                 print(f"[Bot] Safety verdict: {safety_verdict} (score={highest_score})")
@@ -349,15 +306,13 @@ async def _process_message(sender: str, text: str):
                     user_message=text,
                     history=history,
                 )
-                # Safeguard against LLM heavily hallucinating its own disclaimers
+
                 llm_reply = re.sub(r"(?i)(?:⚕️\s*)?(?:\*?Disclaimer\*?:?)\s*.*?(?:\n+|$)", "", llm_reply).strip()
                 reply = DISCLAIMER + llm_reply
 
-        # ── Append BKO soft warning if set (educational BKO context) ─────────
         if bko_soft_warning and reply:
             reply = reply.rstrip() + bko_soft_warning
 
-        # ── Send reply and record in history ──────────────────────────────────
         if reply:
             clean_reply_for_history = reply.replace(DISCLAIMER, "").strip()
             _append_history(sender, "assistant", clean_reply_for_history)
@@ -376,7 +331,6 @@ async def _process_message(sender: str, text: str):
         except Exception as send_err:
             print(f"[Bot ERROR] Cannot send error message: {send_err}")
 
-
 async def _handle_multi_ingredient(ingredient_list: list[str], db) -> str:
     """
     Batch DB lookup for a list of ingredient names.
@@ -386,7 +340,7 @@ async def _handle_multi_ingredient(ingredient_list: list[str], db) -> str:
     has_toxic = False
     has_unknown = False
 
-    for name in ingredient_list[:6]:  # cap at 6 to avoid timeout
+    for name in ingredient_list[:6]:
         best_match, score = await _fuzzy_lookup(name.lower(), db)
         safety_verdict = _build_safety_verdict(best_match, score)
 
@@ -429,12 +383,10 @@ async def _handle_multi_ingredient(ingredient_list: list[str], db) -> str:
     reply += "Ada yang ingin kamu tahu lebih lanjut tentang salah satunya? 🌿"
     return reply
 
-
 class TestChatRequest(BaseModel):
     sender: str = "test_user"
     message: str
     model: str | None = None
-
 
 @router.post("/test-chat")
 async def test_chat(req: TestChatRequest, db=Depends(get_db)):
@@ -473,7 +425,6 @@ async def test_chat(req: TestChatRequest, db=Depends(get_db)):
     reply = ""
     intercepted_by = None
 
-    # ── LAYER 0: Emergency interceptor ────────────────────────────────────────
     emergency_reply = check_emergency(text)
     if emergency_reply:
         _append_history(sender, "assistant", emergency_reply)
@@ -487,7 +438,6 @@ async def test_chat(req: TestChatRequest, db=Depends(get_db)):
             "reply": emergency_reply,
         }
 
-    # ── LAYER 1: BKO interceptor ──────────────────────────────────────────────
     bko_result = await check_bko(text)
     bko_action = bko_result["action"]
 
@@ -506,7 +456,6 @@ async def test_chat(req: TestChatRequest, db=Depends(get_db)):
 
     bko_soft_warning = bko_result.get("soft_warning", "")
 
-    # ── Off-topic cooldown gate ────────────────────────────────────────────────
     if _is_on_cooldown(sender):
         cooldown_reply = OUT_OF_SCOPE_COOLDOWN
         _append_history(sender, "assistant", cooldown_reply)
@@ -520,7 +469,6 @@ async def test_chat(req: TestChatRequest, db=Depends(get_db)):
             "reply": cooldown_reply,
         }
 
-    # ── Intent classification ─────────────────────────────────────────────────
     intent = await parse_intent(text, history=history, model=model_override)
     intent_type = intent.get("intent", "general_tcm_chat")
     ingredient_name = (intent.get("ingredient_name") or "").strip()
@@ -561,7 +509,6 @@ async def test_chat(req: TestChatRequest, db=Depends(get_db)):
             llm_reply = re.sub(r"(?i)(?:⚕️\s*)?(?:\*?Disclaimer\*?:?)\s*.*?(?:\n+|$)", "", llm_reply).strip()
             reply = DISCLAIMER + llm_reply
 
-    # ── Append BKO soft warning if set ───────────────────────────────────────
     if bko_soft_warning and reply:
         reply = reply.rstrip() + bko_soft_warning
 

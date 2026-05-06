@@ -28,11 +28,10 @@ export function setToken(token: string): void {
 export function isTokenExpired(token: string): boolean {
   try {
     const payloadBase64 = token.split(".")[1];
-    // atob decodes base64 — no jwt-decode dep needed
     const payload = JSON.parse(atob(payloadBase64));
     return payload.exp * 1000 < Date.now();
   } catch {
-    return true; // treat unparseable tokens as expired
+    return true;
   }
 }
 

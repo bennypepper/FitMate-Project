@@ -16,10 +16,9 @@ class WhatsAppClient:
         to_phone: raw phone number string e.g. '+628xxxxxxxxxx'
         Twilio requires the 'whatsapp:' prefix on both sides.
         """
-        # Normalise — Twilio sends 'whatsapp:+628...' as From; strip prefix if present
+
         clean_to = to_phone.replace("whatsapp:", "")
-        
-        # Twilio client is synchronous — run in a thread to avoid blocking the event loop
+
         import asyncio
         loop = asyncio.get_event_loop()
         message = await loop.run_in_executor(

@@ -14,7 +14,6 @@ from slowapi.errors import RateLimitExceeded
 
 limiter = Limiter(key_func=get_remote_address)
 
-
 class SecurityHeadersMiddleware(BaseHTTPMiddleware):
     """Adds standard security headers to all responses."""
     async def dispatch(self, request: StarletteRequest, call_next) -> Response:
@@ -23,10 +22,9 @@ class SecurityHeadersMiddleware(BaseHTTPMiddleware):
         response.headers["X-Frame-Options"] = "DENY"
         response.headers["X-XSS-Protection"] = "1; mode=block"
         response.headers["Referrer-Policy"] = "strict-origin-when-cross-origin"
-        # Allow camera/microphone for PWA scanning feature
+
         response.headers["Permissions-Policy"] = "camera=(*), microphone=()"
         return response
-
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
@@ -34,13 +32,12 @@ async def lifespan(app: FastAPI):
     yield
     await close_mongo_connection()
 
-
 app = FastAPI(
     title="FitMate API",
     description="FastAPI Backend for TCM Safety Scanner",
     version="1.0.0",
     lifespan=lifespan,
-    # Hide detailed error info in production
+
     docs_url="/api/docs",
     redoc_url=None,
 )
@@ -48,13 +45,10 @@ app = FastAPI(
 app.state.limiter = limiter
 app.add_exception_handler(RateLimitExceeded, _rate_limit_exceeded_handler)
 
-# Security headers on all responses
 app.add_middleware(SecurityHeadersMiddleware)
 
 import os
 
-# CORS — explicit origin allowlist only
-# localhost:3000 for local dev, Vercel for production
 ALLOWED_ORIGINS = [
     "http://localhost:3000",
     "https://fitmate-tcm.vercel.app",
@@ -68,21 +62,18 @@ app.add_middleware(
     CORSMiddleware,
     allow_origins=ALLOWED_ORIGINS,
     allow_credentials=True,
-    allow_methods=["GET", "POST", "OPTIONS"],  # Removed PUT/DELETE from public CORS (admin only)
+    allow_methods=["GET", "POST", "OPTIONS"],
     allow_headers=["Content-Type", "Authorization"],
 )
-
 
 @app.get("/")
 async def root():
     return {"message": "FitMate API is running", "version": "1.0.0"}
 
-
 @app.get("/health")
 async def health():
     """Health check endpoint for uptime monitoring."""
     return {"status": "healthy"}
-
 
 from routers.ocr import router as ocr_router
 from routers.analyze import router as analyze_router

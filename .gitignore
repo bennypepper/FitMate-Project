@@ -30,5 +30,9 @@ dist/
 .idea/
 .DS_Store
 
+# AI Context
+.agents/
+.planning/
+
 # Backend secrets
 backend/.env

@@ -21,23 +21,19 @@ async def analyze_tcm_label(
     """
     if not file.content_type or not file.content_type.startswith("image/"):
         raise HTTPException(status_code=400, detail="File must be an image")
-    
-    # Max file size: 10MB
+
     content = await file.read()
     if len(content) > 10 * 1024 * 1024:
         raise HTTPException(status_code=413, detail="Image too large. Maximum size is 10MB.")
-    
+
     try:
-        # 1. OCR Extraction (async LLM)
+
         ocr_blocks = await extract_and_translate_text(content)
-        
-        # Extract just the text strings
+
         detected_texts = [block["text"] for block in ocr_blocks]
-        
-        # 2. Safety Match against DB
+
         safety_results = await match_ingredients(detected_texts, db)
-        
-        # 3. Return payload
+
         return {
             "status": "success",
             "ocr_blocks": ocr_blocks,

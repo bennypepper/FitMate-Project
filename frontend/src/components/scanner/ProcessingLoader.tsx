@@ -16,7 +16,7 @@ export default function ProcessingLoader() {
       <p className="text-on-surface font-sans font-medium text-lg animate-pulse text-center px-6">
         Menganalisis Komposisi TCM...
       </p>
-      
+
       <style dangerouslySetInnerHTML={{__html: `
         @keyframes scan {
           0% { transform: translateY(0); }

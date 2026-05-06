@@ -9,9 +9,6 @@ import pytest
 import openpyxl
 from unittest.mock import AsyncMock, MagicMock, patch
 
-
-# ─── Test Helpers ────────────────────────────────────────────────────────────
-
 VALID_HEADERS = [
     "mandarin_name",
     "pinyin_name",
@@ -38,7 +35,6 @@ VALID_ROW = {
     "source_reference": "SymMap-SMIT00001",
 }
 
-
 def make_xlsx_bytes(rows: list[dict], headers: list[str] | None = None) -> bytes:
     """Helper: create an in-memory .xlsx file with given rows."""
     wb = openpyxl.Workbook()
@@ -56,9 +52,6 @@ def make_xlsx_bytes(rows: list[dict], headers: list[str] | None = None) -> bytes
     buf.seek(0)
     return buf.read()
 
-
-# ─── Unit Tests: excel_parser ────────────────────────────────────────────────
-
 def test_parse_xlsx_returns_correct_rows():
     """parse_file can parse a valid .xlsx file and return expected row count."""
     from utils.excel_parser import parse_file
@@ -69,14 +62,12 @@ def test_parse_xlsx_returns_correct_rows():
     assert len(rows) == 1
     assert rows[0]["mandarin_name"] == "附子"
 
-
 def test_validate_row_valid():
     """validate_row returns empty error list for a fully valid row."""
     from utils.excel_parser import validate_row
 
     errors = validate_row(VALID_ROW, 2)
     assert errors == []
-
 
 def test_validate_row_missing_mandarin_name():
     """validate_row flags missing/empty mandarin_name."""
@@ -86,7 +77,6 @@ def test_validate_row_missing_mandarin_name():
     errors = validate_row(row, 2)
     assert any(e["field"] == "mandarin_name" for e in errors)
 
-
 def test_validate_row_invalid_is_toxic():
     """validate_row flags non-boolean is_toxic values."""
     from utils.excel_parser import validate_row
@@ -95,7 +85,6 @@ def test_validate_row_invalid_is_toxic():
     errors = validate_row(row, 2)
     assert any(e["field"] == "is_toxic" for e in errors)
 
-
 def test_validate_row_placeholder_source_reference():
     """validate_row flags 'unknown' as an invalid source_reference."""
     from utils.excel_parser import validate_row
@@ -103,7 +92,6 @@ def test_validate_row_placeholder_source_reference():
     row = {**VALID_ROW, "source_reference": "unknown"}
     errors = validate_row(row, 2)
     assert any(e["field"] == "source_reference" for e in errors)
-
 
 def test_normalize_row_converts_is_toxic_to_bool():
     """normalize_row correctly converts is_toxic string to Python bool."""
@@ -115,16 +103,12 @@ def test_normalize_row_converts_is_toxic_to_bool():
     false_row = normalize_row({**VALID_ROW, "is_toxic": "false"})
     assert false_row["is_toxic"] is False
 
-
 def test_normalize_row_ya_is_truthy():
     """normalize_row recognises Indonesian 'ya' as True."""
     from utils.excel_parser import normalize_row
 
     row = normalize_row({**VALID_ROW, "is_toxic": "ya"})
     assert row["is_toxic"] is True
-
-
-# ─── Integration Tests: upload endpoints ─────────────────────────────────────
 
 def test_validate_endpoint_with_valid_file(client, auth_headers):
     """DATA-03: /validate returns valid_count > 0 and empty errors for a good file."""
@@ -140,7 +124,6 @@ def test_validate_endpoint_with_valid_file(client, auth_headers):
     assert data["error_count"] == 0
     assert data["errors"] == []
 
-
 def test_validate_endpoint_catches_invalid_rows(client, auth_headers):
     """DATA-03: /validate returns error_count > 0 and row errors for bad rows."""
     bad_row = {**VALID_ROW, "mandarin_name": "", "source_reference": "unknown"}
@@ -154,8 +137,7 @@ def test_validate_endpoint_catches_invalid_rows(client, auth_headers):
     data = response.json()
     assert data["error_count"] > 0
     assert len(data["errors"]) > 0
-    assert data["errors"][0]["row"] == 2  # Excel row 2 = first data row
-
+    assert data["errors"][0]["row"] == 2
 
 def test_validate_endpoint_requires_auth(client):
     """AUTH-02: /validate without Authorization header returns 403."""
@@ -165,7 +147,6 @@ def test_validate_endpoint_requires_auth(client):
         files={"file": ("test.xlsx", xlsx_bytes, "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet")},
     )
     assert response.status_code in (401, 403)
-
 
 def test_import_endpoint_upserts_to_mongodb(client, auth_headers):
     """DATA-03: /import successfully upserts rows and returns imported count."""

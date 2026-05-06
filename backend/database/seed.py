@@ -21,7 +21,6 @@ from backend.database.schemas import TCMIngredient
 VALIDATED_EXCEL = Path(__file__).parent.parent.parent / "data" / "scraper" / "validated" / "tcm_validated.xlsx"
 ERRORS_LOG = Path(__file__).parent.parent.parent / "data" / "scraper" / "output" / "seed_errors.json"
 
-# Column mapping from Excel headers to schema fields
 COLUMN_MAP = {
     "Mandarin Name (锁定)": "mandarin_name",
     "Pinyin Name": "pinyin_name",
@@ -35,7 +34,6 @@ COLUMN_MAP = {
     "Validated? (TRUE when done) ← CHECK": "validated",
 }
 
-
 def load_validated_excel() -> pd.DataFrame:
     if not VALIDATED_EXCEL.exists():
         raise FileNotFoundError(
@@ -45,7 +43,6 @@ def load_validated_excel() -> pd.DataFrame:
     df = pd.read_excel(VALIDATED_EXCEL, engine="openpyxl")
     print(f"[load] Read {len(df)} rows from {VALIDATED_EXCEL.name}")
     return df
-
 
 def seed_ingredients(df: pd.DataFrame) -> dict:
     """Seed tcm_ingredients collection from validated DataFrame."""
@@ -58,13 +55,12 @@ def seed_ingredients(df: pd.DataFrame) -> dict:
     errors = []
 
     for idx, row in df.iterrows():
-        # Skip rows not marked as validated
+
         validated_flag = row.get("Validated? (TRUE when done) ← CHECK", False)
         if str(validated_flag).upper() not in ("TRUE", "1", "YES"):
             skipped_unvalidated += 1
             continue
 
-        # Build ingredient dict
         record = {
             "mandarin_name": str(row.get("Mandarin Name (锁定)", "")).strip(),
             "pinyin_name": str(row.get("Pinyin Name", "")).strip() or None,
@@ -76,10 +72,9 @@ def seed_ingredients(df: pd.DataFrame) -> dict:
             "source_reference": str(row.get("Source (SymMap ID / BPOM ref)", "")).strip(),
         }
 
-        # Validate via Pydantic schema
         try:
             ingredient = TCMIngredient(**record)
-            # Upsert by mandarin_name to avoid duplicates
+
             collection.update_one(
                 {"mandarin_name": ingredient.mandarin_name},
                 {"$set": ingredient.model_dump()},
@@ -90,7 +85,6 @@ def seed_ingredients(df: pd.DataFrame) -> dict:
             skipped_validation += 1
             errors.append({"row": idx + 2, "data": record, "error": str(e)})
 
-    # Log errors for pharmacy team review
     if errors:
         with open(ERRORS_LOG, "w", encoding="utf-8") as f:
             json.dump(errors, f, ensure_ascii=False, indent=2)
@@ -102,7 +96,6 @@ def seed_ingredients(df: pd.DataFrame) -> dict:
         "skipped_validation_errors": skipped_validation,
         "total": len(df),
     }
-
 
 def main():
     print("=== FitMate MongoDB Seeder ===\n")
@@ -127,7 +120,6 @@ def main():
         print("  → Check seed_errors.json for validation failures")
     else:
         print(f"\n[ok] Database ready with {result['inserted']} TCM ingredients")
-
 
 if __name__ == "__main__":
     main()
