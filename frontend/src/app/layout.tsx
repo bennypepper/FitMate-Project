@@ -1,7 +1,6 @@
 import type { Metadata } from "next";
-import { Inter, Newsreader, Noto_Sans_SC } from "next/font/google";
+import { Inter, Source_Serif_4, Noto_Sans_SC } from "next/font/google";
 import TopAppBar from "@/components/layout/TopAppBar";
-import WhatsAppFAB from "@/components/layout/WhatsAppFAB";
 import "./globals.css";
 
 const inter = Inter({
@@ -9,9 +8,10 @@ const inter = Inter({
   subsets: ["latin"],
 });
 
-const newsreader = Newsreader({
-  variable: "--font-newsreader",
+const sourceSerif = Source_Serif_4({
+  variable: "--font-serif",
   subsets: ["latin"],
+  weight: ["500", "600", "700"],
 });
 
 const notoSansSC = Noto_Sans_SC({
@@ -21,8 +21,8 @@ const notoSansSC = Noto_Sans_SC({
 });
 
 export const metadata: Metadata = {
-  title: "FitMate",
-  description: "TCM Safety Scanner and Consultant",
+  title: "FitMate TCM — Pindai Label & Cek Toksisitas Herbal",
+  description: "FitMate memindai label komposisi TCM, menerjemahkan aksara Hanzi, dan mencocokkannya dengan basis data toksisitas terverifikasi apoteker.",
   manifest: "/manifest.json",
 };
 
@@ -34,7 +34,7 @@ export default function RootLayout({
   return (
     <html
       lang="id"
-      className={`${inter.variable} ${newsreader.variable} ${notoSansSC.variable} h-full antialiased`}
+      className={`${inter.variable} ${sourceSerif.variable} ${notoSansSC.variable} h-full antialiased`}
     >
       <head>
         <link
@@ -42,10 +42,9 @@ export default function RootLayout({
           rel="stylesheet"
         />
       </head>
-      <body className="font-body bg-background text-on-surface min-h-screen flex flex-col">
+      <body className="font-body bg-paper-deep text-ink min-h-screen flex flex-col selection:bg-trust-tint selection:text-trust-deep">
         <TopAppBar />
-        {children}
-        <WhatsAppFAB />
+        <main className="flex-1 flex flex-col">{children}</main>
         <script
           dangerouslySetInnerHTML={{
             __html: `

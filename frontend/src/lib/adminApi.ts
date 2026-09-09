@@ -6,7 +6,11 @@
  * Post-PIMNAS: migrate to httpOnly cookies + refresh token rotation.
  */
 
-const API_BASE = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8000";
+const API_BASE =
+  process.env.NEXT_PUBLIC_API_URL ||
+  (typeof window !== "undefined" && window.location.hostname === "localhost"
+    ? "http://localhost:8000"
+    : "https://benedictpepper-fitmate-api.hf.space");
 
 export function getToken(): string | null {
   if (typeof window === "undefined") return null;

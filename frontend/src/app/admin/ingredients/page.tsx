@@ -19,25 +19,25 @@ type BadgeConfig = { label: string; className: string };
 const TOXICITY_BADGES: Record<string, BadgeConfig> = {
   high: {
     label: "Risiko Tinggi",
-    className: "bg-error-container text-error",
+    className: "bg-danger text-white font-bold",
   },
   moderate: {
     label: "Sedang",
-    className: "bg-tertiary-container text-on-tertiary-fixed",
+    className: "bg-amber-tint text-amber font-semibold border border-amber/30",
   },
   low: {
     label: "Rendah",
-    className: "bg-surface-container text-on-surface-variant",
+    className: "bg-paper-deep text-ink-soft border border-line",
   },
   unknown: {
     label: "Tidak Diketahui",
-    className: "bg-surface-container text-on-surface-variant",
+    className: "bg-paper-deep text-ink-soft border border-line",
   },
 };
 
 const SAFE_BADGE: BadgeConfig = {
   label: "Aman",
-  className: "bg-surface-container-low text-on-surface-variant",
+  className: "bg-trust-tint text-trust-deep font-bold border border-trust/20",
 };
 
 export default function IngredientsPage() {

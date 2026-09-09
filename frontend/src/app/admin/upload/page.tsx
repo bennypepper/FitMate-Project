@@ -5,7 +5,11 @@ import { useDropzone } from "react-dropzone";
 import { useRouter } from "next/navigation";
 import { getToken, clearToken } from "@/lib/adminApi";
 
-const API_BASE = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8000";
+const API_BASE =
+  process.env.NEXT_PUBLIC_API_URL ||
+  (typeof window !== "undefined" && window.location.hostname === "localhost"
+    ? "http://localhost:8000"
+    : "https://benedictpepper-fitmate-api.hf.space");
 
 interface RowError {
   field: string;

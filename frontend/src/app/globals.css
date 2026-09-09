@@ -1,40 +1,87 @@
 @import "tailwindcss";
 
-@theme {
-  --color-primary: #930014;
-  --color-dark: #5B000B;
-  --color-secondary: #DB4B3A;
-  --color-accent: #D4AF37;
-  --color-light: #E7BD8A;
-  --color-background: #FFFFFF;
-  --color-on-surface: #1a1110;
-  --color-on-surface-variant: #534341;
-  /* keep error variables for standard states */
-  --color-error: #BA1A1A;
-  --color-error-container: #FFDAD6;
+:root {
+  --paper: #F7F4EE;
+  --paper-deep: #EFEAE0;
+  --card: #FFFFFF;
+  --ink: #211C17;
+  --ink-soft: #6E645A;
+  --ink-faint: #A79C8E;
+  --heritage: #7A2230;
+  --heritage-deep: #5B1622;
+  --trust: #1F6F5C;
+  --trust-deep: #134B3D;
+  --trust-tint: #E4EFEB;
+  --amber: #C08A2E;
+  --amber-tint: #F5EAD7;
+  --danger: #B93124;
+  --danger-deep: #8C231A;
+  --danger-tint: #F7E4E0;
+  --line: rgba(33, 28, 23, 0.12);
+  --radius-lg: 20px;
+  --radius-md: 14px;
+  --radius-sm: 9px;
+}
 
-  --font-headline: var(--font-newsreader), serif; /* Nextjs app uses newsreader, let's keep it or map it to headline */
+@theme {
+  --color-paper: var(--paper);
+  --color-paper-deep: var(--paper-deep);
+  --color-card: var(--card);
+  --color-ink: var(--ink);
+  --color-ink-soft: var(--ink-soft);
+  --color-ink-faint: var(--ink-faint);
+  --color-heritage: var(--heritage);
+  --color-heritage-deep: var(--heritage-deep);
+  --color-trust: var(--trust);
+  --color-trust-deep: var(--trust-deep);
+  --color-trust-tint: var(--trust-tint);
+  --color-amber: var(--amber);
+  --color-amber-tint: var(--amber-tint);
+  --color-danger: var(--danger);
+  --color-danger-deep: var(--danger-deep);
+  --color-danger-tint: var(--danger-tint);
+  --color-line: var(--line);
+
+  --color-primary: #7A2230;
+  --color-dark: #211C17;
+  --color-secondary: #C08A2E;
+  --color-accent: #1F6F5C;
+  --color-light: #EFEAE0;
+  --color-background: #F7F4EE;
+  --color-on-surface: #211C17;
+  --color-on-surface-variant: #6E645A;
+  --color-error: #B93124;
+  --color-error-container: #F7E4E0;
+
+  --font-serif: var(--font-serif), "Source Serif 4", Georgia, serif;
   --font-body: var(--font-inter), sans-serif;
   --font-chinese: var(--font-noto-sans-sc), sans-serif;
 
   --radius-button: 10px;
   --radius-card: 14px;
   --radius-badge: 20px;
-
-  --spacing-large: 24px;
 }
 
-@layer utilities {
-  .glass-blur {
-    backdrop-filter: blur(20px);
-    -webkit-backdrop-filter: blur(20px);
-  }
+@keyframes sweep {
+  0% { top: 30%; opacity: 0; }
+  15% { opacity: 1; }
+  50% { top: 70%; opacity: 1; }
+  85% { opacity: 1; }
+  100% { top: 30%; opacity: 0; }
+}
+
+.animate-scan-sweep {
+  animation: sweep 3.2s ease-in-out infinite;
 }
 
 body {
-  background-color: var(--color-background);
-  color: var(--color-on-surface);
+  background-color: var(--paper-deep);
+  color: var(--ink);
   font-family: var(--font-body);
+}
+
+.font-serif-heading {
+  font-family: var(--font-serif);
 }
 
 .material-symbols-outlined {

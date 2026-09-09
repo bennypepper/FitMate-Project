@@ -3,6 +3,7 @@
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { adminLogin, setToken } from "@/lib/adminApi";
+import Link from "next/link";
 
 export default function AdminLoginPage() {
   const [username, setUsername] = useState("");
@@ -28,85 +29,90 @@ export default function AdminLoginPage() {
   };
 
   return (
-    <div className="min-h-screen bg-surface flex items-center justify-center px-4">
-      <div className="w-full max-w-sm">
-
-        {/* Brand — matches sidebar brand style */}
-        <div className="text-center mb-10">
-          <h1 className="font-serif text-4xl font-bold text-primary italic">
-            FitMate
-          </h1>
-          <p className="font-sans text-xs uppercase tracking-widest text-on-surface-variant mt-2">
-            Admin Console
-          </p>
-        </div>
-
-        {/* Login Card */}
-        <div className="bg-surface-container-low rounded-3xl p-8 shadow-ambient">
-          <h2 className="font-serif text-xl text-on-surface mb-6">
-            Masuk ke Dasbor
-          </h2>
-
-          <form onSubmit={handleSubmit} className="space-y-5">
-            {/* Username */}
-            <div>
-              <label htmlFor="admin-username" className="font-sans text-xs font-bold uppercase tracking-wider text-on-surface-variant">
-                Username
-              </label>
-              <input
-                id="admin-username"
-                type="text"
-                value={username}
-                onChange={(e) => setUsername(e.target.value)}
-                className="mt-2 w-full bg-surface-container px-4 py-3 rounded-xl font-sans text-sm text-on-surface placeholder:text-on-surface-variant/50 focus:outline-none focus:ring-2 focus:ring-primary focus:bg-surface-container-high transition-all"
-                placeholder="admin"
-                required
-                autoComplete="username"
-              />
-            </div>
-
-            {/* Password */}
-            <div>
-              <label htmlFor="admin-password" className="font-sans text-xs font-bold uppercase tracking-wider text-on-surface-variant">
-                Password
-              </label>
-              <input
-                id="admin-password"
-                type="password"
-                value={password}
-                onChange={(e) => setPassword(e.target.value)}
-                className="mt-2 w-full bg-surface-container px-4 py-3 rounded-xl font-sans text-sm text-on-surface placeholder:text-on-surface-variant/50 focus:outline-none focus:ring-2 focus:ring-primary focus:bg-surface-container-high transition-all"
-                placeholder="••••••••"
-                required
-                autoComplete="current-password"
-              />
-            </div>
-
-            {/* Error message */}
-            {error && (
-              <div className="bg-error-container rounded-xl px-4 py-3 flex items-start gap-2">
-                <span className="material-symbols-outlined text-error text-sm mt-0.5">
-                  error
-                </span>
-                <p className="font-sans text-sm text-error">{error}</p>
-              </div>
-            )}
-
-            {/* Submit — Gold CTA per design system */}
-            <button
-              id="admin-login-submit"
-              type="submit"
-              disabled={loading}
-              className="w-full py-3 px-6 rounded-xl bg-tertiary-container text-on-tertiary-fixed font-sans font-bold text-sm hover:brightness-105 active:scale-95 transition-all disabled:opacity-60 mt-2"
-            >
-              {loading ? "Memverifikasi..." : "Masuk"}
-            </button>
-          </form>
-        </div>
-
-        <p className="text-center font-sans text-xs text-on-surface-variant mt-8 opacity-60">
-          FitMate TCM Safety Scanner — Admin Portal
+    <div className="w-full max-w-sm mx-auto">
+      {/* Brandmark */}
+      <div className="text-center mb-8">
+        <Link
+          href="/"
+          className="font-serif text-3xl font-bold text-heritage italic hover:opacity-90 transition-opacity inline-block"
+        >
+          FitMate TCM
+        </Link>
+        <p className="text-[11px] uppercase tracking-widest text-ink-faint mt-1.5 font-semibold">
+          Admin Console
         </p>
+      </div>
+
+      {/* Login Card */}
+      <div className="bg-card rounded-[20px] p-7 border border-line shadow-[0_20px_40px_-20px_rgba(33,28,23,0.15)]">
+        <h2 className="font-serif text-xl font-bold text-ink mb-5">
+          Masuk ke Dasbor
+        </h2>
+
+        <form onSubmit={handleSubmit} className="space-y-4">
+          {/* Username */}
+          <div>
+            <label
+              htmlFor="admin-username"
+              className="block text-[11px] font-bold uppercase tracking-wider text-ink-soft mb-1.5"
+            >
+              Username
+            </label>
+            <input
+              id="admin-username"
+              type="text"
+              value={username}
+              onChange={(e) => setUsername(e.target.value)}
+              required
+              autoComplete="username"
+              placeholder="admin"
+              className="w-full bg-paper border border-line rounded-[10px] px-3.5 py-2.5 text-[13.5px] text-ink focus:outline-none focus:border-trust transition-colors placeholder:text-ink-faint"
+            />
+          </div>
+
+          {/* Password */}
+          <div>
+            <label
+              htmlFor="admin-password"
+              className="block text-[11px] font-bold uppercase tracking-wider text-ink-soft mb-1.5"
+            >
+              Password
+            </label>
+            <input
+              id="admin-password"
+              type="password"
+              value={password}
+              onChange={(e) => setPassword(e.target.value)}
+              required
+              autoComplete="current-password"
+              placeholder="••••••••"
+              className="w-full bg-paper border border-line rounded-[10px] px-3.5 py-2.5 text-[13.5px] text-ink focus:outline-none focus:border-trust transition-colors placeholder:text-ink-faint"
+            />
+          </div>
+
+          {error && (
+            <div className="p-3 bg-danger-tint border border-danger/30 rounded-[10px] text-danger text-[12px] leading-tight">
+              {error}
+            </div>
+          )}
+
+          <button
+            type="submit"
+            disabled={loading}
+            className="w-full mt-2 py-2.5 bg-trust hover:bg-trust-deep text-white font-semibold text-[13px] rounded-[10px] shadow-sm transition-colors active:scale-95 disabled:opacity-60 cursor-pointer"
+          >
+            {loading ? "Memverifikasi..." : "Masuk"}
+          </button>
+        </form>
+
+        <div className="text-center mt-5 pt-4 border-t border-line/60">
+          <Link
+            href="/"
+            className="text-[12px] text-ink-soft hover:text-ink transition-colors font-medium"
+          >
+            ← Kembali ke Halaman Utama
+          </Link>
+        </div>
       </div>
     </div>
   );
