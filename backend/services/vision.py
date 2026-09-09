@@ -56,10 +56,15 @@ async def extract_and_translate_text(image_bytes: bytes) -> list[dict]:
         "temperature": 0.1,
     }
 
+    ocr_key = settings.effective_ocr_key
+    if not ocr_key:
+        print("[Vision] Warning: No OpenRouter OCR API key configured.")
+        return []
+
     headers = {
-        "Authorization": f"Bearer {settings.OPENROUTER_OCR_API_KEY}",
+        "Authorization": f"Bearer {ocr_key}",
         "Content-Type": "application/json",
-        "HTTP-Referer": "https://fitmate-tcm.vercel.app",
+        "HTTP-Referer": "https://fitmate-project.vercel.app",
         "X-Title": "FitMate TCM Safety Scanner",
     }
 

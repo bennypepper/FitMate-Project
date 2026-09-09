@@ -1,8 +1,10 @@
 import os
 import sys
-from huggingface_hub import HfApi
 
-import os
+if hasattr(sys.stdout, "reconfigure"):
+    sys.stdout.reconfigure(encoding="utf-8")
+
+from huggingface_hub import HfApi
 from dotenv import load_dotenv
 load_dotenv()
 TOKEN = os.getenv("HF_TOKEN", "")

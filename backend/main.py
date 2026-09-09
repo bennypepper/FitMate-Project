@@ -51,7 +51,10 @@ import os
 
 ALLOWED_ORIGINS = [
     "http://localhost:3000",
+    "http://127.0.0.1:3000",
     "https://fitmate-tcm.vercel.app",
+    "https://fitmate-project.vercel.app",
+    "https://fitmate-scanner.vercel.app",
 ]
 
 env_origin = os.environ.get("FRONTEND_URL")
@@ -61,9 +64,10 @@ if env_origin and env_origin not in ALLOWED_ORIGINS:
 app.add_middleware(
     CORSMiddleware,
     allow_origins=ALLOWED_ORIGINS,
+    allow_origin_regex=r"https://.*\.vercel\.app",
     allow_credentials=True,
-    allow_methods=["GET", "POST", "OPTIONS"],
-    allow_headers=["Content-Type", "Authorization"],
+    allow_methods=["*"],
+    allow_headers=["*"],
 )
 
 @app.get("/")

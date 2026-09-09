@@ -21,18 +21,14 @@ from core.config import settings
 
 OPENROUTER_BASE_URL = "https://openrouter.ai/api/v1/chat/completions"
 
-if not settings.OPENROUTER_CHATBOT_API_KEY:
-    raise RuntimeError(
-        "OPENROUTER_CHATBOT_API_KEY is not set in .env. "
-        "Add it to backend/.env and restart the server."
-    )
-
-_HEADERS = {
-    "Authorization": f"Bearer {settings.OPENROUTER_CHATBOT_API_KEY}",
-    "Content-Type": "application/json",
-    "HTTP-Referer": "https://fitmate-tcm.vercel.app",
-    "X-Title": "FitMate TCM Safety Scanner",
-}
+def _get_headers() -> dict:
+    key = settings.effective_chatbot_key
+    return {
+        "Authorization": f"Bearer {key}",
+        "Content-Type": "application/json",
+        "HTTP-Referer": "https://fitmate-project.vercel.app",
+        "X-Title": "FitMate TCM Safety Scanner",
+    }
 
 _MAX_RETRIES = 2
 _RETRY_BASE_DELAY = 2
@@ -60,7 +56,7 @@ async def _chat(
             try:
                 resp = await client.post(
                     OPENROUTER_BASE_URL,
-                    headers=_HEADERS,
+                    headers=_get_headers(),
                     json=payload,
                 )
                 if resp.status_code in (429, 502, 503, 504):
