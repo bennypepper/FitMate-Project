@@ -57,7 +57,7 @@ if os.path.exists(env_path):
                 key = key.strip()
                 val = val.strip()
 
-                if "YOUR-PASSWORD" in val or "huggingspace token" in line:
+                if "YOUR-PASSWORD" in val or "huggingspace token" in line or key == "HF_TOKEN":
                     continue
                 try:
                     if len(val) > 0:
