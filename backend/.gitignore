@@ -1,0 +1,23 @@
+# Environment & Secrets
+.env
+.env.*
+*.env
+!.env.example
+
+# Virtual Environments
+venv/
+.venv/
+env/
+
+# Python Cache & Bytecode
+__pycache__/
+*.py[cod]
+*$py.class
+.pytest_cache/
+.mypy_cache/
+.coverage
+htmlcov/
+
+# Logs & Benchmark Outputs
+*.log
+evaluasi_model_*.csv
