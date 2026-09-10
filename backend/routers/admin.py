@@ -15,7 +15,8 @@ from pydantic import BaseModel
 
 from core.config import settings
 from database.mongo import get_db
-from utils.auth import verify_password, create_access_token, get_current_admin
+from datetime import datetime, timezone
+from utils.auth import verify_password, get_password_hash, create_access_token, get_current_admin
 
 router = APIRouter(prefix="/api/v1/admin", tags=["admin"])
 
@@ -29,6 +30,10 @@ class TokenResponse(BaseModel):
     access_token: str
     token_type: str = "bearer"
 
+class ChangePasswordRequest(BaseModel):
+    old_password: str
+    new_password: str
+
 class StatsResponse(BaseModel):
     total_ingredients: int
     toxic_count: int
@@ -36,25 +41,33 @@ class StatsResponse(BaseModel):
 
 @router.post("/login", response_model=TokenResponse)
 @limiter.limit("5/minute")
-async def login(request: Request, credentials: LoginRequest):
+async def login(request: Request, credentials: LoginRequest, db = Depends(get_db)):
     """
     Admin login. Rate limited to 5 attempts per minute.
     Returns JWT on success, 401 on invalid credentials.
+    Checks admin_users collection with fallback to .env configuration.
     """
+    # 1. Check database for admin user first
+    user_doc = await db.admin_users.find_one({"username": credentials.username})
+    expected_hash = None
 
-    if credentials.username != settings.ADMIN_USERNAME:
+    if user_doc:
+        expected_hash = user_doc.get("hashed_password")
+    elif credentials.username == settings.ADMIN_USERNAME:
+        expected_hash = settings.ADMIN_PASSWORD_HASH
+    else:
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,
             detail="Username atau password salah",
         )
 
-    if not settings.ADMIN_PASSWORD_HASH:
+    if not expected_hash:
         raise HTTPException(
             status_code=status.HTTP_503_SERVICE_UNAVAILABLE,
             detail="Admin auth not configured. Set ADMIN_PASSWORD_HASH in .env",
         )
 
-    if not verify_password(credentials.password, settings.ADMIN_PASSWORD_HASH):
+    if not verify_password(credentials.password, expected_hash):
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,
             detail="Username atau password salah",
@@ -62,6 +75,48 @@ async def login(request: Request, credentials: LoginRequest):
 
     token = create_access_token(subject=credentials.username)
     return TokenResponse(access_token=token)
+
+@router.post("/change-password")
+async def change_password(
+    req: ChangePasswordRequest,
+    admin: str = Depends(get_current_admin),
+    db = Depends(get_db),
+):
+    """
+    Change password for authenticated admin.
+    Requires current password verification and at least 8 characters for new password.
+    """
+    if len(req.new_password) < 8:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="Password baru minimal 8 karakter",
+        )
+
+    user_doc = await db.admin_users.find_one({"username": admin})
+    current_hash = user_doc.get("hashed_password") if user_doc else settings.ADMIN_PASSWORD_HASH
+
+    if not current_hash or not verify_password(req.old_password, current_hash):
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="Password saat ini tidak sesuai",
+        )
+
+    new_hash = get_password_hash(req.new_password)
+    settings.ADMIN_PASSWORD_HASH = new_hash
+
+    await db.admin_users.update_one(
+        {"username": admin},
+        {
+            "$set": {
+                "username": admin,
+                "hashed_password": new_hash,
+                "updated_at": datetime.now(timezone.utc),
+            }
+        },
+        upsert=True,
+    )
+
+    return {"status": "success", "message": "Password berhasil diperbarui dengan enkripsi bcrypt"}
 
 @router.get("/me")
 async def get_me(admin: str = Depends(get_current_admin)):

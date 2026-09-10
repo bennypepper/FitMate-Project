@@ -1,3 +1,11 @@
+import sys
+if sys.stdout and hasattr(sys.stdout, "reconfigure"):
+    try:
+        sys.stdout.reconfigure(encoding="utf-8")
+        sys.stderr.reconfigure(encoding="utf-8")
+    except Exception:
+        pass
+
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.middleware.trustedhost import TrustedHostMiddleware
@@ -75,6 +83,7 @@ async def root():
     return {"message": "FitMate API is running", "version": "1.0.0"}
 
 @app.get("/health")
+@app.get("/api/v1/health")
 async def health():
     """Health check endpoint for uptime monitoring."""
     return {"status": "healthy"}
@@ -84,9 +93,12 @@ from routers.analyze import router as analyze_router
 from routers.whatsapp import router as whatsapp_router
 from routers.admin import router as admin_router
 from routers.upload import router as upload_router
+from routers.bridge import router as bridge_router
 
 app.include_router(ocr_router)
 app.include_router(analyze_router)
 app.include_router(whatsapp_router)
+app.include_router(whatsapp_router, prefix="/api/v1")
 app.include_router(admin_router)
 app.include_router(upload_router)
+app.include_router(bridge_router)

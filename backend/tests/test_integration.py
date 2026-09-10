@@ -52,6 +52,26 @@ async def run_all_tests():
         print(f"Analyze invalid MIME: status {res.status_code}")
         assert res.status_code == 400
 
+        # WhatsApp test-chat endpoint
+        wa_payload = {"sender": "integration_test", "message": "Apakah Fu Zi aman?"}
+        wa_res = await client.post("/api/v1/whatsapp/test-chat", json=wa_payload)
+        print(f"WhatsApp test-chat: status {wa_res.status_code}")
+        assert wa_res.status_code == 200
+        assert wa_res.json()["status"] == "success"
+        print("WhatsApp test-chat: PASS")
+
+        # Bridge session endpoint
+        bridge_res = await client.post("/api/v1/bridge/session")
+        print(f"Bridge create session: status {bridge_res.status_code}")
+        assert bridge_res.status_code == 200
+        session_id = bridge_res.json()["session_id"]
+        assert session_id.startswith("fm_")
+
+        bridge_st = await client.get(f"/api/v1/bridge/{session_id}/status")
+        assert bridge_st.status_code == 200
+        assert bridge_st.json()["status"] == "waiting"
+        print("Bridge session status check: PASS")
+
     print("--- ALL INTEGRATION TESTS PASSED! ---")
 
 if __name__ == "__main__":

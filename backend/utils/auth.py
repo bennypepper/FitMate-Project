@@ -7,23 +7,27 @@ Post-PIMNAS: migrate to httpOnly cookies + refresh token rotation.
 
 from datetime import datetime, timedelta, timezone
 import jwt
-from passlib.context import CryptContext
+import bcrypt
 from fastapi import HTTPException, status, Depends
 from fastapi.security import HTTPBearer, HTTPAuthorizationCredentials
 
 from core.config import settings
 
-pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
-
 http_bearer = HTTPBearer()
 
 def verify_password(plain_password: str, hashed_password: str) -> bool:
     """Verify a plaintext password against a bcrypt hash."""
-    return pwd_context.verify(plain_password, hashed_password)
+    if not plain_password or not hashed_password:
+        return False
+    try:
+        return bcrypt.checkpw(plain_password.encode("utf-8"), hashed_password.encode("utf-8"))
+    except Exception:
+        return False
 
 def get_password_hash(password: str) -> str:
-    """Hash a password with bcrypt. Use this once to generate ADMIN_PASSWORD_HASH for .env."""
-    return pwd_context.hash(password)
+    """Hash a password with bcrypt (12 salt rounds)."""
+    salt = bcrypt.gensalt(rounds=12)
+    return bcrypt.hashpw(password.encode("utf-8"), salt).decode("utf-8")
 
 def create_access_token(subject: str) -> str:
     """
@@ -73,3 +77,14 @@ def get_current_admin(
         )
     except jwt.InvalidTokenError:
         raise credentials_exception
+
+if __name__ == "__main__":
+    import sys
+    if len(sys.argv) > 2 and sys.argv[1] == "hash":
+        hashed = get_password_hash(sys.argv[2])
+        print(f"Bcrypt Hash: {hashed}")
+    elif len(sys.argv) > 3 and sys.argv[1] == "verify":
+        is_valid = verify_password(sys.argv[2], sys.argv[3])
+        print(f"Valid: {is_valid}")
+    else:
+        print("Usage: python auth.py [hash <plain_password> | verify <plain_password> <hash>]")

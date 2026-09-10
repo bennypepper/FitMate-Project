@@ -72,11 +72,19 @@ class FallbackCollection:
                         break
             if match:
                 if projection:
-                    proj_doc = {}
-                    for pk, pv in projection.items():
-                        if pv and pk in doc:
-                            proj_doc[pk] = doc[pk]
-                    filtered.append(proj_doc)
+                    has_inclusion = any(v == 1 or v is True for k, v in projection.items() if k != "_id")
+                    if not has_inclusion:
+                        proj_doc = dict(doc)
+                        for pk, pv in projection.items():
+                            if not pv and pk in proj_doc:
+                                del proj_doc[pk]
+                        filtered.append(proj_doc)
+                    else:
+                        proj_doc = {}
+                        for pk, pv in projection.items():
+                            if (pv == 1 or pv is True) and pk in doc:
+                                proj_doc[pk] = doc[pk]
+                        filtered.append(proj_doc)
                 else:
                     filtered.append(dict(doc))
         return FallbackCursor(filtered)
@@ -92,6 +100,69 @@ class FallbackCollection:
             if match:
                 return dict(doc)
         return None
+
+    async def insert_one(self, document: dict):
+        new_doc = dict(document)
+        if "_id" not in new_doc:
+            new_doc["_id"] = str(len(self.data) + 1)
+        self.data.append(new_doc)
+        class InsertResult:
+            inserted_id = new_doc["_id"]
+        return InsertResult()
+
+    async def update_one(self, filter_query: dict, update: dict, upsert: bool = False):
+        target = None
+        for doc in self.data:
+            match = True
+            for k, v in filter_query.items():
+                if doc.get(k) != v:
+                    match = False
+                    break
+            if match:
+                target = doc
+                break
+
+        if target:
+            if "$set" in update:
+                target.update(update["$set"])
+            else:
+                target.update(update)
+            class UpdateResult:
+                matched_count = 1
+                modified_count = 1
+            return UpdateResult()
+        elif upsert:
+            new_doc = dict(filter_query)
+            if "$set" in update:
+                new_doc.update(update["$set"])
+            else:
+                new_doc.update(update)
+            await self.insert_one(new_doc)
+            class UpsertResult:
+                matched_count = 0
+                modified_count = 1
+            return UpsertResult()
+
+        class NoOpResult:
+            matched_count = 0
+            modified_count = 0
+        return NoOpResult()
+
+    async def delete_one(self, filter_query: dict):
+        for idx, doc in enumerate(self.data):
+            match = True
+            for k, v in filter_query.items():
+                if doc.get(k) != v:
+                    match = False
+                    break
+            if match:
+                self.data.pop(idx)
+                class DeleteResult:
+                    deleted_count = 1
+                return DeleteResult()
+        class DeleteZero:
+            deleted_count = 0
+        return DeleteZero()
 
 
 class FallbackDatabase:
