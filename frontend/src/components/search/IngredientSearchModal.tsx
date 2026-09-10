@@ -213,7 +213,10 @@ export default function IngredientSearchModal({
                 className="absolute right-3.5 top-3.5 text-ink-faint hover:text-ink transition-colors text-xs cursor-pointer p-1"
                 aria-label="Hapus pencarian"
               >
-                ✕
+                <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+                  <line x1="18" y1="6" x2="6" y2="18" />
+                  <line x1="6" y1="6" x2="18" y2="18" />
+                </svg>
               </button>
             )}
           </div>
@@ -238,7 +241,12 @@ export default function IngredientSearchModal({
                   : "bg-danger-tint/30 text-danger-deep border border-danger/20 hover:bg-danger-tint/60"
               }`}
             >
-              <span>⚠️ Berisiko / Toksik ({totalToxic})</span>
+              <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.4" strokeLinecap="round" strokeLinejoin="round">
+                <path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z" />
+                <line x1="12" y1="9" x2="12" y2="13" />
+                <line x1="12" y1="17" x2="12.01" y2="17" />
+              </svg>
+              <span>Berisiko / Toksik ({totalToxic})</span>
             </button>
             <button
               onClick={() => setFilterType("safe")}
@@ -248,7 +256,10 @@ export default function IngredientSearchModal({
                   : "bg-trust-tint/40 text-trust-deep border border-trust/20 hover:bg-trust-tint/70"
               }`}
             >
-              <span>✅ Aman / Suplemen ({totalSafe})</span>
+              <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.4" strokeLinecap="round" strokeLinejoin="round">
+                <polyline points="20 6 9 17 4 12" />
+              </svg>
+              <span>Aman / Suplemen ({totalSafe})</span>
             </button>
           </div>
         </div>
@@ -256,8 +267,12 @@ export default function IngredientSearchModal({
         {/* Results / Default List */}
         <div className="flex-1 overflow-y-auto p-4 sm:p-6 space-y-3">
           {loading && (
-            <div className="py-12 text-center text-ink-soft text-sm">
-              <span className="inline-block animate-spin mr-2">⏳</span> Mencari bahan herbal...
+            <div className="py-12 text-center text-ink-soft text-sm flex items-center justify-center gap-2">
+              <svg className="animate-spin h-4 w-4 text-trust" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
+                <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z" />
+              </svg>
+              <span>Mencari bahan herbal...</span>
             </div>
           )}
 

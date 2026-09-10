@@ -98,13 +98,13 @@ _EMERGENCY_PATTERN = re.compile(
 )
 
 EMERGENCY_RESPONSE = (
-    "🚨 *DARURAT MEDIS: SEGERA CARI PERTOLONGAN*\n\n"
+    "[DARURAT MEDIS] *Segera Cari Pertolongan Medis*\n\n"
     "Gejala yang kamu sebutkan bisa mengancam jiwa. Jangan menunggu, segera ambil tindakan sekarang:\n\n"
-    "📞 *119*: SPGDT / Ambulans Nasional _(gratis, 24 jam)_\n"
-    "🏥 Pergi ke *IGD rumah sakit terdekat* sekarang juga\n\n"
+    "• *119*: SPGDT / Layanan Ambulans Nasional _(bebas pulsa, 24 jam)_\n"
+    "• Pergi ke *IGD rumah sakit terdekat* sekarang juga\n\n"
     "Hentikan konsumsi produk apapun sementara waktu dan bawa ke tenaga medis untuk diidentifikasi.\n\n"
     "_FitMate adalah program edukasi otomatis dan tidak dapat menangani keadaan darurat medis. "
-    "Keselamatanmu adalah prioritas utama._ ❤️"
+    "Keselamatanmu adalah prioritas utama._"
 )
 
 def _build_bko_warning(substance_info: dict) -> str:
@@ -112,15 +112,15 @@ def _build_bko_warning(substance_info: dict) -> str:
     risk = substance_info["risk_summary_id"]
     cat = substance_info["category_name_id"]
     return (
-        f"⚠️ *PERINGATAN: BKO Terdeteksi ({name})*\n\n"
+        f"[PERINGATAN] *Bahan Kimia Obat (BKO) Terdeteksi ({name})*\n\n"
         f"*{name}* adalah bahan kimia obat keras kategori *{cat}*.\n\n"
-        f"❌ Keberadaannya dalam produk herbal atau TCM adalah *ILEGAL* dan sangat berbahaya:\n"
+        f"Keberadaannya dalam produk herbal atau TCM adalah *ILEGAL* dan sangat berbahaya:\n"
         f"• *Risiko kesehatan:* {risk}\n"
         f"• Dosis tidak terkontrol, jauh lebih berbahaya dibanding obat resep yang diawasi dokter\n"
         f"• Merupakan pemalsuan produk yang melanggar regulasi BPOM\n\n"
-        f"🔴 *Hentikan konsumsi produk ini segera.*\n\n"
-        f"📋 Laporkan ke BPOM: *1500-533* atau _cekbpom.pom.go.id_\n\n"
-        f"⚕️ _Ini adalah informasi keselamatan berbasis regulasi, bukan saran medis personal._"
+        f"*Hentikan konsumsi produk ini segera.*\n\n"
+        f"Laporkan ke Contact Center BPOM: *1500-533* atau _cekbpom.pom.go.id_\n\n"
+        f"_Ini adalah informasi keselamatan berbasis regulasi publik BPOM, bukan saran medis personal._"
     )
 
 def _build_bko_soft_warning(substance_info: dict) -> str:
@@ -129,38 +129,38 @@ def _build_bko_soft_warning(substance_info: dict) -> str:
     cat = substance_info["category_name_id"]
     return (
         f"\n\n---\n"
-        f"💡 *Catatan penting:* *{name}* adalah {cat} yang hanya boleh digunakan di bawah pengawasan dokter. "
+        f"[Catatan Penting] *{name}* adalah {cat} yang hanya boleh digunakan di bawah pengawasan dokter. "
         f"*Keberadaannya dalam produk herbal atau TCM adalah ilegal* dan merupakan tanda pemalsuan berbahaya. "
         f"Jika kamu menemukan bahan ini pada label produk herbal, segera hentikan konsumsi dan laporkan ke BPOM (1500-533)."
     )
 
 CLARIFICATION_RESPONSE = (
-    "Hmm, saya mendeteksi nama bahan kimia obat di pesanmu, tapi saya kurang yakin konteksnya. 🤔\n\n"
+    "Sistem mendeteksi nama bahan kimia obat di pesanmu, tetapi konteksnya belum jelas.\n\n"
     "Bisa ceritakan lebih jelas:\n"
     "• Apakah bahan ini *tertera di label produk herbal/TCM* yang kamu punya?\n"
     "• Atau kamu sedang ingin belajar tentang bahan tersebut secara umum?\n\n"
-    "Dengan begitu saya bisa kasih jawaban yang tepat untuk situasimu ya! 🌿"
+    "Dengan begitu sistem bisa memberikan informasi yang sesuai dengan situasimu."
 )
 
 OUT_OF_SCOPE_STATIC = (
-    "Hei! Saya FitMate, asisten khusus untuk keamanan bahan herbal & TCM. 🌿\n\n"
-    "Pertanyaan itu di luar area keahlian saya ya. Saya bisa bantu:\n"
+    "Halo! Saya FitMate, asisten bot untuk catatan keamanan bahan herbal dan TCM.\n\n"
+    "Pertanyaan itu di luar cakupan sistem kami. Saya dapat membantu:\n"
     "• Cek keamanan bahan/produk TCM atau herbal\n"
-    "• Info manfaat & kontraindikasi bahan TCM\n"
-    "• Pertanyaan seputar kesehatan & obat tradisional\n\n"
-    "Ada bahan herbal atau produk TCM yang ingin kamu cek keamanannya? 🌿"
+    "• Info manfaat dan kontraindikasi bahan TCM\n"
+    "• Pertanyaan seputar catatan kesehatan dan ramuan tradisional\n\n"
+    "Ada bahan herbal atau produk TCM yang ingin kamu cek keamanannya?"
 )
 
 OUT_OF_SCOPE_TERSE = (
-    "Maaf, itu di luar spesialisasi saya nih. "
-    "Saya hanya bisa bantu soal keamanan bahan herbal & TCM. "
-    "Ada bahan yang ingin dicek? 🌿"
+    "Maaf, topik tersebut di luar cakupan sistem kami. "
+    "Sistem ini difokuskan untuk catatan keamanan bahan herbal dan TCM. "
+    "Ada bahan yang ingin dicek?"
 )
 
 OUT_OF_SCOPE_COOLDOWN = (
-    "Kamu sudah beberapa kali bertanya di luar topik saya. "
-    "Saya perlu fokus pada pertanyaan seputar herbal & TCM saja. "
-    "Silakan coba lagi dalam beberapa menit ya. 🌿\n\n"
+    "Kamu sudah beberapa kali mengirim pesan di luar topik layanan kami. "
+    "Sistem perlu fokus pada pertanyaan seputar herbal dan TCM saja. "
+    "Silakan coba kembali dalam beberapa menit.\n\n"
     "_FitMate hanya melayani pertanyaan keamanan bahan herbal dan TCM._"
 )
 

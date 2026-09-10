@@ -9,18 +9,18 @@ from dotenv import load_dotenv
 load_dotenv()
 TOKEN = os.getenv("HF_TOKEN", "")
 if not TOKEN:
-    print("❌ HF_TOKEN not set. Add HF_TOKEN=hf_... to backend/.env before deploying.")
+    print("[ERROR] HF_TOKEN not set. Add HF_TOKEN=hf_... to backend/.env before deploying.")
     sys.exit(1)
 REPO_ID = "benedictpepper/fitmate-api"
 
-print("🔥 Inisialisasi HuggingFace API...")
+print("[INFO] Inisialisasi HuggingFace API...")
 try:
     api = HfApi(token=TOKEN)
 except Exception as e:
-    print(f"Gagal menginisialisasi HfApi: {e}")
+    print(f"[ERROR] Gagal menginisialisasi HfApi: {e}")
     sys.exit(1)
 
-print(f"\n🚀 Sedang mengupload folder backend ke Space: {REPO_ID}")
+print(f"\n[UPLOAD] Sedang mengupload folder backend ke Space: {REPO_ID}")
 print("Ini akan memakan waktu beberapa detik...\n")
 try:
     api.upload_folder(
@@ -38,13 +38,13 @@ try:
             "*.log",
             "deploy_hf.py"
         ],
-        commit_message="🚀 Automated deployment backend API by VS Code AI"
+        commit_message="Automated deployment backend API by VS Code AI"
     )
-    print("✅ Semua file dan kode berhasil di-upload ke Hugging Face Spaces!")
+    print("[OK] Semua file dan kode berhasil di-upload ke Hugging Face Spaces!")
 except Exception as e:
-    print(f"❌ Error saat upload folder: {e}")
+    print(f"[ERROR] Error saat upload folder: {e}")
 
-print("\n🔐 Sedang menginjeksi rahasia (Environment Secrets) dari .env ke server...")
+print("\n[SECRET] Sedang menginjeksi rahasia (Environment Secrets) dari .env ke server...")
 env_path = r"C:\Users\Benny Pepper\Documents\GitHub\FitMate-Project\backend\.env"
 if os.path.exists(env_path):
     with open(env_path, "r", encoding="utf-8") as f:
@@ -62,11 +62,11 @@ if os.path.exists(env_path):
                 try:
                     if len(val) > 0:
                         api.add_space_secret(repo_id=REPO_ID, key=key, value=val)
-                        print(f" - ✅ Secret tersimpan: {key}")
+                        print(f" - [OK] Secret tersimpan: {key}")
                 except Exception as e:
-                    print(f" - ❌ Error setting secret {key}: {e}")
+                    print(f" - [ERROR] Error setting secret {key}: {e}")
 else:
-    print("❌ File .env tidak ditemukan, melewati tahap set rahasia.")
+    print("[WARN] File .env tidak ditemukan, melewati tahap set rahasia.")
 
-print("\n🎉 DEPLOYMENT SELESAI!")
+print("\n[SUCCESS] DEPLOYMENT SELESAI!")
 print("Server Backend-mu sekarang sedang di-Build secara live di Docker HuggingFace.")

@@ -217,8 +217,13 @@ export default function CameraViewfinder({ onCapture, onReset }: CameraViewfinde
             </div>
 
             {/* Bottom Tip Overlay */}
-            <div className="absolute bottom-4 inset-x-0 mx-auto max-w-max px-3.5 py-1 rounded-full bg-black/50 backdrop-blur-sm text-paper/80 text-[11px] pointer-events-none hidden sm:block">
-              💡 Pastikan pencahayaan cukup dan teks obat terlihat tajam
+            <div className="absolute bottom-4 inset-x-0 mx-auto max-w-max px-3.5 py-1 rounded-full bg-black/50 backdrop-blur-sm text-paper/80 text-[11px] pointer-events-none hidden sm:flex items-center gap-1.5">
+              <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round" className="text-[#60C4AB]">
+                <circle cx="12" cy="12" r="10" />
+                <line x1="12" y1="16" x2="12" y2="12" />
+                <line x1="12" y1="8" x2="12.01" y2="8" />
+              </svg>
+              <span>Pastikan pencahayaan cukup dan teks obat terlihat tajam</span>
             </div>
           </>
         )}

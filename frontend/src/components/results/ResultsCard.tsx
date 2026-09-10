@@ -30,7 +30,7 @@ export default function ResultsCard({
   const generateWhatsAppMessage = () => {
     let msg = "Halo Bot FitMate, saya baru saja memindai label kemasan dan ingin menanyakan informasi tentang bahan berikut:\n\n";
     if (toxicItems.length > 0) {
-      msg += `⚠️ BAHAN BERISIKO (${toxicItems.length}):\n`;
+      msg += `[PERINGATAN BERISIKO] (${toxicItems.length} bahan):\n`;
       toxicItems.forEach((item, idx) => {
         const name = item.matched_mandarin || item.english_name || item.indonesian_name || item.detected_text;
         const desc = item.description ? ` (${item.description})` : "";
@@ -38,14 +38,14 @@ export default function ResultsCard({
       });
       msg += "\nBisa tolong jelaskan rincian efek atau catatan keamanannya?";
     } else if (safeItems.length > 0) {
-      msg += `✅ BAHAN HERBAL TERDETEKSI (${safeItems.length}):\n`;
+      msg += `[BAHAN HERBAL TERDETEKSI] (${safeItems.length} bahan):\n`;
       safeItems.forEach((item, idx) => {
         const name = item.matched_mandarin || item.english_name || item.indonesian_name || item.detected_text;
         msg += `${idx + 1}. ${name}\n`;
       });
       msg += "\nBisa tolong jelaskan manfaat umum dan hal yang perlu diperhatikan?";
     } else {
-      msg += "ℹ️ Tidak terdeteksi komposisi herbal TCM pada kemasan yang dipindai.\n";
+      msg += "[CATATAN] Tidak terdeteksi komposisi herbal TCM pada kemasan yang dipindai.\n";
       msg += "Apakah bahan pada foto saya termasuk obat tradisional yang ada di basis data?";
     }
     return msg;

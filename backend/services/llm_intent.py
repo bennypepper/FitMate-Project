@@ -277,21 +277,21 @@ async def generate_safety_reply(
         if safety_verdict == "toxic":
             name = db_match.get("indonesian_name", ingredient_name) if db_match else ingredient_name
             return (
-                f"⚠️ *{name}* dikategorikan berisiko berdasarkan database kami. "
-                "Tolong konsultasikan dengan dokter sebelum mengonsumsi ya. 🏥"
+                f"[Peringatan] *{name}* dikategorikan berisiko berdasarkan database kami. "
+                "Tolong konsultasikan dengan dokter sebelum mengonsumsi ya."
             )
         elif safety_verdict == "safe":
             name = db_match.get("indonesian_name", ingredient_name) if db_match else ingredient_name
             return (
-                f"✅ *{name}* tergolong aman berdasarkan database kami. "
+                f"[Aman] *{name}* tergolong aman berdasarkan database kami. "
                 "Tetap konsultasi dengan dokter untuk kondisi kesehatanmu ya. "
-                "Ada bahan lain yang ingin dicek? 🌿"
+                "Ada bahan lain yang ingin dicek?"
             )
         else:
             return (
                 f"Hmm, bahan *{ingredient_name}* belum ada di database kami. "
                 "Coba ketik dengan nama Indonesia, Mandarin, atau Pinyin-nya, "
-                "siapa tahu ada di sana. 🌿"
+                "siapa tahu ada di sana."
             )
 
 async def generate_chat_reply(message_text: str, history: list[dict] | None = None, model: str | None = None) -> str:
@@ -336,8 +336,8 @@ async def generate_chat_reply(message_text: str, history: list[dict] | None = No
     except Exception as e:
         print(f"[OpenRouter] generate_chat_reply error: {e}")
         return (
-            "Hai! Saya FitMate 😊 Bisa bantu cek keamanan bahan herbal atau TCM yang ingin kamu ketahui. "
-            "Ketik saja nama bahannya! 🌿"
+            "Hai! Saya FitMate, asisten bot untuk cek catatan keamanan bahan herbal dan TCM. "
+            "Ketik saja nama bahan yang ingin kamu ketahui!"
         )
 
 async def generate_ingredient_info_reply(
@@ -356,7 +356,7 @@ async def generate_ingredient_info_reply(
             f"Nama Mandarin: {db_match.get('mandarin_name', '-')}\n"
             f"Nama Latin: {db_match.get('latin_name', '-')}\n"
             f"Deskripsi: {db_match.get('description', 'Tidak tersedia')}\n"
-            f"Status keamanan: {'⚠️ Terindikasi berbahaya' if db_match.get('is_toxic') else '✅ Umumnya aman'}\n"
+            f"Status keamanan: {'[Peringatan] Terindikasi berisiko' if db_match.get('is_toxic') else '[Aman] Umumnya aman'}\n"
             f"Kontraindikasi: {db_match.get('contraindications', 'Tidak ada data khusus')}\n"
         )
     else:
@@ -388,5 +388,5 @@ async def generate_ingredient_info_reply(
         name = db_match.get("indonesian_name", ingredient_name) if db_match else ingredient_name
         return (
             f"Maaf, saya tidak bisa memuat info tentang *{name}* saat ini. "
-            "Coba tanya lagi ya! 🌿"
+            "Coba tanyakan kembali beberapa saat lagi."
         )

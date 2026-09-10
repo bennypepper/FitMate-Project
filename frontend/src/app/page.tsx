@@ -185,8 +185,10 @@ function HomeContent() {
             {/* Sync Success Header */}
             <div className="w-full bg-trust-tint border border-trust/40 rounded-[20px] p-5 mb-5 flex items-center justify-between gap-3 shadow-xs">
               <div className="flex items-center gap-3">
-                <div className="w-10 h-10 rounded-full bg-white text-trust-deep flex items-center justify-center text-xl font-bold shadow-xs">
-                  ✓
+                <div className="w-10 h-10 rounded-full bg-white text-trust-deep flex items-center justify-center shadow-xs">
+                  <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+                    <polyline points="20 6 9 17 4 12" />
+                  </svg>
                 </div>
                 <div>
                   <h3 className="font-serif text-[15px] font-bold text-ink">
@@ -230,7 +232,10 @@ function HomeContent() {
           <div className="w-full max-w-md flex flex-col items-center">
             {/* Bridge Info Banner */}
             <div className="w-full mb-3 p-3 bg-trust-tint border border-trust/30 rounded-[14px] flex items-center gap-2.5 text-trust-deep text-[12px] font-medium">
-              <span className="text-base">📱</span>
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="text-trust-deep flex-shrink-0">
+                <rect x="5" y="2" width="14" height="20" rx="2" ry="2" />
+                <line x1="12" y1="18" x2="12.01" y2="18" />
+              </svg>
               <span>Jembatan Aktif: Foto akan otomatis disinkronkan ke komputer &amp; HP ini.</span>
             </div>
 
@@ -494,7 +499,10 @@ function HomeContent() {
                       className="w-full flex items-center justify-between px-3.5 py-2.5 rounded-[12px] bg-paper-deep/60 hover:bg-paper-deep text-ink-soft hover:text-ink text-[12.5px] font-medium transition cursor-pointer border border-line/40"
                     >
                       <div className="flex items-center gap-2">
-                        <span className="text-base">📱</span>
+                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="text-trust flex-shrink-0">
+                          <rect x="5" y="2" width="14" height="20" rx="2" ry="2" />
+                          <line x1="12" y1="18" x2="12.01" y2="18" />
+                        </svg>
                         <span>Ingin foto pakai kamera HP? (Jembatan QR)</span>
                       </div>
                       <span className="text-ink-faint text-[11px] font-semibold">
@@ -727,7 +735,11 @@ function HomeContent() {
           {/* Medical Disclaimer Banner */}
           <div className="mt-8 bg-paper-deep border border-line rounded-[16px] p-6 flex flex-col md:flex-row items-start gap-4">
             <div className="w-10 h-10 rounded-full bg-line flex items-center justify-center flex-shrink-0 text-ink">
-              ⚕️
+              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z" />
+                <line x1="12" y1="8" x2="12" y2="14" />
+                <line x1="9" y1="11" x2="15" y2="11" />
+              </svg>
             </div>
             <div>
               <h5 className="font-bold text-[13px] text-ink uppercase tracking-wider mb-1">
@@ -760,7 +772,10 @@ export default function HomePage() {
     <Suspense
       fallback={
         <div className="w-full min-h-[60vh] flex items-center justify-center p-8 text-ink-soft text-sm">
-          <span className="inline-block animate-spin mr-2">🌿</span>
+          <svg className="animate-spin inline-block h-5 w-5 mr-2 text-trust" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+            <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
+            <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z" />
+          </svg>
           Memuat FitMate TCM...
         </div>
       }

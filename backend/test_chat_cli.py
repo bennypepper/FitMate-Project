@@ -35,14 +35,14 @@ def select_model():
 
 def main():
     print("========================================")
-    print("🌿 FitMate Bot CLI Tester 🌿")
+    print("FitMate Bot CLI Tester")
     print("========================================")
 
     selected_model = select_model()
     model_display = selected_model if selected_model else "Default Config (.env)"
 
     print("\n========================================")
-    print(f"✅ Active Model: {model_display}")
+    print(f"[Active Model] {model_display}")
     print("Ketik pesan dan tekan Enter.")
     print("Ketik 'quit' atau 'exit' untuk berhenti.")
     print("Pastikan server FastAPI berjalan di terminal lain!")
@@ -58,7 +58,7 @@ def main():
             if not user_msg.strip():
                 continue
 
-            print(f"⏳ Evaluasi menggunakan {model_display}...")
+            print(f"[Evaluasi] Menggunakan {model_display}...")
 
             payload = {"sender": sender, "message": user_msg}
             if selected_model:
@@ -82,7 +82,7 @@ def main():
 
                 ext = data.get('ingredient_extracted')
                 ingredient_display = ext if ext else "None"
-                print(f"\n  (🤖 Debug: Intent='{data.get('intent')}' | Ingredient='{ingredient_display}')")
+                print(f"\n  (Debug: Intent='{data.get('intent')}' | Ingredient='{ingredient_display}')")
             else:
                 print(f"\n[Error]: Server respond with status code {response.status_code}")
                 print(response.text)
@@ -91,7 +91,7 @@ def main():
             print(f"\n[Error]: Cannot connect to backend.")
             print("Make sure your FastAPI server is running! (e.g. 'uvicorn main:app --reload')")
         except KeyboardInterrupt:
-            print("\nBot tester closed. Goodbye! 👋")
+            print("\nBot tester closed. Goodbye.")
             break
 
 if __name__ == "__main__":

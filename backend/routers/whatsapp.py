@@ -45,7 +45,7 @@ MAX_HISTORY_USER_BUBBLES = 15
 
 _welcomed_set: set[str] = set()
 
-DISCLAIMER = "⚕️ *Disclaimer:* Informasi ini bukan pengganti saran medis profesional.\n\n"
+DISCLAIMER = "*Disclaimer Medis:* Informasi ini bukan pengganti saran medis profesional.\n\n"
 
 _offtopic_counter: TTLCache = TTLCache(maxsize=1000, ttl=7200)
 
@@ -56,13 +56,13 @@ OFFTOPIC_TERSE_LIMIT = 3
 OFFTOPIC_COOLDOWN_LIMIT = 5
 
 WELCOME_MESSAGE = (
-    "Halo! Saya *FitMate* 🌿: asisten bot untuk cek catatan keamanan produk herbal dan TCM kamu.\n\n"
+    "Halo! Saya *FitMate*: asisten bot untuk cek catatan keamanan produk herbal dan TCM kamu.\n\n"
     "Silakan ketik:\n"
     "• Nama bahan atau produk: untuk cek catatan keamanan\n"
     "• _\"Apakah [bahan] aman untuk [kondisi]?\"_: untuk info interaksi atau pantangan\n"
     "• _\"Apa itu [bahan]?\"_: untuk info deskripsi dan kegunaan\n\n"
     "Catatan: Jawaban dirangkum otomatis oleh asisten bot berbasis kompilasi data publikasi resmi BPOM dan literatur herbal. "
-    "Sistem ini berstatus prototipe riset dan bukan pengganti diagnosis medis dokter. 💊"
+    "Sistem ini berstatus prototipe riset dan bukan pengganti diagnosis medis dokter."
 )
 
 def _validate_twilio_signature(request_url: str, params: dict, signature: str) -> bool:
@@ -307,7 +307,7 @@ async def _process_message(sender: str, text: str):
                     history=history,
                 )
 
-                llm_reply = re.sub(r"(?i)(?:⚕️\s*)?(?:\*?Disclaimer\*?:?)\s*.*?(?:\n+|$)", "", llm_reply).strip()
+                llm_reply = re.sub(r"(?i)(?:\[Catatan Medis\]|\*?Disclaimer(?: Medis)?\*?:?)\s*.*?(?:\n+|$)", "", llm_reply).strip()
                 reply = DISCLAIMER + llm_reply
 
         if bko_soft_warning and reply:
@@ -322,8 +322,8 @@ async def _process_message(sender: str, text: str):
         print(f"[Bot ERROR] {e}")
         traceback.print_exc()
         error_reply = (
-            "Aduh, ada error nih dari sisi saya. Coba kirim lagi ya! 🙏\n"
-            "Kalau masih error, tunggu sebentar dan coba lagi."
+            "Aduh, ada kendala teknis dari sistem kami. Silakan kirim pesan kembali beberapa saat lagi.\n"
+            "Jika masih terjadi kendala, silakan coba kembali nanti."
         )
         _append_history(sender, "assistant", error_reply)
         try:
@@ -351,36 +351,36 @@ async def _handle_multi_ingredient(ingredient_list: list[str], db) -> str:
         )
 
         if safety_verdict == "toxic":
-            emoji = "⚠️"
+            tag = "[Berisiko]"
             verdict_text = "Berbahaya/Toksik"
             has_toxic = True
         elif safety_verdict == "safe":
-            emoji = "✅"
+            tag = "[Aman]"
             verdict_text = "Aman"
         else:
-            emoji = "❓"
+            tag = "[Tidak Terdaftar]"
             verdict_text = "Tidak ada di database kami"
             has_unknown = True
 
-        results.append(f"{emoji} *{display_name}*: {verdict_text}")
+        results.append(f"• {tag} *{display_name}*: {verdict_text}")
 
     if not results:
         return (
             f"{DISCLAIMER}"
             "Hmm, tidak ada bahan yang ketemu di database kami. "
-            "Coba ketik satu per satu ya, dengan nama Indonesia, Mandarin, atau Pinyin. 🌿"
+            "Coba ketik satu per satu dengan nama Indonesia, Mandarin, atau Pinyin."
         )
 
     lines = "\n".join(results)
-    reply = f"{DISCLAIMER}🔍 *Hasil cek {len(results)} bahan:*\n\n{lines}\n\n"
+    reply = f"{DISCLAIMER}[Pencarian Bahan] *Hasil cek {len(results)} bahan:*\n\n{lines}\n\n"
 
     if has_toxic:
-        reply += "⚠️ *Ada bahan berisiko di daftar ini.* Sebaiknya konsultasikan dengan dokter sebelum dikonsumsi.\n\n"
+        reply += "[Peringatan] *Ada bahan berisiko di daftar ini.* Sebaiknya konsultasikan dengan dokter sebelum dikonsumsi.\n\n"
 
     if has_unknown:
         reply += "Beberapa bahan tidak ada di database kami, silakan coba tanya satu per satu untuk hasil lebih rinci.\n\n"
 
-    reply += "Ada yang ingin kamu tahu lebih lanjut tentang salah satunya? 🌿"
+    reply += "Ada yang ingin kamu tahu lebih lanjut tentang salah satunya?"
     return reply
 
 class TestChatRequest(BaseModel):
@@ -506,7 +506,7 @@ async def test_chat(req: TestChatRequest, db=Depends(get_db)):
                 history=history,
                 model=model_override,
             )
-            llm_reply = re.sub(r"(?i)(?:⚕️\s*)?(?:\*?Disclaimer\*?:?)\s*.*?(?:\n+|$)", "", llm_reply).strip()
+            llm_reply = re.sub(r"(?i)(?:\[Catatan Medis\]|\*?Disclaimer(?: Medis)?\*?:?)\s*.*?(?:\n+|$)", "", llm_reply).strip()
             reply = DISCLAIMER + llm_reply
 
     if bko_soft_warning and reply:

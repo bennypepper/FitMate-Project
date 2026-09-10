@@ -102,7 +102,7 @@ export default function WhatsAppFAB() {
             `}
           >
             <span className="text-[11px] font-semibold text-on-surface">
-              Tanya Bot TCM 🌿
+              Tanya Bot TCM
             </span>
             <button
               onClick={() => setNudgeOpen(false)}
@@ -152,7 +152,7 @@ export default function WhatsAppFAB() {
                   <WaIcon size={14} />
                 </div>
                 <div className="bg-slate-50 rounded-2xl rounded-tl-sm px-3 py-2 text-xs text-on-surface leading-relaxed border border-slate-100">
-                  Ada pertanyaan tentang bahan TCM yang baru Anda pindai? 🌿
+                  Ada pertanyaan tentang bahan TCM yang baru Anda pindai?
                   <br />
                   <span className="text-on-surface-variant">
                     Tanyakan langsung kepada asisten bot kami.

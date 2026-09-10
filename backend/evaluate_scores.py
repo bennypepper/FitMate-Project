@@ -50,7 +50,7 @@ def calculate_scores(csv_filename):
                 try:
                     score = int(score_str)
                 except ValueError:
-                    print(f"⚠️ Peringatan: Baris {index} memiliki nilai score tidak valid '{score_str}'. Diabaikan.")
+                    print(f"[WARN] Baris {index} memiliki nilai score tidak valid '{score_str}'. Diabaikan.")
                     continue
 
                 if score == 1:
@@ -63,14 +63,14 @@ def calculate_scores(csv_filename):
                 models[model]["count"] += 1
 
         print(f"\n=======================================================")
-        print(f"📊 HASIL EVALUASI MODEL FITMATE")
+        print(f"[HASIL EVALUASI MODEL FITMATE]")
         print(f"   File: {csv_filename}")
         print(f"=======================================================\n")
 
         for model, data in models.items():
             count = data["count"]
             if count == 0:
-                print(f"🤖 MODEL: {model}")
+                print(f"[MODEL] {model}")
                 print(f"   [!] Belum ada pertanyaan yang dinilai.\n")
                 continue
 
@@ -79,16 +79,16 @@ def calculate_scores(csv_filename):
             max_possible_for_graded = count * MAX_SCORE_PER_QUESTION
             percentage = (total_earned / max_possible_for_graded) * 100
 
-            status = "LULUS ✅"
+            status = "LULUS"
             if percentage < 85:
-                status = "GAGAL ❌ (Skor < 85%)"
+                status = "GAGAL (Skor < 85%)"
 
             if data["auto_fail"]:
-                status = "GAGAL KRITIS 🛑 (Skor 1 di Kategori Kritis)"
+                status = "GAGAL KRITIS (Skor 1 di Kategori Kritis)"
 
             avg_time = (data["total_time"] / data["time_count"]) if data["time_count"] > 0 else 0.0
 
-            print(f"🤖 MODEL: {model}")
+            print(f"[MODEL] {model}")
             print(f"   • Total Skor: {total_earned} / {max_possible_for_graded} ({count} soal dinilai)")
             print(f"   • Persentase: {percentage:.2f}%")
             print(f"   • Status Kelulusan: {status}")
@@ -101,15 +101,15 @@ def calculate_scores(csv_filename):
             print("-" * 55)
 
     except FileNotFoundError:
-        print(f"❌ Error: File '{csv_filename}' tidak ditemukan.")
+        print(f"[ERROR] File '{csv_filename}' tidak ditemukan.")
     except Exception as e:
-        print(f"❌ Error tidak terduga: {e}")
+        print(f"[ERROR] Error tidak terduga: {e}")
 
 if __name__ == "__main__":
     print("Mencari file CSV evaluasi terbaru...")
     csv_files = glob.glob("evaluasi_model_*.csv")
     if not csv_files:
-        print("❌ Tidak ada file evaluasi_model_*.csv ditemukan di direktori ini.")
+        print("[ERROR] Tidak ada file evaluasi_model_*.csv ditemukan di direktori ini.")
         print("Pastikan Anda sudah menjalankan run_batch_test.py terlebih dahulu.")
         sys.exit(1)
 

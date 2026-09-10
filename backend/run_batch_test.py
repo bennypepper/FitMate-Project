@@ -171,7 +171,7 @@ QUESTIONS = [
 
 async def run_tests():
     print("=========================================================")
-    print(f"🤖 MEMULAI FITMATE BATCH TESTING")
+    print(f"[TEST] MEMULAI FITMATE BATCH TESTING")
     print(f"   Model: {len(MODELS)} | Pertanyaan: {len(QUESTIONS)} | Total API Calls: {len(MODELS) * len(QUESTIONS)}")
     print("=========================================================\n")
     print("Mengingatkan: Pastikan FastAPI Server (main.py) sudah berjalan.")
@@ -191,7 +191,7 @@ async def run_tests():
         async with httpx.AsyncClient(timeout=45.0) as client:
             row_num = 1
             for model in MODELS:
-                print(f"\n[🚀] MENGUJI MODEL: {model}")
+                print(f"\n[TEST] MENGUJI MODEL: {model}")
                 print("-" * 55)
 
                 for q in QUESTIONS:
@@ -205,7 +205,7 @@ async def run_tests():
                         "model": model
                     }
 
-                    print(f"  ➜ [{q['id']}] {q['prompt'][:35]}... ", end="", flush=True)
+                    print(f"  -> [{q['id']}] {q['prompt'][:35]}... ", end="", flush=True)
 
                     try:
                         start_time = time.time()
@@ -218,7 +218,7 @@ async def run_tests():
                             actual_ingredient = data.get("ingredient_extracted", "")
                             actual_reply = data.get("reply", "")
 
-                            print(f"✅ ({elapsed:.1f}s)")
+                            print(f"[OK] ({elapsed:.1f}s)")
 
                             writer.writerow([
                                 row_num, q["id"], q["category"], model,
@@ -227,7 +227,7 @@ async def run_tests():
                                 actual_reply, "", ""
                             ])
                         else:
-                            print(f"❌ (HTTP {response.status_code})")
+                            print(f"[FAIL] (HTTP {response.status_code})")
                             writer.writerow([
                                 row_num, q["id"], q["category"], model,
                                 f"{elapsed:.2f}", q["prompt"], q["expected"],
@@ -237,7 +237,7 @@ async def run_tests():
 
                     except Exception as e:
                         elapsed_err = (time.time() - start_time) if 'start_time' in locals() else 0.0
-                        print(f"❌ (Error: {str(e)[:40]}...)")
+                        print(f"[ERROR] (Error: {str(e)[:40]}...)")
                         writer.writerow([
                             row_num, q["id"], q["category"], model,
                             f"{elapsed_err:.2f}", q["prompt"], q["expected"],
@@ -250,8 +250,8 @@ async def run_tests():
                     await asyncio.sleep(1.0)
 
     print(f"\n=========================================================")
-    print(f"🎉 SUKSES! Pengujian batch selesai.")
-    print(f"📂 Hasil diekspor ke file: {filename}")
+    print(f"[SUKSES] Pengujian batch selesai.")
+    print(f"[HASIL] File diekspor ke: {filename}")
     print(f"=========================================================")
     print("1. Buka file CSV tersebut di Microsoft Excel atau Google Sheets.")
     print("2. Evaluasi kolom 'Actual Reply' secara manual dengan rubrik.")

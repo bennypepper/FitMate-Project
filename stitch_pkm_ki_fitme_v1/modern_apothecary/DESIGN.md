@@ -5,7 +5,7 @@
 
 This design system moves away from the sterile, "app-like" feel of traditional health platforms toward a **High-End Editorial** experience. It blends the heritage of Traditional Chinese Medicine (TCM) with modern medical precision. 
 
-The aesthetic is built on **Intentional Asymmetry** and **Tonal Depth**. We avoid rigid, boxed-in layouts in favor of breathing room and layered surfaces. By utilizing high-contrast typography scales (the tension between the elegant serif and the functional sans-serif), we create an environment that feels authoritative yet deeply personal—like a bespoke prescription from a master practitioner.
+The aesthetic is built on **Intentional Asymmetry** and **Tonal Depth**. We avoid rigid, boxed-in layouts in favor of breathing room and layered surfaces. By utilizing high-contrast typography scales (the tension between the elegant serif and the functional sans-serif), we create an environment that feels authoritative yet deeply personal: like a bespoke prescription from a master practitioner.
 
 ---
 
@@ -24,7 +24,7 @@ The palette is rooted in deep cinnabar reds and medicinal golds, balanced by sof
 - *Implementation:* Place a `surface_container_low` card on a `surface` background to create a "ghost" boundary. This creates a more organic, premium feel that mimics fine stationery.
 
 ### Surface Hierarchy & Nesting
-Treat the UI as a series of physical layers—like stacked sheets of fine washi paper.
+Treat the UI as a series of physical layers, like stacked sheets of fine washi paper.
 - **Level 0 (Background):** `surface` (#FFF8F7)
 - **Level 1 (Sections):** `surface_container_low` (#FFF0EF)
 - **Level 2 (Cards/Interactives):** `surface_container` (#FFE9E7)
@@ -104,7 +104,7 @@ We eschew traditional "Material" drop shadows in favor of **Tonal Layering**.
 ---
 
 ## 7. Spacing Scale Reference
-- **Compact:** `2` (0.5rem / 8px) — For internal element padding.
-- **Standard:** `4` (1rem / 16px) — For component gutters.
-- **Editorial:** `8` (2rem / 32px) — For card spacing.
-- **Hero:** `20` (5rem / 80px) — For section transitions.
+- **Compact:** `2` (0.5rem / 8px): For internal element padding.
+- **Standard:** `4` (1rem / 16px): For component gutters.
+- **Editorial:** `8` (2rem / 32px): For card spacing.
+- **Hero:** `20` (5rem / 80px): For section transitions.

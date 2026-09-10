@@ -11,23 +11,23 @@ function buildCopyText(ingredients: any[]): string {
     return "Tidak ada bahan yang terdeteksi.";
   }
 
-  const lines: string[] = ["🔍 *Hasil Scan FitMate:*", "Bahan yang terdeteksi:", ""];
+  const lines: string[] = ["*Hasil Pindai FitMate TCM:*", "Bahan yang terdeteksi:", ""];
 
   for (const item of ingredients) {
     const name = item.indonesian_name || item.matched_mandarin || item.detected_text || "-";
-    const emoji =
+    const tag =
       item.category === "toxic" || item.category === "contraindicated"
-        ? "⚠️"
+        ? "[Berisiko]"
         : item.category === "safe"
-        ? "✅"
-        : "❓";
-    lines.push(`${emoji} ${name}`);
+        ? "[Aman]"
+        : "[Tidak Terdaftar]";
+    lines.push(`• ${name} ${tag}`);
   }
 
   lines.push("");
   lines.push(
     "Tolong bantu saya memahami lebih lanjut tentang bahan-bahan di atas. " +
-      "Apakah aman dikonsumsi? Ada kontraindikasi yang perlu diperhatikan?"
+      "Apakah aman dikonsumsi? Ada catatan yang perlu diperhatikan?"
   );
 
   return lines.join("\n");
@@ -144,9 +144,14 @@ export default function ScanResultCopy({ ingredients }: ScanResultCopyProps) {
 
         {/* Instruction */}
         <div className="px-6 pb-5 -mt-2">
-          <p className="font-body text-[11px] text-on-surface-variant text-center leading-relaxed">
-            💡 Salin pesan di atas, lalu kirimkan ke chatbot WhatsApp FitMate untuk konsultasi lebih lanjut tentang hasil scan Anda.
-          </p>
+          <div className="flex items-center justify-center gap-1.5 text-[11.5px] text-on-surface-variant text-center">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="text-trust flex-shrink-0">
+              <circle cx="12" cy="12" r="10" />
+              <line x1="12" y1="16" x2="12" y2="12" />
+              <line x1="12" y1="8" x2="12.01" y2="8" />
+            </svg>
+            <span>Salin pesan di atas, lalu kirimkan ke asisten bot WhatsApp FitMate untuk rincian lebih lanjut.</span>
+          </div>
         </div>
       </div>
     </div>
