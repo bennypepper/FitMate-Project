@@ -340,7 +340,7 @@ function HomeContent() {
                     >
                       <path d="M12 2l8 3v6c0 5-3.5 8.5-8 11-4.5-2.5-8-6-8-11V5z" />
                     </svg>
-                    Diverifikasi apoteker terdaftar
+                    Rujukan BPOM &amp; SymMap
                   </div>
 
                   <h1 className="font-serif font-bold text-[32px] md:text-[38px] leading-[1.2] text-ink mb-4 max-w-[520px]">
@@ -348,8 +348,7 @@ function HomeContent() {
                   </h1>
 
                   <p className="text-[14.5px] md:text-[15px] leading-[1.65] text-ink-soft mb-6 max-w-[480px]">
-                    FitMate memindai label komposisi, menerjemahkan aksara Hanzi, dan mencocokkannya
-                    dengan basis data 500 herbal &amp; toksisitas — memastikan produk aman tanpa bahan kimia obat atau logam berat.
+                    Pindai label komposisi obat tradisional China (TCM), terjemahkan aksara Hanzi, dan cocokkan kandungannya dengan daftar kompilasi resmi BPOM serta data toksisitas herbal.
                   </p>
 
                   {/* Primary Action Buttons: Standalone single-device workflow */}
@@ -414,7 +413,7 @@ function HomeContent() {
                       >
                         <polyline points="20 6 9 17 4 12" />
                       </svg>
-                      <span>Panduan rule-based tervalidasi, bukan tebakan AI</span>
+                      <span>Pencocokan aturan langsung dari monograf, bukan tebakan bebas</span>
                     </div>
                     <div className="flex items-center gap-2.5">
                       <svg
@@ -429,7 +428,7 @@ function HomeContent() {
                       >
                         <polyline points="20 6 9 17 4 12" />
                       </svg>
-                      <span>500 basis data bahan TCM &amp; toksisitas BPOM / FHI</span>
+                      <span>500 data bahan herbal dan zat berisiko dari BPOM serta SymMap</span>
                     </div>
                     <div className="flex items-center gap-2.5">
                       <svg
@@ -444,7 +443,7 @@ function HomeContent() {
                       >
                         <polyline points="20 6 9 17 4 12" />
                       </svg>
-                      <span>Lanjutkan konsultasi langsung via WhatsApp</span>
+                      <span>Tanya jawab seputar kandungan produk lewat bot WhatsApp</span>
                     </div>
                   </div>
                 </div>
@@ -551,10 +550,10 @@ function HomeContent() {
                     </svg>
                   </div>
                   <h5 className="font-semibold text-[13.5px] text-ink mb-1.5">
-                    Deteksi Toksisitas Berbasis Aturan
+                    Pencocokan Aturan Baku
                   </h5>
                   <p className="text-[12px] leading-relaxed text-ink-soft">
-                    Dicocokkan ke 500 basis data toksisitas &amp; herbal berlisensi dengan prinsip ketat zero-hallucination.
+                    Dicocokkan ke 500 daftar bahan herbal dan zat berisiko dari literatur resmi tanpa halusinasi AI.
                   </p>
                 </div>
 
@@ -572,10 +571,10 @@ function HomeContent() {
                     </svg>
                   </div>
                   <h5 className="font-semibold text-[13.5px] text-ink mb-1.5">
-                    Konsultasi Lanjutan WhatsApp
+                    Asisten Bot WhatsApp
                   </h5>
                   <p className="text-[12px] leading-relaxed text-ink-soft">
-                    Temuan berisiko langsung terhubung ke konsultan herbal dan apoteker via WhatsApp untuk tindak lanjut klinis.
+                    Tanyakan informasi bahan dan ringkasan umum secara otomatis melalui bot WhatsApp interaktif.
                   </p>
                 </div>
               </div>
@@ -673,10 +672,10 @@ function HomeContent() {
                 </svg>
               </div>
               <h3 className="font-serif font-bold text-[16px] text-ink mb-2">
-                3. Verifikasi Toksisitas &amp; WhatsApp
+                3. Skrining Bahan &amp; Bot WhatsApp
               </h3>
               <p className="text-[13px] text-ink-soft leading-relaxed">
-                Hasil dicocokkan ke 500 basis data TCM &amp; toksisitas terverifikasi. Jika terdeteksi merkuri, aconite, atau BKO, Anda dapat langsung konsultasi apoteker via WhatsApp.
+                Hasil dicocokkan ke 500 basis data herbal BPOM dan SymMap. Jika ada bahan berisiko seperti merkuri atau BKO, Anda dapat menanyakan rinciannya ke bot WhatsApp atau berkonsultasi ke dokter.
               </p>
             </div>
           </div>
@@ -711,16 +710,16 @@ function HomeContent() {
                 Prinsip Zero-Hallucination
               </h4>
               <p className="text-[13px] text-ink-soft leading-relaxed">
-                FitMate tidak menyerahkan penentuan aman atau bahaya pada tebakan model AI bebas. Seluruh status toksisitas dipetakan menggunakan aturan deterministik yang divalidasi apoteker.
+                FitMate tidak menyerahkan penentuan aman atau bahaya pada tebakan model AI bebas. Seluruh status bahan dipetakan langsung menggunakan aturan deterministik dari pustaka data resmi.
               </p>
             </div>
 
             <div className="bg-card border border-line rounded-[18px] p-6 shadow-xs">
               <h4 className="font-serif font-bold text-[16px] text-ink mb-2">
-                Jembatan Edukasi &amp; Apoteker
+                Transparansi Informasi Herbal
               </h4>
               <p className="text-[13px] text-ink-soft leading-relaxed">
-                Kami memberikan transparansi instan bagi konsumen awam yang kesulitan membaca aksara Mandarin, sekaligus menghubungkan Anda dengan tenaga kesehatan berlisensi.
+                Membantu masyarakat awam memahami komposisi aksara Mandarin pada kemasan obat tradisional secara transparan, mudah dibaca, dan berbasis kompilasi data publik.
               </p>
             </div>
           </div>
@@ -741,9 +740,15 @@ function HomeContent() {
           </div>
         </section>
 
-        {/* Simple Footer */}
-        <footer className="mt-20 pt-8 border-t border-line text-center text-[12.5px] text-ink-faint">
-          <p>© 2026 FitMate TCM. Dilindungi hak cipta. Platform keamanan herbal untuk konsumen Indonesia.</p>
+        {/* Simple Footer with Prototype Notice */}
+        <footer className="mt-20 pt-8 border-t border-line text-center text-[12px] text-ink-faint flex flex-col items-center gap-2">
+          <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-paper-deep text-ink-soft text-[11px] font-semibold border border-line">
+            <span className="w-1.5 h-1.5 rounded-full bg-amber" />
+            <span>Versi Prototipe Riset (Bukan Pelayanan Medis Resmi)</span>
+          </div>
+          <p className="max-w-2xl leading-relaxed">
+            © 2026 FitMate TCM. Proyek ini merupakan prototipe aplikasi untuk edukasi dan skrining awal mandiri. Seluruh basis data dikompilasi dari publikasi publik BPOM dan SymMap, serta belum divalidasi oleh praktisi klinis atau apoteker independen.
+          </p>
         </footer>
       </div>
     </div>

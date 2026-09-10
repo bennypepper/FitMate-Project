@@ -28,7 +28,7 @@ export default function ResultsCard({
 
   // Generate WhatsApp prefilled message
   const generateWhatsAppMessage = () => {
-    let msg = "Halo Apoteker FitMate, saya baru saja memindai label TCM dan menemukan hasil berikut:\n\n";
+    let msg = "Halo Bot FitMate, saya baru saja memindai label kemasan dan ingin menanyakan informasi tentang bahan berikut:\n\n";
     if (toxicItems.length > 0) {
       msg += `⚠️ BAHAN BERISIKO (${toxicItems.length}):\n`;
       toxicItems.forEach((item, idx) => {
@@ -36,17 +36,17 @@ export default function ResultsCard({
         const desc = item.description ? ` (${item.description})` : "";
         msg += `${idx + 1}. ${name}${desc}\n`;
       });
-      msg += "\nMohon konfirmasi dan rekomendasi keamanan untuk mengonsumsi produk ini.";
+      msg += "\nBisa tolong jelaskan rincian efek atau catatan keamanannya?";
     } else if (safeItems.length > 0) {
-      msg += `✅ BAHAN HERBAL AMAN (${safeItems.length}):\n`;
+      msg += `✅ BAHAN HERBAL TERDETEKSI (${safeItems.length}):\n`;
       safeItems.forEach((item, idx) => {
         const name = item.matched_mandarin || item.english_name || item.indonesian_name || item.detected_text;
         msg += `${idx + 1}. ${name}\n`;
       });
-      msg += "\nApakah ada petunjuk dosis atau anjuran minum yang tepat?";
+      msg += "\nBisa tolong jelaskan manfaat umum dan hal yang perlu diperhatikan?";
     } else {
       msg += "ℹ️ Tidak terdeteksi komposisi herbal TCM pada kemasan yang dipindai.\n";
-      msg += "Mohon konfirmasi apakah produk ini terdaftar sebagai obat tradisional atau suplemen kesehatan.";
+      msg += "Apakah bahan pada foto saya termasuk obat tradisional yang ada di basis data?";
     }
     return msg;
   };
@@ -63,7 +63,7 @@ export default function ResultsCard({
         <button
           onClick={onReset}
           className="w-[34px] h-[34px] rounded-full bg-paper-deep text-ink hover:bg-paper transition flex items-center justify-center cursor-pointer"
-          title="Kembali ke Kamera"
+          title="Kembali"
         >
           <svg
             width="16"
@@ -81,7 +81,7 @@ export default function ResultsCard({
         <div className="w-[34px] h-[34px]" />
       </div>
 
-      {/* Hero Result Banner — 3 Dynamic States */}
+      {/* Hero Result Banner: 3 Dynamic States */}
       {toxicItems.length > 0 ? (
         /* State 1: Toxic / Contraindicated Ingredients Found */
         <div className="bg-danger-tint border border-danger/30 rounded-[16px] p-4 mb-5">
@@ -105,7 +105,7 @@ export default function ResultsCard({
           </h3>
           <p className="text-[12.5px] leading-relaxed text-ink">
             {primaryToxic?.description ||
-              "Mengandung senyawa yang memiliki peringatan toksisitas atau kontraindikasi klinis. Tidak dianjurkan untuk dikonsumsi tanpa resep atau pengawasan apoteker berlisensi."}
+              "Mengandung bahan yang memiliki catatan peringatan toksisitas atau pembatasan penggunaan dalam literatur resmi. Disarankan untuk berkonsultasi dengan dokter sebelum mengonsumsinya."}
           </p>
         </div>
       ) : safeItems.length > 0 ? (
@@ -122,13 +122,13 @@ export default function ResultsCard({
             >
               <polyline points="20 6 9 17 4 12" />
             </svg>
-            <span>{safeItems.length} herbal terverifikasi aman</span>
+            <span>{safeItems.length} herbal terdaftar aman</span>
           </div>
           <h3 className="font-serif text-[17px] font-bold text-trust-deep mb-1.5">
-            Komposisi Herbal Terverifikasi Aman
+            Komposisi Herbal Terdaftar Aman
           </h3>
           <p className="text-[12.5px] leading-relaxed text-ink">
-            Semua komposisi herbal yang terdeteksi cocok dengan daftar monograf TCM aman pada basis data apotek kami dan tidak ditemukan bahan toksik atau terlarang.
+            Semua komposisi herbal yang terdeteksi cocok dengan daftar monograf TCM aman pada basis data resmi kami dan tidak ditemukan bahan berbahaya.
           </p>
         </div>
       ) : (
@@ -153,7 +153,7 @@ export default function ResultsCard({
             Tidak Terdeteksi Komposisi Herbal TCM
           </h3>
           <p className="text-[12.5px] leading-relaxed text-ink-soft">
-            Teks yang dipindai tidak cocok dengan monograf obat herbal TCM pada basis data apotek kami. Produk ini kemungkinan adalah makanan/snack umum, atau daftar komposisi tidak tertera secara jelas.
+            Teks yang dipindai tidak cocok dengan monograf obat herbal TCM pada basis data kompilasi kami. Produk ini kemungkinan adalah makanan atau camilan umum, atau daftar komposisi tidak tertera secara jelas.
           </p>
         </div>
       )}
@@ -230,10 +230,10 @@ export default function ResultsCard({
         </div>
         <div className="flex-1">
           <strong className="block text-[13px] font-semibold text-white">
-            Lanjut konsultasi via WhatsApp
+            Tanya Bot FitMate via WhatsApp
           </strong>
           <span className="block text-[11px] text-white/75 mt-0.5">
-            Panduan berbasis aturan, bukan tebakan AI
+            Tanyakan rincian bahan atau hal yang perlu diperhatikan
           </span>
         </div>
         <svg

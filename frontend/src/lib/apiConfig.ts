@@ -1,5 +1,5 @@
 /**
- * apiConfig.ts — Centralized API base URL resolver.
+ * apiConfig.ts: Centralized API base URL resolver.
  *
  * Automatically routes requests to local backend (http://127.0.0.1:8000)
  * when running locally in development, and to Hugging Face Spaces in production.

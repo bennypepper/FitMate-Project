@@ -5,7 +5,7 @@ import { usePathname } from "next/navigation";
 
 const WA_NUMBER = "14155238886";
 const WA_MESSAGE =
-  "Halo FitMate! Saya ingin berkonsultasi mengenai keamanan bahan TCM yang saya pindai.";
+  "Halo Bot FitMate, saya ingin menanyakan informasi mengenai keamanan bahan TCM yang saya pindai.";
 const WA_URL = `https://wa.me/${WA_NUMBER}?text=${encodeURIComponent(WA_MESSAGE)}`;
 
 const BOUNCE_DELAY_MS = 300;
@@ -83,11 +83,11 @@ export default function WhatsAppFAB() {
         }
       `}</style>
 
-      {/* Fixed anchor — only the FAB circle is in flow; card + pill are absolute */}
+      {/* Fixed anchor: only the FAB circle is in flow; card + pill are absolute */}
       <div className="fixed bottom-6 right-5 z-50">
         <div className="relative">
 
-          {/* ── Small nudge pill — absolute, above FAB ── */}
+          {/* Small nudge pill: absolute, above FAB */}
           <div
             className={`
               absolute bottom-full right-0 mb-3
@@ -102,7 +102,7 @@ export default function WhatsAppFAB() {
             `}
           >
             <span className="text-[11px] font-semibold text-on-surface">
-              Konsultasi TCM 🌿
+              Tanya Bot TCM 🌿
             </span>
             <button
               onClick={() => setNudgeOpen(false)}
@@ -115,7 +115,7 @@ export default function WhatsAppFAB() {
             </button>
           </div>
 
-          {/* ── Full consultation card — absolute, above FAB ── */}
+          {/* Full consultation card: absolute, above FAB */}
           <div
             onMouseEnter={handleCardEnter}
             onMouseLeave={handleLeave}
@@ -133,7 +133,7 @@ export default function WhatsAppFAB() {
             {/* Header */}
             <div className="bg-[#25D366] px-4 py-3 flex items-center gap-2">
               <WaIcon size={18} />
-              <span className="text-white text-sm font-bold tracking-wide">FitMate Chatbot</span>
+              <span className="text-white text-sm font-bold tracking-wide">Bot FitMate TCM</span>
               <button
                 onClick={() => setCardOpen(false)}
                 className="ml-auto text-white/80 hover:text-white transition-colors"
@@ -155,7 +155,7 @@ export default function WhatsAppFAB() {
                   Ada pertanyaan tentang bahan TCM yang baru Anda pindai? 🌿
                   <br />
                   <span className="text-on-surface-variant">
-                    Konsultasikan langsung dengan chatbot kami.
+                    Tanyakan langsung kepada asisten bot kami.
                   </span>
                 </div>
               </div>
@@ -178,16 +178,16 @@ export default function WhatsAppFAB() {
                 className="flex items-center justify-center gap-2 w-full py-2.5 rounded-xl bg-[#25D366] text-white text-xs font-bold tracking-wide shadow-sm hover:brightness-105 active:scale-95 transition-all duration-150"
               >
                 <WaIcon size={14} />
-                Mulai Konsultasi
+                Tanya Bot WhatsApp
               </a>
 
               <p className="text-[9px] text-on-surface-variant text-center leading-snug">
-                Balasan otomatis • Bukan diagnosis medis
+                Balasan otomatis bot • Bukan diagnosis medis
               </p>
             </div>
           </div>
 
-          {/* ── FAB circle — hover trigger ── */}
+          {/* FAB circle: hover trigger */}
           <div
             onMouseEnter={handleFabEnter}
             onMouseLeave={handleLeave}
@@ -197,7 +197,7 @@ export default function WhatsAppFAB() {
               target="_blank"
               rel="noopener noreferrer"
               onClick={handleFabClick}
-              aria-label="Konsultasi via WhatsApp"
+              aria-label="Tanya Bot via WhatsApp"
               className={`
                 flex items-center justify-center
                 w-14 h-14 rounded-full

@@ -175,10 +175,10 @@ export default function IngredientsPage() {
                           </div>
                         </td>
                         <td className="px-8 py-6 text-sm text-on-surface-variant italic">
-                          {ing.latin_name ?? "—"}
+                          {ing.latin_name ?? "-"}
                         </td>
                         <td className="px-8 py-6 text-sm text-on-surface-variant">
-                          {ing.english_name ?? "—"}
+                          {ing.english_name ?? "-"}
                         </td>
                         <td className="px-8 py-6 text-right">
                           <span className={`inline-flex items-center px-3 py-1 rounded-full text-[10px] font-bold uppercase tracking-wider ${badge.className}`}>

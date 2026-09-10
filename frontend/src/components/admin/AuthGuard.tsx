@@ -9,7 +9,7 @@ interface AuthGuardProps {
 }
 
 /**
- * AuthGuard — wraps all /admin/* routes except /admin/login.
+ * AuthGuard: wraps all /admin/* routes except /admin/login.
  * Checks localStorage for a valid (non-expired) JWT on client mount.
  * Server renders a loading state to avoid hydration mismatch.
  */

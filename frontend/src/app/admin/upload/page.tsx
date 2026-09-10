@@ -216,7 +216,7 @@ export default function UploadPage() {
                 atau klik untuk memilih file
               </p>
               <p className="font-sans text-xs text-on-surface-variant mt-4 opacity-50">
-                Format: .xlsx, .csv — Maks. 10MB
+                Format: .xlsx, .csv (Maks. 10MB)
               </p>
             </>
           )}
@@ -345,7 +345,7 @@ export default function UploadPage() {
               >
                 Ganti File
               </button>
-              {/* Confirm import — ONLY shows when zero errors */}
+              {/* Confirm import: ONLY shows when zero errors */}
               {validation.error_count === 0 && (
                 <button
                   id="confirm-import-btn"
@@ -416,7 +416,7 @@ export default function UploadPage() {
           </div>
         )}
 
-        {/* Usage Instructions — shown only when idle */}
+        {/* Usage Instructions: shown only when idle */}
         {uploadState === "idle" && (
           <div className="mt-8 bg-surface-container-low rounded-3xl px-8 py-6">
             <h3 className="font-serif text-lg font-bold text-on-surface mb-4">

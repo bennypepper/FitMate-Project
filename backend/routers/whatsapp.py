@@ -10,7 +10,7 @@ Multi-ingredient support:
   If parse_intent() returns a comma-separated ingredient_name (e.g. from
   reading a label), all items are looked up in the DB and a combined
   safety card is returned. Multi-ingredient detection happens AFTER intent
-  classification — NOT on raw message text — to avoid false positives.
+  classification (not on raw message text) to avoid false positives.
 
 First-time users:
   A welcome message is sent once per phone number (tracked in _welcomed_set).
@@ -56,13 +56,13 @@ OFFTOPIC_TERSE_LIMIT = 3
 OFFTOPIC_COOLDOWN_LIMIT = 5
 
 WELCOME_MESSAGE = (
-    "Halo! Saya *FitMate* 🌿 — teman cek keamanan produk herbal & TCM kamu.\n\n"
-    "Langsung aja ketik:\n"
-    "• Nama bahan/produk → saya cek keamanannya\n"
-    "• _\"Apakah [bahan] aman untuk [kondisi]?\"_ → saya jawab sesuai kondisimu\n"
-    "• _\"Apa itu [bahan]?\"_ → saya jelaskan info & manfaatnya\n\n"
-    "Semua jawaban berbasis database TCM tervalidasi ya, bukan saran medis. "
-    "Kalau ada yang urgent, tetap konsultasi dokter dulu! 💊"
+    "Halo! Saya *FitMate* 🌿: asisten bot untuk cek catatan keamanan produk herbal dan TCM kamu.\n\n"
+    "Silakan ketik:\n"
+    "• Nama bahan atau produk: untuk cek catatan keamanan\n"
+    "• _\"Apakah [bahan] aman untuk [kondisi]?\"_: untuk info interaksi atau pantangan\n"
+    "• _\"Apa itu [bahan]?\"_: untuk info deskripsi dan kegunaan\n\n"
+    "Catatan: Jawaban dirangkum otomatis oleh asisten bot berbasis kompilasi data publikasi resmi BPOM dan literatur herbal. "
+    "Sistem ini berstatus prototipe riset dan bukan pengganti diagnosis medis dokter. 💊"
 )
 
 def _validate_twilio_signature(request_url: str, params: dict, signature: str) -> bool:
@@ -150,7 +150,7 @@ async def receive_message(
 
     if twilio_signature and settings.TWILIO_AUTH_TOKEN:
         if not _validate_twilio_signature(webhook_url, params, twilio_signature):
-            print(f"[Twilio] [WARN] Invalid signature from {request.client.host} — rejected")
+            print(f"[Twilio] [WARN] Invalid signature from {request.client.host} - rejected")
             return {"status": "ok"}
 
     sender_phone = From.replace("whatsapp:", "").strip()
@@ -179,7 +179,7 @@ async def _fuzzy_lookup(ingredient_name: str, db) -> tuple[dict | None, int]:
     print(f"[Bot] DB has {len(ingredients)} ingredients")
 
     if not ingredients:
-        print("[Bot] [WARN] tcm_ingredients is EMPTY — run seed_100_tcm.py first!")
+        print("[Bot] [WARN] tcm_ingredients is EMPTY - run seed_100_tcm.py first!")
         return None, 0
 
     best_match = None
@@ -362,7 +362,7 @@ async def _handle_multi_ingredient(ingredient_list: list[str], db) -> str:
             verdict_text = "Tidak ada di database kami"
             has_unknown = True
 
-        results.append(f"{emoji} *{display_name}* — {verdict_text}")
+        results.append(f"{emoji} *{display_name}*: {verdict_text}")
 
     if not results:
         return (
@@ -375,10 +375,10 @@ async def _handle_multi_ingredient(ingredient_list: list[str], db) -> str:
     reply = f"{DISCLAIMER}🔍 *Hasil cek {len(results)} bahan:*\n\n{lines}\n\n"
 
     if has_toxic:
-        reply += "⚠️ *Ada bahan berbahaya di daftar ini.* Sebaiknya konsultasi dengan apoteker atau dokter sebelum dikonsumsi.\n\n"
+        reply += "⚠️ *Ada bahan berisiko di daftar ini.* Sebaiknya konsultasikan dengan dokter sebelum dikonsumsi.\n\n"
 
     if has_unknown:
-        reply += "Beberapa bahan tidak ada di database kami — coba tanya satu per satu untuk hasil lebih detail.\n\n"
+        reply += "Beberapa bahan tidak ada di database kami, silakan coba tanya satu per satu untuk hasil lebih rinci.\n\n"
 
     reply += "Ada yang ingin kamu tahu lebih lanjut tentang salah satunya? 🌿"
     return reply

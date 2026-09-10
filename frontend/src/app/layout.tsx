@@ -21,8 +21,8 @@ const notoSansSC = Noto_Sans_SC({
 });
 
 export const metadata: Metadata = {
-  title: "FitMate TCM — Pindai Label & Cek Toksisitas Herbal",
-  description: "FitMate memindai label komposisi TCM, menerjemahkan aksara Hanzi, dan mencocokkannya dengan basis data toksisitas terverifikasi apoteker.",
+  title: "FitMate TCM: Pindai Label dan Cek Keamanan Produk Herbal",
+  description: "FitMate membantu membaca label komposisi obat tradisional China (TCM), menerjemahkan aksara Hanzi, dan mencocokkannya dengan daftar bahan resmi BPOM.",
   manifest: "/manifest.json",
 };
 

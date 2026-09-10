@@ -170,7 +170,7 @@ export default function AdminDashboardPage() {
             {loading ? "..." : fmt(stats?.total_ingredients)}
           </div>
           <div className="text-[11.5px] text-ink-faint mt-1.5">
-            {stats?.total_ingredients ? "Dataset terindeks di memori server" : "Belum ada data — unggah dataset pertama"}
+            {stats?.total_ingredients ? "Dataset terindeks di memori server" : "Belum ada data: silakan unggah dataset"}
           </div>
         </div>
 

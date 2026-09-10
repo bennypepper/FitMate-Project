@@ -74,7 +74,7 @@ def _load_bko_data() -> None:
         )
         print(f"[Interceptor] [OK] BKO database loaded: {len(_BKO_ALIAS_MAP)} aliases across {len(data['categories'])} categories")
     else:
-        print("[Interceptor] [WARN] BKO alias list is empty — check bko_substances.json")
+        print("[Interceptor] [WARN] BKO alias list is empty - check bko_substances.json")
 
 _load_bko_data()
 
@@ -98,12 +98,12 @@ _EMERGENCY_PATTERN = re.compile(
 )
 
 EMERGENCY_RESPONSE = (
-    "🚨 *DARURAT MEDIS — SEGERA CARI PERTOLONGAN*\n\n"
-    "Gejala yang kamu sebutkan bisa mengancam jiwa. *Jangan tunggu* — ambil tindakan sekarang:\n\n"
-    "📞 *119* — SPGDT / Ambulans Nasional _(gratis, 24 jam)_\n"
+    "🚨 *DARURAT MEDIS: SEGERA CARI PERTOLONGAN*\n\n"
+    "Gejala yang kamu sebutkan bisa mengancam jiwa. Jangan menunggu, segera ambil tindakan sekarang:\n\n"
+    "📞 *119*: SPGDT / Ambulans Nasional _(gratis, 24 jam)_\n"
     "🏥 Pergi ke *IGD rumah sakit terdekat* sekarang juga\n\n"
     "Hentikan konsumsi produk apapun sementara waktu dan bawa ke tenaga medis untuk diidentifikasi.\n\n"
-    "_FitMate adalah alat edukasi — saya tidak bisa menangani keadaan darurat. "
+    "_FitMate adalah program edukasi otomatis dan tidak dapat menangani keadaan darurat medis. "
     "Keselamatanmu adalah prioritas utama._ ❤️"
 )
 
@@ -112,11 +112,11 @@ def _build_bko_warning(substance_info: dict) -> str:
     risk = substance_info["risk_summary_id"]
     cat = substance_info["category_name_id"]
     return (
-        f"⚠️ *PERINGATAN: BKO Terdeteksi — {name}*\n\n"
+        f"⚠️ *PERINGATAN: BKO Terdeteksi ({name})*\n\n"
         f"*{name}* adalah bahan kimia obat keras kategori *{cat}*.\n\n"
         f"❌ Keberadaannya dalam produk herbal atau TCM adalah *ILEGAL* dan sangat berbahaya:\n"
         f"• *Risiko kesehatan:* {risk}\n"
-        f"• Dosis tidak terkontrol — jauh lebih berbahaya dibanding obat resep yang diawasi dokter\n"
+        f"• Dosis tidak terkontrol, jauh lebih berbahaya dibanding obat resep yang diawasi dokter\n"
         f"• Merupakan pemalsuan produk yang melanggar regulasi BPOM\n\n"
         f"🔴 *Hentikan konsumsi produk ini segera.*\n\n"
         f"📋 Laporkan ke BPOM: *1500-533* atau _cekbpom.pom.go.id_\n\n"
@@ -292,8 +292,8 @@ async def _bko_context_llm_check(text: str, substance_name: str) -> str:
         result = result.strip().upper().split()[0]
         if result in ("YES", "NO", "AMBIGUOUS"):
             return result
-        print(f"[Interceptor] Unexpected BKO context reply: '{result}' — defaulting to AMBIGUOUS")
+        print(f"[Interceptor] Unexpected BKO context reply: '{result}' - defaulting to AMBIGUOUS")
         return "AMBIGUOUS"
     except Exception as e:
-        print(f"[Interceptor] BKO context LLM error: {e} — defaulting to AMBIGUOUS")
+        print(f"[Interceptor] BKO context LLM error: {e} - defaulting to AMBIGUOUS")
         return "AMBIGUOUS"

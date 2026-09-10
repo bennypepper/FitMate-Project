@@ -1,5 +1,5 @@
 /**
- * adminApi.ts — Utility functions for all admin API calls.
+ * adminApi.ts: Utility functions for all admin API calls.
  * All protected calls automatically attach the JWT from localStorage.
  *
  * Security note (prototype): JWT stored in localStorage is XSS-vulnerable.

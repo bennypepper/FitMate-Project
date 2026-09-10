@@ -36,7 +36,7 @@ async def extract_and_translate_text(image_bytes: bytes) -> list[dict]:
         "2. IF NO composition section exists (e.g. it is just the front cover of a box), "
         "extract the main herbal product name or prominent herbal names visible (e.g. 'Tian Wang Bu Xin Dan' or 'Golden Throat Lozenges'). "
         "Include Chinese (Hanzi), Pinyin, Latin, Indonesian, and English names if visible. "
-        "Return ONLY a JSON array of strings — one extracted text per string. "
+        "Return ONLY a JSON array of strings: one extracted text per string. "
         "Example: [\"Ginseng\", \"当归\", \"Radix Astragali\", \"Golden Throat\"] "
         "If you cannot find any text at all, return an empty array: [] "
         "Do NOT include markdown code fences, do NOT include any explanation."

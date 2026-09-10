@@ -160,7 +160,7 @@ export default function IngredientSearchModal({
                 Kamus Bahan TCM &amp; Toksisitas
               </h3>
               <p className="text-[12px] text-ink-soft">
-                Basis data 500 bahan &amp; obat TCM terverifikasi BPOM &amp; monograf toksikologi
+                Katalog kompilasi 500 bahan TCM rujukan resmi BPOM OTSKK dan SymMap
               </p>
             </div>
           </div>
@@ -368,7 +368,7 @@ export default function IngredientSearchModal({
 
         {/* Footer */}
         <div className="p-3.5 sm:p-4 border-t border-line bg-paper-deep text-center text-[11.5px] text-ink-soft">
-          Semua data telah diverifikasi sesuai monograf TCM &amp; BPOM untuk pencegahan risiko kesehatan.
+          Basis data dikompilasi dari publikasi resmi BPOM OTSKK dan SymMap sebagai referensi edukasi awal, bukan pengganti konsultasi dokter.
         </div>
       </div>
     </div>

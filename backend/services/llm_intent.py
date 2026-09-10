@@ -4,12 +4,12 @@ Uses google/gemini-2.5-flash-lite for fast, natural responses.
 
 Intent classes
 --------------
-  ingredient_safety_inquiry  — user asking if ingredient/brand is safe/toxic/contraindicated
-                              → DB verdict is ALWAYS rule-based; LLM writes the reply language only
-  ingredient_info_inquiry    — user asking what an ingredient is, benefits, uses
-                              → LLM answers using DB context if available
-  general_tcm_chat           — greetings, general health/TCM questions, off-topic
-                              → LLM answers helpfully and naturally; steers to TCM when relevant
+  ingredient_safety_inquiry  : user asking if ingredient/brand is safe/toxic/contraindicated
+                               -> DB verdict is ALWAYS rule-based; LLM writes the reply language only
+  ingredient_info_inquiry    : user asking what an ingredient is, benefits, uses
+                               -> LLM answers using DB context if available
+  general_tcm_chat           : greetings, general health/TCM questions, off-topic
+                               -> LLM answers helpfully and naturally; steers to TCM when relevant
 
 Conversation history is passed to all chat functions so the LLM can resolve
 references like "bahan itu", "yang tadi", "apakah aman?", etc.
@@ -123,17 +123,17 @@ async def parse_intent(message_text: str, history: list[dict] | None = None, mod
         "Classify the user's message into EXACTLY one of three intents.\n"
         "Use the conversation context below to resolve vague references.\n\n"
 
-        "1. ingredient_safety_inquiry — user wants to know if an ingredient/product is safe, dangerous,\n"
+        "1. ingredient_safety_inquiry: user wants to know if an ingredient/product is safe, dangerous,\n"
         "   has side effects, is contraindicated, OK for a health condition, or OK to drink/consume.\n"
         "   Also classify here if user just types a bare ingredient name with no question.\n"
         "   Examples: 'apakah ginseng berbahaya?', 'lo han guo aman?', 'bahan tadi aman?', "
         "'lo han guo', 'saya ingin beli X apa aman'\n\n"
 
-        "2. ingredient_info_inquiry — user wants to know WHAT an ingredient is, its benefits,\n"
+        "2. ingredient_info_inquiry: user wants to know WHAT an ingredient is, its benefits,\n"
         "   uses, or history (not primarily about safety).\n"
         "   Examples: 'apa itu ginseng?', 'lo han guo untuk apa?', 'manfaat jahe merah?'\n\n"
 
-        "3. general_tcm_chat — greetings, general health questions, off-topic, statements,\n"
+        "3. general_tcm_chat: greetings, general health questions, off-topic, statements,\n"
         "   or messages that cannot be mapped to a specific ingredient.\n"
         "   Examples: 'halo', 'buah apa yang sehat?', 'makasih', 'oke'\n\n"
 
@@ -141,8 +141,8 @@ async def parse_intent(message_text: str, history: list[dict] | None = None, mod
         "- Extract the ingredient name from the user's message\n"
         "- If the name is in a foreign language (German, Dutch, Japanese, Latin, etc.), "
         "TRANSLATE or NORMALIZE it to its most common Indonesian, English, or Pinyin name\n"
-        "  Example: 'Sibirischer Ginseng' → 'Siberian Ginseng' or 'Jahe Siber'\n"
-        "  Example: 'Kamille' (German) → 'Chamomile' or 'Kamomil'\n"
+        "  Example: 'Sibirischer Ginseng' -> 'Siberian Ginseng' or 'Jahe Siber'\n"
+        "  Example: 'Kamille' (German) -> 'Chamomile' or 'Kamomil'\n"
         "- If the user references a previous ingredient vaguely ('bahan itu', 'tadi'), "
         "extract the actual name from context\n"
         "- If the user sends a comma-separated LIST of ingredient names "
@@ -187,14 +187,14 @@ async def generate_safety_reply(
     Generates a warm, empathetic safety reply grounded in the DB verdict.
 
     CRITICAL: safety_verdict is determined purely by rule-based code (never LLM).
-    The LLM writes the surrounding language — it CANNOT change the verdict.
+    The LLM writes the surrounding language: it CANNOT change the verdict.
 
     Parameters:
-        ingredient_name  — ingredient queried (already normalized)
-        db_match         — full DB document (may be None)
-        safety_verdict   — "safe" | "toxic" | "not_found"  (set by caller, not LLM)
-        user_message     — raw user text (may contain health conditions)
-        history          — conversation history for multi-turn context
+        ingredient_name  : ingredient queried (already normalized)
+        db_match         : full DB document (may be None)
+        safety_verdict   : "safe" | "toxic" | "not_found"  (set by caller, not LLM)
+        user_message     : raw user text (may contain health conditions)
+        history          : conversation history for multi-turn context
     """
 
     if db_match:
@@ -215,28 +215,28 @@ async def generate_safety_reply(
 
     verdict_instructions = {
         "safe": (
-            "VERDICT: AMAN. Bahan ini tergolong aman berdasarkan database kami. "
+            "VERDICT: AMAN. Bahan ini tergolong aman berdasarkan database kompilasi kami. "
             "Sampaikan ini dengan jelas. "
             "Jika user menyebut kondisi kesehatan spesifik (diabetes, hamil, hipertensi, "
-            "gagal ginjal, dll.) — WAJIB sebutkan kondisi itu dan sarankan tetap konsultasi dokter "
-            "karena kondisi spesifik memerlukan penilaian personal."
+            "gagal ginjal, dll.): WAJIB sebutkan kondisi itu dan sarankan tetap konsultasi dokter "
+            "karena kondisi spesifik memerlukan penilaian medis langsung."
         ),
         "toxic": (
             "VERDICT: BERBAHAYA/TOKSIK. Sampaikan dengan tegas tapi sopan. "
             "Jika user menyebut kondisi kesehatan, tekankan risikonya lebih besar untuk kondisi itu. "
-            "Sarankan konsultasi dokter/apoteker segera."
+            "Sarankan segera berkonsultasi dengan dokter."
         ),
         "not_found": (
             "VERDICT: TIDAK ADA DI DATABASE. Kamu DILARANG berspekulasi tentang keamanan atau "
-            "bahaya bahan ini karena tidak ada data terverifikasi. "
-            "Jangan membuat klaim keamanan berdasarkan pengetahuan umum — ini aplikasi medis. "
-            "Sampaikan bahwa kita tidak bisa memberi penilaian, dan sarankan user konsultasi apoteker "
-            "atau dokter, serta coba ketik nama bahan dengan ejaan berbeda (Indonesia/Mandarin/Pinyin)."
+            "bahaya bahan ini karena tidak ada data terverifikasi di database. "
+            "Jangan membuat klaim keamanan berdasarkan pengetahuan umum, karena ini sistem skrining kesehatan. "
+            "Sampaikan bahwa kita tidak bisa memberi penilaian, dan sarankan user berkonsultasi langsung "
+            "dengan dokter, serta coba ketik nama bahan dengan ejaan berbeda (Indonesia/Mandarin/Pinyin)."
         ),
     }.get(safety_verdict, "Verdict tidak diketahui.")
 
     BKO_HARD_RULE = (
-        "=== ATURAN MUTLAK — BKO (BAHAN KIMIA OBAT) ===\n"
+        "=== ATURAN MUTLAK: BKO (BAHAN KIMIA OBAT) ===\n"
         "Jika nama bahan mengandung obat farmasi keras (steroid, PDE5 inhibitor, NSAID, "
         "antidiabetik, sedatif, diuretik, anabolik steroid, atau obat penurun berat badan), "
         "dan konteksnya adalah produk herbal/TCM:\n"
@@ -247,8 +247,9 @@ async def generate_safety_reply(
     )
 
     system = (
-        "Kamu adalah FitMate, asisten TCM yang ramah, hangat, dan berpengetahuan. "
-        "Kamu berbicara seperti teman yang paham kesehatan — bukan robot kaku.\n\n"
+        "Kamu adalah FitMate, asisten bot TCM otomatis yang ramah dan komunikatif. "
+        "Kamu adalah program komputer asisten digital, bukan apoteker dan bukan dokter manusia. "
+        "Bicaralah dengan santun dan bersahabat seperti asisten yang memahami informasi herbal.\n\n"
         f"=== DATA DATABASE ===\n{db_context}\n\n"
         + BKO_HARD_RULE
         + f"=== INSTRUKSI VERDICT (JANGAN UBAH INI) ===\n{verdict_instructions}\n\n"
@@ -257,9 +258,9 @@ async def generate_safety_reply(
         "- WAJIB akui kondisi kesehatan yang user sebutkan, jangan abaikan\n"
         "- Sampaikan verdict dengan jelas tapi tidak kaku\n"
         "- Boleh tambah info berguna dari DB seperti kontraindikasi, tapi jangan berlebihan\n"
-        "- Panjang: 3–5 kalimat, cukup informatif tapi tidak overwhelming\n"
-        "- Tutup dengan pertanyaan natural, tidak harus selalu sama — variasikan\n"
-        "- JANGAN tulis disclaimer — itu sudah ditambahkan secara terpisah\n"
+        "- Panjang: 3-5 kalimat, cukup informatif tapi tidak bertele-tele\n"
+        "- Tutup dengan pertanyaan natural, tidak harus selalu sama, buat bervariasi\n"
+        "- JANGAN tulis disclaimer, karena sudah ditambahkan secara terpisah\n"
         f"\nPesan user: {user_message}"
     )
 
@@ -276,8 +277,8 @@ async def generate_safety_reply(
         if safety_verdict == "toxic":
             name = db_match.get("indonesian_name", ingredient_name) if db_match else ingredient_name
             return (
-                f"⚠️ *{name}* dikategorikan berbahaya berdasarkan database kami. "
-                "Tolong konsultasikan dengan dokter atau apoteker sebelum mengonsumsi ya. 🏥"
+                f"⚠️ *{name}* dikategorikan berisiko berdasarkan database kami. "
+                "Tolong konsultasikan dengan dokter sebelum mengonsumsi ya. 🏥"
             )
         elif safety_verdict == "safe":
             name = db_match.get("indonesian_name", ingredient_name) if db_match else ingredient_name
@@ -289,8 +290,8 @@ async def generate_safety_reply(
         else:
             return (
                 f"Hmm, bahan *{ingredient_name}* belum ada di database kami. "
-                "Coba ketik dengan nama Indonesia, Mandarin, atau Pinyin-nya — "
-                "mungkin ada di sana. 🌿"
+                "Coba ketik dengan nama Indonesia, Mandarin, atau Pinyin-nya, "
+                "siapa tahu ada di sana. 🌿"
             )
 
 async def generate_chat_reply(message_text: str, history: list[dict] | None = None, model: str | None = None) -> str:
@@ -299,26 +300,29 @@ async def generate_chat_reply(message_text: str, history: list[dict] | None = No
     Acknowledges health conditions. Steers toward TCM naturally, not robotically.
     """
     system = (
-        "Kamu adalah FitMate, asisten TCM yang ramah dan helpful — bukan bot kaku. "
-        "Kamu bisa diakses langsung via WhatsApp tanpa perlu buka aplikasi apapun.\n\n"
+        "Kamu adalah FitMate, asisten bot TCM otomatis yang ramah dan komunikatif. "
+        "Kamu adalah program komputer (AI bot), bukan manusia, bukan apoteker, dan bukan dokter. "
+        "Kamu bisa diakses via WhatsApp untuk membantu mengecek catatan bahan herbal.\n\n"
         "Kemampuan kamu:\n"
-        "• Cek keamanan bahan herbal/TCM dari database tervalidasi\n"
-        "• Menjawab apakah suatu bahan aman untuk kondisi kesehatan tertentu\n"
-        "• Memberikan info/manfaat umum tentang bahan TCM\n\n"
+        "• Mengecek kecocokan bahan herbal/TCM dengan basis data kompilasi BPOM dan literatur toksisitas\n"
+        "• Menjawab apakah suatu bahan memiliki catatan kontraindikasi atau pantangan kondisi tertentu\n"
+        "• Memberikan informasi deskripsi dan khasiat umum bahan TCM\n\n"
+        "Batasan & Identitas Penting:\n"
+        "- DILARANG mengaku atau menyiratkan diri sebagai apoteker, dokter, atau petugas medis manusia.\n"
+        "- Jangan pernah meresepkan dosis obat klinis atau memberikan diagnosis medis.\n"
+        "- Gunakan bahasa Indonesia yang santun, bersahabat, dan jelas, gunakan sapaan 'kamu'.\n\n"
         "Cara bicara:\n"
-        "- Gunakan bahasa Indonesia yang natural dan hangat, pakai 'kamu'\n"
         "- Jika user menyebut kondisi kesehatan (diabetes, hamil, hipertensi, dll.), "
         "AKUI kondisi itu dengan empati sebelum menjawab\n"
-        "- Untuk pertanyaan kesehatan/nutrisi umum: boleh jawab SINGKAT (1-2 kalimat), "
+        "- Untuk pertanyaan kesehatan/nutrisi umum: jawab singkat (1-2 kalimat), "
         "lalu arahkan ke topik TCM/herbal yang relevan\n"
-        "- Tidak bisa mendiagnosis atau meresepkan obat\n"
-        "- Panjang: 2–3 kalimat, natural dan tidak berlebihan\n"
-        "- Kalau relevan, tawarkan untuk cek bahan TCM spesifik — tapi jangan paksa kalau tidak relevan\n"
-        "- Jangan akhiri setiap pesan dengan CTA yang persis sama — buat natural\n\n"
+        "- Panjang: 2-3 kalimat, ringkas dan tidak bertele-tele\n"
+        "- Kalau relevan, tawarkan untuk mengecek bahan TCM spesifik, tetapi jangan memaksa jika tidak relevan\n"
+        "- Buat kalimat penutup bervariasi dan natural\n\n"
         "BATAS TOPIK KETAT:\n"
         "Jika pesan sama sekali tidak berhubungan dengan kesehatan, herbal, TCM, obat, "
         "nutrisi, atau kondisi medis (contoh: investasi, teknologi, olahraga non-kesehatan, "
-        "hiburan, berita, dll.) — TOLAK dengan sopan dan kembalikan ke topik TCM. "
+        "hiburan, berita, dll.): TOLAK dengan sopan dan kembalikan ke topik herbal TCM. "
         "JANGAN jawab pertanyaan di luar cakupan, bahkan sebagian kecil sekalipun."
     )
 
@@ -356,20 +360,20 @@ async def generate_ingredient_info_reply(
             f"Kontraindikasi: {db_match.get('contraindications', 'Tidak ada data khusus')}\n"
         )
     else:
-        db_context = "Bahan ini tidak ada di database kami — gunakan pengetahuan umum TCM, tapi jangan fabrikasi klaim keamanan/toksisitas."
+        db_context = "Bahan ini tidak ada di database kami: gunakan pengetahuan umum TCM, tapi jangan fabrikasi klaim keamanan/toksisitas."
 
     system = (
-        "Kamu adalah FitMate, teman yang paham tentang bahan-bahan TCM. "
-        "Berikan informasi yang berguna dan mudah dipahami.\n\n"
+        "Kamu adalah FitMate, asisten bot edukasi TCM (program komputer otomatis, bukan apoteker atau dokter manusia). "
+        "Berikan informasi bahan yang objektif dan mudah dipahami.\n\n"
         f"Bahan: {ingredient_name}\n"
         f"{db_context}\n\n"
         "Cara menjawab:\n"
-        "- Pakai bahasa Indonesia yang natural, gunakan 'kamu'\n"
-        "- Jelaskan apa bahan ini, kegunaannya, dan manfaat umum\n"
+        "- Pakai bahasa Indonesia yang natural dan ramah, gunakan 'kamu'\n"
+        "- Jelaskan apa bahan ini, kegunaannya, dan catatan umum\n"
         "- Kalau ada data keamanan dari DB, sebutkan\n"
-        "- Kalau tidak ada di DB, boleh kasih info umum tapi jangan klaim soal keamanan/bahaya\n"
-        "- Panjang: 3–4 kalimat, informatif tapi ringkas\n"
-        "- Tutup dengan tawarkan untuk cek keamanannya kalau mereka mau"
+        "- Kalau tidak ada di DB, boleh beri info umum tapi jangan buat klaim keamanan atau bahaya yang tidak pasti\n"
+        "- Panjang: 3-4 kalimat, ringkas dan informatif\n"
+        "- Tutup dengan tawaran untuk cek keamanannya jika mereka memerlukan"
     )
 
     messages: list[dict] = [{"role": "system", "content": system}]
