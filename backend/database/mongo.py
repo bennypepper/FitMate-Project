@@ -224,9 +224,25 @@ async def connect_to_mongo():
         )
         database = client[settings.MONGODB_DB_NAME]
         count = await database["tcm_ingredients"].count_documents({})
+        if count == 0:
+            print("[DB] Remote MongoDB collection 'tcm_ingredients' is empty. Seeding from POPULAR_TCM...")
+            try:
+                fallback_items = [dict(item) for item in db.fallback_db["tcm_ingredients"].data]
+                if fallback_items:
+                    await database["tcm_ingredients"].insert_many(fallback_items)
+                    count = await database["tcm_ingredients"].count_documents({})
+                    print(f"[DB] Successfully seeded remote MongoDB — {count} ingredients.")
+            except Exception as seed_err:
+                print(f"[DB] Seeding remote failed ({seed_err}). Falling back to in-memory store.")
+                db.is_fallback = True
+
         db.client = client
-        db.is_fallback = False
-        print(f"[DB] Connected to MongoDB — {count} ingredients in tcm_ingredients")
+        if count > 0 and not db.is_fallback:
+            db.is_fallback = False
+            print(f"[DB] Connected to MongoDB — {count} ingredients in tcm_ingredients")
+        else:
+            db.is_fallback = True
+            print("[DB] Using in-memory dataset.")
     except Exception as e:
         db.client = None
         db.is_fallback = True
