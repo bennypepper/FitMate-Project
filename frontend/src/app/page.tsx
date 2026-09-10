@@ -315,23 +315,10 @@ function HomeContent() {
             </div>
           )}
 
-          {/* Active Live Camera View State (Works seamlessly on mobile or laptop webcam) */}
+          {/* Active Live Camera View State (Adaptive Widescreen Studio on Desktop, Portrait on Mobile) */}
           {showLiveCamera && !results && !isProcessing && (
-            <div className="p-6 md:p-10 flex flex-col items-center justify-center">
-              <div className="w-full max-w-md flex flex-col items-center">
-                <div className="w-full flex items-center justify-between mb-3 px-1">
-                  <span className="text-[12.5px] font-semibold text-ink flex items-center gap-1.5">
-                    📷 Pindai Label Komposisi
-                  </span>
-                  <button
-                    onClick={handleReset}
-                    className="text-[12px] text-ink-soft hover:text-ink underline cursor-pointer"
-                  >
-                    Batal &amp; Kembali
-                  </button>
-                </div>
-                <CameraViewfinder onCapture={handleImageReady} onReset={handleReset} />
-              </div>
+            <div className="p-4 sm:p-6 md:p-8 flex flex-col items-center justify-center w-full">
+              <CameraViewfinder onCapture={handleImageReady} onReset={handleReset} />
             </div>
           )}
 

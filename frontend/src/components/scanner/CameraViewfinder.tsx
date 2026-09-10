@@ -87,7 +87,7 @@ export default function CameraViewfinder({ onCapture, onReset }: CameraViewfinde
   };
 
   return (
-    <div className="w-full max-w-[360px] mx-auto bg-card rounded-[28px] border border-line p-3 shadow-xl overflow-hidden flex flex-col">
+    <div className="w-full max-w-full md:max-w-4xl mx-auto bg-card rounded-[22px] border border-line p-3 sm:p-5 md:p-6 shadow-xl flex flex-col animate-in fade-in duration-200">
       {/* Hidden File Input & Canvas */}
       <input
         ref={fileInputRef}
@@ -98,55 +98,62 @@ export default function CameraViewfinder({ onCapture, onReset }: CameraViewfinde
       />
       <canvas ref={canvasRef} className="hidden" />
 
-      {/* Screen Header */}
-      <div className="flex items-center justify-between px-2 py-2 mb-1">
-        <button
-          onClick={onReset}
-          className="w-[34px] height-[34px] p-2 rounded-full bg-paper-deep text-ink hover:bg-paper transition flex items-center justify-center"
-          title="Kembali"
-        >
-          <svg
-            width="16"
-            height="16"
-            viewBox="0 0 24 24"
-            fill="none"
-            stroke="currentColor"
-            strokeWidth="2.4"
-            strokeLinecap="round"
-          >
-            <path d="M15 18l-6-6 6-6" />
-          </svg>
-        </button>
-        <div className="font-serif font-semibold text-[16px] text-heritage tracking-wide">
-          FitMate
+      {/* Screen Header Bar */}
+      <div className="flex items-center justify-between gap-3 mb-3 px-1">
+        <div className="flex items-center gap-2.5">
+          {onReset && (
+            <button
+              onClick={onReset}
+              className="px-3 py-1.5 rounded-[10px] bg-paper-deep hover:bg-line text-ink text-[12.5px] font-medium transition cursor-pointer flex items-center gap-1.5"
+              title="Kembali ke Halaman Utama"
+            >
+              <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2">
+                <path d="M15 18l-6-6 6-6" />
+              </svg>
+              <span>Kembali</span>
+            </button>
+          )}
+
+          {/* Live Status Badge */}
+          <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-trust-tint text-trust-deep text-[11.5px] font-semibold border border-trust/20">
+            <span className="w-2 h-2 rounded-full bg-trust animate-pulse" />
+            <span>Kamera Pemindai Aktif</span>
+          </div>
         </div>
-        <button
-          onClick={() => fileInputRef.current?.click()}
-          className="w-[34px] height-[34px] p-2 rounded-full bg-paper-deep text-ink-soft hover:text-ink transition flex items-center justify-center"
-          title="Unggah Foto"
-        >
-          <svg
-            width="16"
-            height="16"
-            viewBox="0 0 24 24"
-            fill="none"
-            stroke="currentColor"
-            strokeWidth="2.2"
-            strokeLinecap="round"
-            strokeLinejoin="round"
+
+        {/* Quick Actions (Switch Camera / Upload fallback) */}
+        <div className="flex items-center gap-2">
+          <button
+            onClick={toggleCamera}
+            className="px-3 py-1.5 rounded-[10px] bg-paper-deep hover:bg-line text-ink-soft hover:text-ink text-[12px] font-medium transition cursor-pointer flex items-center gap-1.5"
+            title="Putar Kamera / Ganti Input"
           >
-            <path d="M3 12a9 9 0 1 0 3-6.7" />
-            <path d="M3 4v5h5" />
-            <path d="M12 7v5l3 3" />
-          </svg>
-        </button>
+            <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+              <path d="M20 10c0-4.418-3.582-8-8-8s-8 3.582-8 8c0 2.21 0.895 4.21 2.343 5.657L4 18h5v-5l-1.657 1.657A5.98 5.98 0 0 1 6 10c0-3.314 2.686-6 6-6s6 2.686 6 6c0 1.657-0.672 3.157-1.757 4.243l1.414 1.414A7.96 7.96 0 0 0 20 10z" />
+            </svg>
+            <span className="hidden sm:inline">Ganti Kamera</span>
+          </button>
+
+          <button
+            onClick={() => fileInputRef.current?.click()}
+            className="px-3 py-1.5 rounded-[10px] bg-paper-deep hover:bg-line text-ink-soft hover:text-ink text-[12px] font-medium transition cursor-pointer flex items-center gap-1.5"
+            title="Unggah Foto dari Berkas Komputer"
+          >
+            <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+              <rect x="3" y="3" width="18" height="18" rx="3" />
+              <circle cx="9" cy="9" r="1.6" />
+              <path d="M21 15l-5-5L5 21" />
+            </svg>
+            <span className="hidden sm:inline">Pilih File</span>
+          </button>
+        </div>
       </div>
 
-      {/* Camera Viewfinder */}
-      <div className="relative w-full aspect-[3/4] rounded-[22px] overflow-hidden bg-gradient-to-b from-[#2C2620] via-[#16130F] to-[#0E0C0A] flex items-center justify-center">
-        {/* Background Texture */}
+      {/* Adaptive Viewfinder Frame (Landscape on Desktop, Natural Portrait on Phone) */}
+      <div className="relative w-full aspect-[4/5] sm:aspect-[16/10] md:aspect-[16/9] max-h-[62vh] rounded-[18px] overflow-hidden bg-gradient-to-b from-[#1C1814] via-[#120F0D] to-[#0A0908] flex items-center justify-center shadow-inner border border-white/5">
+        {/* Subtle Vignette Background Texture */}
         <div
-          className="absolute inset-0 opacity-40 pointer-events-none"
+          className="absolute inset-0 opacity-30 pointer-events-none"
           style={{
             backgroundImage:
               "repeating-linear-gradient(100deg, rgba(255,255,255,0.02) 0px, rgba(255,255,255,0.02) 1px, transparent 1px, transparent 60px)",
@@ -154,7 +161,7 @@ export default function CameraViewfinder({ onCapture, onReset }: CameraViewfinde
         />
 
         {error ? (
-          <div className="p-6 text-center text-white/90 z-10">
+          <div className="p-8 text-center text-white/90 z-10 max-w-md">
             <svg
               className="w-12 h-12 mx-auto mb-3 text-amber"
               fill="none"
@@ -168,12 +175,12 @@ export default function CameraViewfinder({ onCapture, onReset }: CameraViewfinde
                 d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"
               />
             </svg>
-            <p className="text-xs leading-relaxed mb-4">{error}</p>
+            <p className="text-xs sm:text-sm leading-relaxed mb-4 text-paper-deep">{error}</p>
             <button
               onClick={() => fileInputRef.current?.click()}
-              className="px-4 py-2 bg-trust hover:bg-trust-deep text-white text-xs font-semibold rounded-lg shadow"
+              className="px-5 py-2.5 bg-trust hover:bg-trust-deep text-white text-xs sm:text-sm font-semibold rounded-[10px] shadow transition cursor-pointer"
             >
-              Pilih Foto dari Galeri
+              Pilih Foto dari Galeri / Berkas
             </button>
           </div>
         ) : (
@@ -189,110 +196,58 @@ export default function CameraViewfinder({ onCapture, onReset }: CameraViewfinde
         {/* Viewfinder Target Overlays */}
         {!error && (
           <>
-            <div className="absolute top-4 left-0 right-0 text-center px-4 text-paper/80 text-[11.5px] font-medium leading-tight drop-shadow">
-              Posisikan teks Hanzi di label rata di dalam bingkai
+            {/* Top Prompt Overlay */}
+            <div className="absolute top-4 inset-x-0 mx-auto max-w-max px-4 py-1.5 rounded-full bg-black/60 backdrop-blur-md border border-white/10 text-white/90 text-[11.5px] sm:text-[12.5px] font-medium shadow-md pointer-events-none text-center">
+              Posisikan teks komposisi / aksara Hanzi di dalam bingkai target
             </div>
 
-            {/* Target Bracket Frame */}
-            <div className="absolute inset-x-[12%] top-[28%] bottom-[28%] pointer-events-none">
+            {/* Target Bracket Frame (Scales adaptively: wider on desktop, compact on mobile) */}
+            <div className="absolute inset-x-[12%] sm:inset-x-[20%] md:inset-x-[26%] top-[14%] sm:top-[16%] bottom-[16%] sm:bottom-[18%] pointer-events-none">
               {/* Corner TL */}
-              <div className="absolute top-0 left-0 w-6 h-6 border-t-[2.5px] border-l-[2.5px] border-trust rounded-tl-[8px]" />
+              <div className="absolute top-0 left-0 w-8 h-8 sm:w-10 sm:h-10 border-t-[3px] border-l-[3px] border-trust rounded-tl-[12px] shadow-[0_0_10px_rgba(33,122,96,0.5)]" />
               {/* Corner TR */}
-              <div className="absolute top-0 right-0 w-6 h-6 border-t-[2.5px] border-r-[2.5px] border-trust rounded-tr-[8px]" />
+              <div className="absolute top-0 right-0 w-8 h-8 sm:w-10 sm:h-10 border-t-[3px] border-r-[3px] border-trust rounded-tr-[12px] shadow-[0_0_10px_rgba(33,122,96,0.5)]" />
               {/* Corner BL */}
-              <div className="absolute bottom-0 left-0 w-6 h-6 border-b-[2.5px] border-l-[2.5px] border-trust rounded-bl-[8px]" />
+              <div className="absolute bottom-0 left-0 w-8 h-8 sm:w-10 sm:h-10 border-b-[3px] border-l-[3px] border-trust rounded-bl-[12px] shadow-[0_0_10px_rgba(33,122,96,0.5)]" />
               {/* Corner BR */}
-              <div className="absolute bottom-0 right-0 w-6 h-6 border-b-[2.5px] border-r-[2.5px] border-trust rounded-br-[8px]" />
+              <div className="absolute bottom-0 right-0 w-8 h-8 sm:w-10 sm:h-10 border-b-[3px] border-r-[3px] border-trust rounded-br-[12px] shadow-[0_0_10px_rgba(33,122,96,0.5)]" />
 
               {/* Animated Laser Scanning Line */}
-              <div className="absolute inset-x-0 h-[2px] bg-gradient-to-r from-transparent via-[#60C4AB] to-transparent animate-scan-sweep shadow-[0_0_8px_#60C4AB]" />
+              <div className="absolute inset-x-0 h-[2px] bg-gradient-to-r from-transparent via-[#60C4AB] to-transparent animate-scan-sweep shadow-[0_0_12px_#60C4AB]" />
             </div>
 
-            <div className="absolute bottom-3 left-0 right-0 text-center text-paper/60 text-[11px]">
-              Pencahayaan cukup — siap memindai
+            {/* Bottom Tip Overlay */}
+            <div className="absolute bottom-4 inset-x-0 mx-auto max-w-max px-3.5 py-1 rounded-full bg-black/50 backdrop-blur-sm text-paper/80 text-[11px] pointer-events-none hidden sm:block">
+              💡 Pastikan pencahayaan cukup dan teks obat terlihat tajam
             </div>
           </>
         )}
       </div>
 
-      {/* Bottom Controls (Thumb Zone) */}
-      <div className="flex items-center justify-center gap-7 pt-4 pb-2">
-        {/* Gallery / File Button */}
-        <button
-          onClick={() => fileInputRef.current?.click()}
-          className="w-[46px] h-[46px] rounded-[14px] bg-paper-deep border border-line flex items-center justify-center text-ink-soft hover:text-ink active:scale-95 transition"
-          title="Buka Galeri"
-        >
-          <svg
-            width="19"
-            height="19"
-            viewBox="0 0 24 24"
-            fill="none"
-            stroke="currentColor"
-            strokeWidth="2"
-          >
-            <rect x="3" y="3" width="18" height="18" rx="3" />
-            <circle cx="9" cy="9" r="1.6" />
-            <path d="M21 15l-5-5L5 21" />
+      {/* Bottom Controls Bar (Ergonomic Desktop & Mobile) */}
+      <div className="flex flex-col sm:flex-row items-center justify-between gap-4 pt-4 md:pt-5 border-t border-line/60 mt-4">
+        {/* Left note */}
+        <div className="flex items-center gap-2 text-[12px] text-ink-soft order-2 sm:order-1">
+          <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" className="text-trust flex-shrink-0">
+            <path d="M12 2l8 3v6c0 5-3.5 8.5-8 11-4.5-2.5-8-6-8-11V5z" />
           </svg>
-        </button>
+          <span>Dicocokkan langsung ke 500 basis data keamanan TCM</span>
+        </div>
 
-        {/* Shutter Capture Button */}
-        <button
-          onClick={handleCapture}
-          className="w-[68px] h-[68px] rounded-full bg-trust border-[4px] border-trust-tint shadow-[0_8px_20px_-6px_rgba(19,75,61,0.55)] flex items-center justify-center text-white active:scale-95 transition hover:brightness-105"
-          title="Ambil Foto"
-        >
-          <svg
-            width="26"
-            height="26"
-            viewBox="0 0 24 24"
-            fill="none"
-            stroke="currentColor"
-            strokeWidth="2"
-            strokeLinecap="round"
-            strokeLinejoin="round"
+        {/* Primary Shutter Action */}
+        <div className="flex items-center gap-3 order-1 sm:order-2 w-full sm:w-auto justify-center">
+          <button
+            onClick={handleCapture}
+            className="w-full sm:w-auto px-7 py-3 rounded-[14px] bg-trust hover:bg-trust-deep text-white text-[13.5px] font-bold shadow-[0_8px_20px_-6px_rgba(19,75,61,0.55)] transition-all hover:scale-[1.02] active:scale-95 cursor-pointer flex items-center justify-center gap-2.5"
+            title="Ambil Foto Label & Analisis"
           >
-            <path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z" />
-            <circle cx="12" cy="13" r="4" />
-          </svg>
-        </button>
-
-        {/* Camera Switch / Flip Button */}
-        <button
-          onClick={toggleCamera}
-          className="w-[46px] h-[46px] rounded-[14px] bg-paper-deep border border-line flex items-center justify-center text-ink-soft hover:text-ink active:scale-95 transition"
-          title="Putar Kamera"
-        >
-          <svg
-            width="18"
-            height="18"
-            viewBox="0 0 24 24"
-            fill="none"
-            stroke="currentColor"
-            strokeWidth="2"
-            strokeLinecap="round"
-            strokeLinejoin="round"
-          >
-            <path d="M20 10c0-4.418-3.582-8-8-8s-8 3.582-8 8c0 2.21 0.895 4.21 2.343 5.657L4 18h5v-5l-1.657 1.657A5.98 5.98 0 0 1 6 10c0-3.314 2.686-6 6-6s6 2.686 6 6c0 1.657-0.672 3.157-1.757 4.243l1.414 1.414A7.96 7.96 0 0 0 20 10z" />
-          </svg>
-        </button>
-      </div>
-
-      {/* Trust Note */}
-      <div className="flex items-center justify-center gap-2 py-2 text-ink-soft text-[11.5px] border-t border-line/50 mt-1">
-        <svg
-          width="14"
-          height="14"
-          viewBox="0 0 24 24"
-          fill="none"
-          stroke="currentColor"
-          strokeWidth="2.2"
-          className="text-trust flex-shrink-0"
-        >
-          <path d="M12 2l8 3v6c0 5-3.5 8.5-8 11-4.5-2.5-8-6-8-11V5z" />
-        </svg>
-        <span>Basis data diverifikasi apoteker terdaftar</span>
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round">
+              <path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z" />
+              <circle cx="12" cy="13" r="4" />
+            </svg>
+            <span>Ambil Foto Label &amp; Analisis</span>
+          </button>
+        </div>
       </div>
     </div>
   );
