@@ -21,6 +21,14 @@ Decisions applied:
   - BKO context LLM is ambiguous → ask user for clarification
 """
 
+import sys
+if sys.stdout and hasattr(sys.stdout, "reconfigure"):
+    try:
+        sys.stdout.reconfigure(encoding="utf-8")
+        sys.stderr.reconfigure(encoding="utf-8")
+    except Exception:
+        pass
+
 import re
 import json
 import asyncio
@@ -37,7 +45,7 @@ def _load_bko_data() -> None:
         with open(_BKO_DATA_PATH, encoding="utf-8") as f:
             data = json.load(f)
     except Exception as e:
-        print(f"[Interceptor] ⚠️  Could not load BKO data: {e}")
+        print(f"[Interceptor] [WARN] Could not load BKO data: {e}")
         return
 
     all_aliases: list[str] = []
@@ -64,9 +72,9 @@ def _load_bko_data() -> None:
         _BKO_PATTERN = re.compile(
             r"(?i)(?<!\w)(" + "|".join(all_aliases) + r")(?!\w)"
         )
-        print(f"[Interceptor] ✅ BKO database loaded: {len(_BKO_ALIAS_MAP)} aliases across {len(data['categories'])} categories")
+        print(f"[Interceptor] [OK] BKO database loaded: {len(_BKO_ALIAS_MAP)} aliases across {len(data['categories'])} categories")
     else:
-        print("[Interceptor] ⚠️  BKO alias list is empty — check bko_substances.json")
+        print("[Interceptor] [WARN] BKO alias list is empty — check bko_substances.json")
 
 _load_bko_data()
 
@@ -201,7 +209,7 @@ def check_emergency(text: str) -> str | None:
     Call this BEFORE any LLM interaction.
     """
     if _EMERGENCY_PATTERN.search(text):
-        print(f"[Interceptor] 🚨 Emergency keyword triggered in: '{text[:60]}...'")
+        print(f"[Interceptor] [EMERGENCY] Emergency keyword triggered in: '{text[:60]}...'")
         return EMERGENCY_RESPONSE
     return None
 
@@ -228,7 +236,7 @@ async def check_bko(text: str) -> dict:
         return {"action": "pass"}
 
     substance_name = substance_info["display_name_id"]
-    print(f"[Interceptor] ⚠️  BKO keyword '{matched_alias}' ({substance_name}) detected. Running context check...")
+    print(f"[Interceptor] [WARN] BKO keyword '{matched_alias}' ({substance_name}) detected. Running context check...")
 
     context_result = await _bko_context_llm_check(text, substance_name)
     print(f"[Interceptor] BKO context LLM result: {context_result}")

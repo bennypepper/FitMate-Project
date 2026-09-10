@@ -150,7 +150,7 @@ async def receive_message(
 
     if twilio_signature and settings.TWILIO_AUTH_TOKEN:
         if not _validate_twilio_signature(webhook_url, params, twilio_signature):
-            print(f"[Twilio] ⚠️  Invalid signature from {request.client.host} — rejected")
+            print(f"[Twilio] [WARN] Invalid signature from {request.client.host} — rejected")
             return {"status": "ok"}
 
     sender_phone = From.replace("whatsapp:", "").strip()
@@ -179,7 +179,7 @@ async def _fuzzy_lookup(ingredient_name: str, db) -> tuple[dict | None, int]:
     print(f"[Bot] DB has {len(ingredients)} ingredients")
 
     if not ingredients:
-        print("[Bot] ⚠️  tcm_ingredients is EMPTY — run seed_100_tcm.py first!")
+        print("[Bot] [WARN] tcm_ingredients is EMPTY — run seed_100_tcm.py first!")
         return None, 0
 
     best_match = None
