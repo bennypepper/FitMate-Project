@@ -160,7 +160,7 @@ export default function IngredientSearchModal({
                 Kamus Bahan TCM &amp; Toksisitas
               </h3>
               <p className="text-[12px] text-ink-soft">
-                Basis data 101 herbal terverifikasi BPOM &amp; monograf TCM
+                Basis data 500 bahan &amp; obat TCM terverifikasi BPOM &amp; monograf toksikologi
               </p>
             </div>
           </div>

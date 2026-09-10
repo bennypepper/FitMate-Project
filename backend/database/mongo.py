@@ -170,26 +170,37 @@ class FallbackDatabase:
     def __init__(self):
         tcm_data = []
         try:
-            from database.seed_100_tcm import POPULAR_TCM
-            for idx, item in enumerate(POPULAR_TCM, 1):
-                mandarin, pinyin, indo, eng, is_toxic, tox_class, organ, desc, source = item
-                tcm_data.append({
-                    "_id": str(idx),
-                    "mandarin_name": mandarin,
-                    "pinyin_name": pinyin,
-                    "indonesian_name": indo,
-                    "english_name": eng,
-                    "latin_name": indo if " " in indo else None,
-                    "is_toxic": is_toxic,
-                    "toxicity_level": tox_class,
-                    "toxicity_class": "toxic" if is_toxic else tox_class,
-                    "target_organ": organ,
-                    "description": desc,
-                    "source_reference": source,
-                    "validated_by": "fitmate_verified"
-                })
+            import json
+            from pathlib import Path
+            json_path = Path(__file__).parent / "data" / "tcm_500_ingredients.json"
+            if json_path.exists():
+                with open(json_path, "r", encoding="utf-8") as f:
+                    raw_items = json.load(f)
+                for idx, it in enumerate(raw_items, 1):
+                    doc = dict(it)
+                    doc["_id"] = str(idx)
+                    tcm_data.append(doc)
+            else:
+                from database.seed_100_tcm import POPULAR_TCM
+                for idx, item in enumerate(POPULAR_TCM, 1):
+                    mandarin, pinyin, indo, eng, is_toxic, tox_class, organ, desc, source = item
+                    tcm_data.append({
+                        "_id": str(idx),
+                        "mandarin_name": mandarin,
+                        "pinyin_name": pinyin,
+                        "indonesian_name": indo,
+                        "english_name": eng,
+                        "latin_name": indo if " " in indo else None,
+                        "is_toxic": is_toxic,
+                        "toxicity_level": tox_class,
+                        "toxicity_class": "toxic" if is_toxic else tox_class,
+                        "target_organ": organ,
+                        "description": desc,
+                        "source_reference": source,
+                        "validated_by": "fitmate_verified"
+                    })
         except Exception as e:
-            logger.warning(f"Could not load POPULAR_TCM into fallback: {e}")
+            logger.warning(f"Could not load TCM ingredients into fallback: {e}")
 
         self._collections = {
             "tcm_ingredients": FallbackCollection("tcm_ingredients", tcm_data),

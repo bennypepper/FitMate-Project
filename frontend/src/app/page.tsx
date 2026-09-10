@@ -13,12 +13,14 @@ function HomeContent() {
   const sessionParam = searchParams.get("session");
   const [bridgeUploaded, setBridgeUploaded] = useState(false);
   const [bridgeUploading, setBridgeUploading] = useState(false);
+  const [bridgeResults, setBridgeResults] = useState<any | null>(null);
 
   const [image, setImage] = useState<string | null>(null);
   const [isProcessing, setIsProcessing] = useState(false);
   const [results, setResults] = useState<any | null>(null);
   const [networkError, setNetworkError] = useState<string | null>(null);
   const [showLiveCamera, setShowLiveCamera] = useState(false);
+  const [showQrBridge, setShowQrBridge] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   // Send captured or uploaded image to backend for OCR + Safety Analysis
@@ -178,37 +180,58 @@ function HomeContent() {
   if (sessionParam) {
     return (
       <div className="w-full min-h-[85vh] flex flex-col items-center justify-center p-4">
-        {bridgeUploaded ? (
-          <div className="bg-card border border-line rounded-[24px] p-8 max-w-sm w-full text-center shadow-xl animate-in zoom-in-95">
-            <div className="w-16 h-16 rounded-full bg-trust-tint text-trust-deep mx-auto mb-4 flex items-center justify-center text-3xl font-bold">
-              ✓
+        {bridgeUploaded && bridgeResults ? (
+          <div className="w-full max-w-lg flex flex-col items-center animate-in zoom-in-95 duration-200">
+            {/* Sync Success Header */}
+            <div className="w-full bg-trust-tint border border-trust/40 rounded-[20px] p-5 mb-5 flex items-center justify-between gap-3 shadow-xs">
+              <div className="flex items-center gap-3">
+                <div className="w-10 h-10 rounded-full bg-white text-trust-deep flex items-center justify-center text-xl font-bold shadow-xs">
+                  ✓
+                </div>
+                <div>
+                  <h3 className="font-serif text-[15px] font-bold text-ink">
+                    Tersinkron ke Layar Komputer!
+                  </h3>
+                  <p className="text-[12px] text-ink-soft">
+                    Hasil analisis otomatis muncul di monitor desktop &amp; layar HP Anda.
+                  </p>
+                </div>
+              </div>
+              <button
+                onClick={() => {
+                  setBridgeUploaded(false);
+                  setBridgeResults(null);
+                }}
+                className="px-3.5 py-2 bg-trust hover:bg-trust-deep text-white font-semibold text-[12px] rounded-[10px] shadow-xs transition cursor-pointer whitespace-nowrap"
+              >
+                Pindai Lagi
+              </button>
             </div>
-            <h2 className="font-serif text-2xl font-bold text-ink mb-2">
-              Berhasil Terkirim!
-            </h2>
-            <p className="text-[13.5px] text-ink-soft leading-relaxed mb-6">
-              Foto kemasan herbal telah berhasil dikirim ke komputer Anda. Hasil analisis sedang ditampilkan di layar monitor.
-            </p>
-            <button
-              onClick={() => setBridgeUploaded(false)}
-              className="w-full py-3 bg-trust hover:bg-trust-deep text-white font-semibold text-[13.5px] rounded-[12px] shadow-sm transition cursor-pointer"
-            >
-              Kirim Foto Label Lain
-            </button>
+
+            {/* Render Full Results on Mobile as well */}
+            <ResultsCard
+              ingredients={bridgeResults.ingredients}
+              ocrBlocks={bridgeResults.ocr_blocks}
+              disclaimer={bridgeResults.disclaimer}
+              onReset={() => {
+                setBridgeUploaded(false);
+                setBridgeResults(null);
+              }}
+            />
           </div>
         ) : bridgeUploading ? (
           <div className="bg-card border border-line rounded-[24px] p-10 max-w-sm w-full text-center shadow-xl">
             <ProcessingLoader />
             <p className="text-[13.5px] font-medium text-ink mt-5">
-              Mengirim foto ke layar komputer Anda...
+              Menganalisis label &amp; menghubungkan ke desktop...
             </p>
           </div>
         ) : (
           <div className="w-full max-w-md flex flex-col items-center">
-            {/* Bridge Banner */}
+            {/* Bridge Info Banner */}
             <div className="w-full mb-3 p-3 bg-trust-tint border border-trust/30 rounded-[14px] flex items-center gap-2.5 text-trust-deep text-[12px] font-medium">
               <span className="text-base">📱</span>
-              <span>Mode Jembatan: Foto akan otomatis ditampilkan di layar komputer.</span>
+              <span>Jembatan Aktif: Foto akan otomatis disinkronkan ke komputer &amp; HP ini.</span>
             </div>
 
             <CameraViewfinder
@@ -228,6 +251,19 @@ function HomeContent() {
                   if (!uploadRes.ok) {
                     throw new Error("Gagal mengunggah foto ke sesi desktop");
                   }
+                  const uploadData = await uploadRes.json();
+                  const sa = uploadData.safety_analysis || {};
+                  const allIngredients = [
+                    ...(sa.toxic || []).map((i: any) => ({ ...i, category: "toxic", is_toxic: true })),
+                    ...(sa.contraindicated || []).map((i: any) => ({ ...i, category: "contraindicated", is_toxic: true })),
+                    ...(sa.safe || []).map((i: any) => ({ ...i, category: "safe", is_toxic: false })),
+                    ...(sa.unknown || []).map((i: any) => ({ ...i, category: "unknown", is_toxic: false })),
+                  ];
+                  setBridgeResults({
+                    ingredients: allIngredients,
+                    disclaimer: uploadData.disclaimer || "",
+                    ocr_blocks: uploadData.ocr_blocks || [],
+                  });
                   setBridgeUploaded(true);
                 } catch (err: any) {
                   alert(err.message || "Gagal mengirim foto. Coba lagi.");
@@ -279,17 +315,30 @@ function HomeContent() {
             </div>
           )}
 
-          {/* Active Live Camera View State (if triggered on desktop/mobile) */}
+          {/* Active Live Camera View State (Works seamlessly on mobile or laptop webcam) */}
           {showLiveCamera && !results && !isProcessing && (
             <div className="p-6 md:p-10 flex flex-col items-center justify-center">
-              <CameraViewfinder onCapture={handleImageReady} onReset={handleReset} />
+              <div className="w-full max-w-md flex flex-col items-center">
+                <div className="w-full flex items-center justify-between mb-3 px-1">
+                  <span className="text-[12.5px] font-semibold text-ink flex items-center gap-1.5">
+                    📷 Pindai Label Komposisi
+                  </span>
+                  <button
+                    onClick={handleReset}
+                    className="text-[12px] text-ink-soft hover:text-ink underline cursor-pointer"
+                  >
+                    Batal &amp; Kembali
+                  </button>
+                </div>
+                <CameraViewfinder onCapture={handleImageReady} onReset={handleReset} />
+              </div>
             </div>
           )}
 
-          {/* Default Hero Presentation (Mockup Section 1) */}
+          {/* Default Hero Presentation */}
           {!results && !isProcessing && !showLiveCamera && (
             <>
-              <div className="grid grid-cols-1 lg:grid-cols-[1.1fr_1fr] gap-10 lg:gap-14 p-6 md:p-12 items-center">
+              <div className="grid grid-cols-1 lg:grid-cols-[1.1fr_1fr] gap-8 lg:gap-12 p-6 md:p-12 items-center">
                 
                 {/* Hero Copy (Left Column) */}
                 <div className="flex flex-col items-start">
@@ -307,20 +356,20 @@ function HomeContent() {
                     Diverifikasi apoteker terdaftar
                   </div>
 
-                  <h1 className="font-serif font-bold text-[34px] md:text-[38px] leading-[1.2] text-ink mb-4 max-w-[520px]">
+                  <h1 className="font-serif font-bold text-[32px] md:text-[38px] leading-[1.2] text-ink mb-4 max-w-[520px]">
                     Tahu isi obat TCM Anda sebelum meminumnya
                   </h1>
 
                   <p className="text-[14.5px] md:text-[15px] leading-[1.65] text-ink-soft mb-6 max-w-[480px]">
                     FitMate memindai label komposisi, menerjemahkan aksara Hanzi, dan mencocokkannya
-                    dengan basis data toksisitas — supaya bahan berbahaya seperti merkuri atau arsenik
-                    tidak lolos dari perhatian.
+                    dengan basis data 500 herbal &amp; toksisitas — memastikan produk aman tanpa bahan kimia obat atau logam berat.
                   </p>
 
-                  <div className="flex flex-wrap items-center gap-3 mb-7">
+                  {/* Primary Action Buttons: Standalone single-device workflow */}
+                  <div className="flex flex-wrap items-center gap-3 mb-7 w-full sm:w-auto">
                     <button
-                      onClick={() => fileInputRef.current?.click()}
-                      className="px-5 py-2.5 bg-trust hover:bg-trust-deep text-white text-[13px] font-semibold rounded-[10px] shadow-sm transition flex items-center gap-2 active:scale-95 cursor-pointer"
+                      onClick={() => setShowLiveCamera(true)}
+                      className="px-5 py-2.5 bg-trust hover:bg-trust-deep text-white text-[13px] font-semibold rounded-[10px] shadow-sm transition flex items-center justify-center gap-2 active:scale-95 cursor-pointer flex-1 sm:flex-initial"
                     >
                       <svg
                         width="16"
@@ -330,23 +379,15 @@ function HomeContent() {
                         stroke="currentColor"
                         strokeWidth="2"
                       >
-                        <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" />
-                        <polyline points="17 8 12 3 7 8" />
-                        <line x1="12" y1="3" x2="12" y2="15" />
+                        <path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z" />
+                        <circle cx="12" cy="13" r="4" />
                       </svg>
-                      Unggah Label Obat
+                      Pindai via Kamera
                     </button>
 
                     <button
-                      onClick={handleShowDemoResult}
-                      className="px-5 py-2.5 bg-transparent hover:bg-trust-tint text-trust-deep text-[13px] font-semibold rounded-[10px] border border-trust transition active:scale-95 cursor-pointer"
-                    >
-                      Lihat Contoh Hasil
-                    </button>
-
-                    <button
-                      onClick={() => setShowLiveCamera(true)}
-                      className="px-4 py-2.5 bg-paper-deep hover:bg-paper text-ink text-[13px] font-medium rounded-[10px] border border-line transition cursor-pointer flex items-center gap-1.5"
+                      onClick={() => fileInputRef.current?.click()}
+                      className="px-4 py-2.5 bg-paper-deep hover:bg-paper text-ink text-[13px] font-medium rounded-[10px] border border-line transition cursor-pointer flex items-center justify-center gap-1.5 flex-1 sm:flex-initial"
                     >
                       <svg
                         width="15"
@@ -356,10 +397,18 @@ function HomeContent() {
                         stroke="currentColor"
                         strokeWidth="2"
                       >
-                        <path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z" />
-                        <circle cx="12" cy="13" r="4" />
+                        <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" />
+                        <polyline points="17 8 12 3 7 8" />
+                        <line x1="12" y1="3" x2="12" y2="15" />
                       </svg>
-                      Pindai via Kamera
+                      Pilih Foto Label
+                    </button>
+
+                    <button
+                      onClick={handleShowDemoResult}
+                      className="px-4 py-2.5 bg-transparent hover:bg-trust-tint text-trust-deep text-[13px] font-semibold rounded-[10px] border border-trust/50 transition active:scale-95 cursor-pointer w-full sm:w-auto"
+                    >
+                      Lihat Contoh Hasil
                     </button>
                   </div>
 
@@ -378,7 +427,7 @@ function HomeContent() {
                       >
                         <polyline points="20 6 9 17 4 12" />
                       </svg>
-                      <span>Panduan rule-based, bukan tebakan AI</span>
+                      <span>Panduan rule-based tervalidasi, bukan tebakan AI</span>
                     </div>
                     <div className="flex items-center gap-2.5">
                       <svg
@@ -393,7 +442,7 @@ function HomeContent() {
                       >
                         <polyline points="20 6 9 17 4 12" />
                       </svg>
-                      <span>Bahan dicocokkan ke basis data toksisitas tervalidasi</span>
+                      <span>500 basis data bahan TCM &amp; toksisitas BPOM / FHI</span>
                     </div>
                     <div className="flex items-center gap-2.5">
                       <svg
@@ -413,19 +462,19 @@ function HomeContent() {
                   </div>
                 </div>
 
-                {/* Hero Panel (Right Column: Dropzone & QR Bridge) */}
+                {/* Hero Panel (Right Column: Standalone Dropzone + Optional QR Bridge) */}
                 <div className="bg-card border border-line rounded-[20px] p-6 shadow-sm flex flex-col">
-                  {/* Dropzone */}
+                  {/* Standalone Dropzone */}
                   <div
                     onDragOver={handleDragOver}
                     onDrop={handleDrop}
                     onClick={() => fileInputRef.current?.click()}
-                    className="border-[1.5px] border-dashed border-trust/40 bg-trust-tint hover:bg-trust-tint/80 rounded-[14px] p-8 text-center cursor-pointer transition-colors group"
+                    className="border-[1.5px] border-dashed border-trust/40 bg-trust-tint/70 hover:bg-trust-tint rounded-[16px] p-8 text-center cursor-pointer transition-colors group"
                   >
-                    <div className="w-[46px] h-[46px] rounded-full bg-white text-trust-deep flex items-center justify-center mx-auto mb-3 shadow-xs group-hover:scale-105 transition-transform">
+                    <div className="w-[50px] h-[50px] rounded-full bg-white text-trust-deep flex items-center justify-center mx-auto mb-3 shadow-xs group-hover:scale-105 transition-transform">
                       <svg
-                        width="20"
-                        height="20"
+                        width="22"
+                        height="22"
                         viewBox="0 0 24 24"
                         fill="none"
                         stroke="currentColor"
@@ -437,29 +486,42 @@ function HomeContent() {
                         <path d="M4 17v3a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-3" />
                       </svg>
                     </div>
-                    <h4 className="text-[14px] font-semibold text-ink mb-1">
+                    <h4 className="text-[14.5px] font-semibold text-ink mb-1">
                       Seret foto label ke sini
                     </h4>
                     <p className="text-[12px] text-ink-soft mb-4">
-                      atau klik untuk memilih file — JPG, PNG, maks 10MB
+                      atau klik untuk memilih file dari komputer/galeri (JPG, PNG, WebP)
                     </p>
                     <button
                       type="button"
-                      className="w-full py-2.5 bg-trust hover:bg-trust-deep text-white text-[13px] font-semibold rounded-[10px] shadow-sm transition"
+                      className="w-full py-2.5 bg-trust hover:bg-trust-deep text-white text-[13px] font-semibold rounded-[10px] shadow-sm transition pointer-events-none"
                     >
-                      Pilih File
+                      Pilih Foto Label
                     </button>
                   </div>
 
-                  {/* Divider */}
-                  <div className="flex items-center gap-3 my-5 text-[11px] font-bold text-ink-faint tracking-wider">
-                    <div className="flex-1 h-[1px] bg-line" />
-                    <span>ATAU LANJUTKAN DI HP</span>
-                    <div className="flex-1 h-[1px] bg-line" />
-                  </div>
+                  {/* Optional QR Bridge (For Laptop Users wanting to use smartphone camera as scanner) */}
+                  <div className="mt-4 pt-4 border-t border-line/60">
+                    <button
+                      type="button"
+                      onClick={() => setShowQrBridge(!showQrBridge)}
+                      className="w-full flex items-center justify-between px-3.5 py-2.5 rounded-[12px] bg-paper-deep/60 hover:bg-paper-deep text-ink-soft hover:text-ink text-[12.5px] font-medium transition cursor-pointer border border-line/40"
+                    >
+                      <div className="flex items-center gap-2">
+                        <span className="text-base">📱</span>
+                        <span>Ingin foto pakai kamera HP? (Jembatan QR)</span>
+                      </div>
+                      <span className="text-ink-faint text-[11px] font-semibold">
+                        {showQrBridge ? "▲ Sembunyikan" : "▼ Buka QR"}
+                      </span>
+                    </button>
 
-                  {/* Dynamic QR Bridge */}
-                  <QRCodeBridge onComplete={handleBridgeComplete} />
+                    {showQrBridge && (
+                      <div className="mt-3 animate-in fade-in slide-in-from-top-2 duration-200">
+                        <QRCodeBridge onComplete={handleBridgeComplete} />
+                      </div>
+                    )}
+                  </div>
                 </div>
               </div>
 
@@ -505,7 +567,7 @@ function HomeContent() {
                     Deteksi Toksisitas Berbasis Aturan
                   </h5>
                   <p className="text-[12px] leading-relaxed text-ink-soft">
-                    Dicocokkan ke 101 basis data toksisitas apoteker berlisensi dengan prinsip ketat zero-hallucination.
+                    Dicocokkan ke 500 basis data toksisitas &amp; herbal berlisensi dengan prinsip ketat zero-hallucination.
                   </p>
                 </div>
 
@@ -591,7 +653,7 @@ function HomeContent() {
                 1. Foto atau Unggah Label
               </h3>
               <p className="text-[13px] text-ink-soft leading-relaxed">
-                Arahkan kamera ponsel ke label komposisi obat tradisional, atau unggah foto kemasan yang sudah Anda simpan.
+                Arahkan kamera ke label komposisi obat tradisional, atau unggah foto kemasan yang sudah Anda simpan di laptop atau ponsel.
               </p>
             </div>
 
@@ -627,7 +689,7 @@ function HomeContent() {
                 3. Verifikasi Toksisitas &amp; WhatsApp
               </h3>
               <p className="text-[13px] text-ink-soft leading-relaxed">
-                Hasil dicocokkan ke data toksisitas 101 TCM. Jika terdeteksi merkuri, aconite, atau BKO, Anda dapat langsung konsultasi apoteker via WhatsApp.
+                Hasil dicocokkan ke 500 basis data TCM &amp; toksisitas terverifikasi. Jika terdeteksi merkuri, aconite, atau BKO, Anda dapat langsung konsultasi apoteker via WhatsApp.
               </p>
             </div>
           </div>

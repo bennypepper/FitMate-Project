@@ -42,28 +42,53 @@ async def match_ingredients(detected_texts: list[str], db) -> dict:
             matched_texts.add(raw_text)
             continue
 
-        # 2. Substring matching (both directions)
+        # 2. Strict word boundary check (Requires full word match, not loose partial letters)
         matched_item = None
         matched_score = 0
         for name_key, item in lookup_keys.items():
-            if len(name_key) >= 2 and (name_key in lower_text or (len(lower_text) >= 3 and lower_text in name_key)):
-                matched_item = item
-                matched_score = 95
-                break
+            if len(name_key) >= 3 or re.search(r'[\u4e00-\u9fff]', name_key):
+                p1 = r'(?:\b|^)' + re.escape(name_key) + r'(?:\b|$)'
+                p2 = r'(?:\b|^)' + re.escape(lower_text) + r'(?:\b|$)'
+                if re.search(p1, lower_text) or (len(lower_text) >= 4 and re.search(p2, name_key)):
+                    matched_item = item
+                    matched_score = 95
+                    break
 
         if matched_item:
             _categorize_item(matched_item, raw_text, results, matched_score)
             matched_texts.add(raw_text)
             continue
 
-        # 3. Fuzzy ratio matching against all known names
-        best_match = process.extractOne(lower_text, list(lookup_keys.keys()), scorer=fuzz.partial_ratio)
-        if best_match and best_match[1] >= 82:
-            matched_item = lookup_keys[best_match[0]]
-            _categorize_item(matched_item, raw_text, results, best_match[1])
-            matched_texts.add(raw_text)
-        else:
-            results["unknown"].append({"detected_text": raw_text, "match_score": 0})
+        # 3. Fuzzy token ratio matching (only for shorter text snippets)
+        if len(lower_text) <= 35:
+            best_match = process.extractOne(lower_text, list(lookup_keys.keys()), scorer=fuzz.token_sort_ratio)
+            if best_match and best_match[1] >= 88:
+                matched_item = lookup_keys[best_match[0]]
+                _categorize_item(matched_item, raw_text, results, best_match[1])
+                matched_texts.add(raw_text)
+                continue
+
+        results["unknown"].append({
+            "detected_text": raw_text,
+            "match_score": 0,
+            "is_toxic": False,
+            "is_herbal": False,
+            "status_label": "Bukan Komposisi Herbal / Teks Kemasan Umum"
+        })
+
+    total_toxic = len(results["toxic"]) + len(results["contraindicated"])
+    total_safe = len(results["safe"])
+    total_unknown = len(results["unknown"])
+    is_herbal = (total_toxic + total_safe) > 0
+
+    results["meta"] = {
+        "total_detected": len(detected_texts),
+        "total_toxic": total_toxic,
+        "total_safe": total_safe,
+        "total_unknown": total_unknown,
+        "is_herbal_product": is_herbal,
+        "classification": "toxic" if total_toxic > 0 else ("safe" if total_safe > 0 else "non_herbal")
+    }
 
     return results
 

@@ -97,7 +97,11 @@ async def upload_for_session(
 
         session["status"] = "completed"
         session["results"] = payload
-        return {"status": "success", "message": "Hasil analisis berhasil dikirim ke desktop"}
+        return {
+            "status": "success",
+            "message": "Hasil analisis berhasil diproses",
+            **payload
+        }
     except Exception as e:
         session["status"] = "error"
         session["error"] = str(e)

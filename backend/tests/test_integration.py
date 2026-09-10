@@ -8,9 +8,9 @@ async def run_all_tests():
     print("--- 1. Testing Database & Fallback ---")
     db = get_db()
     col = db["tcm_ingredients"]
-    doc_count = await col.count_documents({})
-    print(f"Database ingredient count: {doc_count}")
-    assert doc_count >= 100, f"Expected >= 100 ingredients, got {doc_count}"
+    count = await col.count_documents({})
+    assert count >= 100
+    print(f"Database ingredient count: {count}")
 
     print("--- 2. Testing Multilingual Safety Matching ---")
     test_queries = [
@@ -32,6 +32,15 @@ async def run_all_tests():
             assert len(matched["safe"]) > 0, f"Expected safe match for {raw_name}, got {matched}"
             item = matched["safe"][0]
             print(f"Query: {raw_name:<15} -> Matched SAFE:  {item.get('english_name') or item.get('indonesian_name')}")
+
+    # Test non-herbal food snack text
+    snack_res = await match_ingredients(["Naraya Rice Crackers", "Krekers Beras Rasa Asin"], db)
+    assert snack_res["meta"]["is_herbal_product"] == False
+    assert snack_res["meta"]["classification"] == "non_herbal"
+    assert len(snack_res["toxic"]) == 0
+    assert len(snack_res["safe"]) == 0
+    assert len(snack_res["unknown"]) == 2
+    print("Non-herbal food snack test: PASS (Correctly flagged non_herbal)")
 
     print("--- 3. Testing API Endpoints via ASGI ---")
     transport = httpx.ASGITransport(app=app)

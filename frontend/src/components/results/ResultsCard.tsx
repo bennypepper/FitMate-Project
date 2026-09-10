@@ -37,13 +37,16 @@ export default function ResultsCard({
         msg += `${idx + 1}. ${name}${desc}\n`;
       });
       msg += "\nMohon konfirmasi dan rekomendasi keamanan untuk mengonsumsi produk ini.";
-    } else {
-      msg += `✅ BAHAN AMAN (${safeItems.length}):\n`;
+    } else if (safeItems.length > 0) {
+      msg += `✅ BAHAN HERBAL AMAN (${safeItems.length}):\n`;
       safeItems.forEach((item, idx) => {
         const name = item.matched_mandarin || item.english_name || item.indonesian_name || item.detected_text;
         msg += `${idx + 1}. ${name}\n`;
       });
       msg += "\nApakah ada petunjuk dosis atau anjuran minum yang tepat?";
+    } else {
+      msg += "ℹ️ Tidak terdeteksi komposisi herbal TCM pada kemasan yang dipindai.\n";
+      msg += "Mohon konfirmasi apakah produk ini terdaftar sebagai obat tradisional atau suplemen kesehatan.";
     }
     return msg;
   };
@@ -59,7 +62,7 @@ export default function ResultsCard({
       <div className="flex items-center justify-between pb-3 border-b border-line mb-4">
         <button
           onClick={onReset}
-          className="w-[34px] h-[34px] rounded-full bg-paper-deep text-ink hover:bg-paper transition flex items-center justify-center"
+          className="w-[34px] h-[34px] rounded-full bg-paper-deep text-ink hover:bg-paper transition flex items-center justify-center cursor-pointer"
           title="Kembali ke Kamera"
         >
           <svg
@@ -78,8 +81,9 @@ export default function ResultsCard({
         <div className="w-[34px] h-[34px]" />
       </div>
 
-      {/* Hero Result Banner */}
+      {/* Hero Result Banner — 3 Dynamic States */}
       {toxicItems.length > 0 ? (
+        /* State 1: Toxic / Contraindicated Ingredients Found */
         <div className="bg-danger-tint border border-danger/30 rounded-[16px] p-4 mb-5">
           <div className="inline-flex items-center gap-1.5 bg-danger text-white text-[11px] font-semibold px-2.5 py-1 rounded-full mb-2.5">
             <svg
@@ -104,7 +108,8 @@ export default function ResultsCard({
               "Mengandung senyawa yang memiliki peringatan toksisitas atau kontraindikasi klinis. Tidak dianjurkan untuk dikonsumsi tanpa resep atau pengawasan apoteker berlisensi."}
           </p>
         </div>
-      ) : (
+      ) : safeItems.length > 0 ? (
+        /* State 2: Verified Safe TCM Ingredients Found */
         <div className="bg-trust-tint border border-trust/30 rounded-[16px] p-4 mb-5">
           <div className="inline-flex items-center gap-1.5 bg-trust text-white text-[11px] font-semibold px-2.5 py-1 rounded-full mb-2.5">
             <svg
@@ -117,13 +122,38 @@ export default function ResultsCard({
             >
               <polyline points="20 6 9 17 4 12" />
             </svg>
-            <span>Semua bahan aman</span>
+            <span>{safeItems.length} herbal terverifikasi aman</span>
           </div>
           <h3 className="font-serif text-[17px] font-bold text-trust-deep mb-1.5">
-            Tidak Ditemukan Bahan Berbahaya
+            Komposisi Herbal Terverifikasi Aman
           </h3>
           <p className="text-[12.5px] leading-relaxed text-ink">
-            Semua bahan yang terdeteksi cocok dengan daftar herbal aman pada basis data apotek tervalidasi kami.
+            Semua komposisi herbal yang terdeteksi cocok dengan daftar monograf TCM aman pada basis data apotek kami dan tidak ditemukan bahan toksik atau terlarang.
+          </p>
+        </div>
+      ) : (
+        /* State 3: Non-Herbal Product / No TCM Ingredients Detected */
+        <div className="bg-paper-deep border border-line rounded-[16px] p-4 mb-5">
+          <div className="inline-flex items-center gap-1.5 bg-ink-soft text-white text-[11px] font-semibold px-2.5 py-1 rounded-full mb-2.5">
+            <svg
+              width="12"
+              height="12"
+              viewBox="0 0 24 24"
+              fill="none"
+              stroke="currentColor"
+              strokeWidth="2.5"
+            >
+              <circle cx="12" cy="12" r="10" />
+              <line x1="12" y1="8" x2="12" y2="12" />
+              <line x1="12" y1="16" x2="12.01" y2="16" />
+            </svg>
+            <span>Bukan Produk Herbal TCM</span>
+          </div>
+          <h3 className="font-serif text-[17px] font-bold text-ink mb-1.5">
+            Tidak Terdeteksi Komposisi Herbal TCM
+          </h3>
+          <p className="text-[12.5px] leading-relaxed text-ink-soft">
+            Teks yang dipindai tidak cocok dengan monograf obat herbal TCM pada basis data apotek kami. Produk ini kemungkinan adalah makanan/snack umum, atau daftar komposisi tidak tertera secara jelas.
           </p>
         </div>
       )}
@@ -132,7 +162,7 @@ export default function ResultsCard({
       <div className="mb-5">
         <div className="flex items-center justify-between mb-2.5">
           <h4 className="text-[12px] font-bold uppercase tracking-wider text-ink-soft">
-            Rincian Komposisi Bahan ({ingredients.length})
+            Rincian Teks &amp; Komposisi ({ingredients.length})
           </h4>
           <span className="text-[11px] text-ink-faint">Rule-based lookup</span>
         </div>
@@ -142,8 +172,10 @@ export default function ResultsCard({
             const isToxic =
               item.is_toxic || item.category === "toxic" || item.category === "contraindicated";
             const zh = item.matched_mandarin || item.detected_text;
-            const sub =
-              item.indonesian_name || item.english_name || item.latin_name || "Herbal Terverifikasi";
+            const isHerbal = item.category === "safe" || isToxic;
+            const sub = isHerbal
+              ? (item.indonesian_name || item.english_name || item.latin_name || "Komposisi Herbal Terdaftar")
+              : "Bukan Komposisi Herbal / Teks Kemasan Umum";
 
             return (
               <div
@@ -151,14 +183,16 @@ export default function ResultsCard({
                 className={`flex items-center justify-between p-3 rounded-[12px] border transition-colors ${
                   isToxic
                     ? "bg-danger-tint border-danger/30"
-                    : "bg-paper border-line"
+                    : isHerbal
+                    ? "bg-card border-line"
+                    : "bg-paper-deep/60 border-line/60"
                 }`}
               >
                 <div className="flex flex-col pr-2">
                   <span className="font-semibold text-[13.5px] text-ink">
                     {zh}
                   </span>
-                  <span className="text-[11px] text-ink-soft mt-0.5">
+                  <span className={`text-[11px] mt-0.5 ${isHerbal ? "text-ink-soft" : "text-ink-faint italic"}`}>
                     {sub}
                   </span>
                 </div>
@@ -168,13 +202,13 @@ export default function ResultsCard({
                     <span className="inline-block text-[10.5px] font-bold px-2.5 py-1 rounded-full bg-danger text-white shadow-xs">
                       Berisiko
                     </span>
-                  ) : item.category === "unknown" ? (
-                    <span className="inline-block text-[10.5px] font-medium px-2 py-0.5 rounded-full bg-paper-deep text-ink-soft border border-line">
-                      Perlu Review
-                    </span>
-                  ) : (
+                  ) : item.category === "safe" ? (
                     <span className="inline-block text-[10.5px] font-bold px-2.5 py-1 rounded-full bg-trust-tint text-trust-deep border border-trust/20">
                       Aman
+                    </span>
+                  ) : (
+                    <span className="inline-block text-[10.5px] font-medium px-2 py-0.5 rounded-full bg-paper text-ink-faint border border-line">
+                      Bukan Herbal
                     </span>
                   )}
                 </div>
