@@ -62,3 +62,7 @@ Thumbs.db
 
 # AI Context
 .agents/
+
+# Document drafts
+*.docx
+
