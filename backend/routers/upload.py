@@ -10,11 +10,14 @@ Max file size: 10MB.
 """
 
 import os
+import logging
 from fastapi import APIRouter, Depends, HTTPException, UploadFile, File, status
 
 from utils.auth import get_current_admin
 from utils.excel_parser import parse_file, validate_all_rows
 from database.mongo import get_db
+
+logger = logging.getLogger("fitmate.upload")
 
 router = APIRouter(prefix="/api/v1/admin/upload", tags=["admin-upload"])
 
@@ -116,6 +119,7 @@ async def import_upload(
     updated_count = 0
     failed_count = 0
 
+    failed_rows = []
     for row_data in valid_rows:
         try:
             result = await db.tcm_ingredients.update_one(
@@ -127,8 +131,16 @@ async def import_upload(
                 imported_count += 1
             else:
                 updated_count += 1
-        except Exception:
+        except Exception as exc:
+            logger.error(
+                f"[Upload] Failed to upsert ingredient '{row_data.get('mandarin_name')}': {exc}",
+                exc_info=True,
+            )
             failed_count += 1
+            failed_rows.append({
+                "mandarin_name": row_data.get("mandarin_name"),
+                "reason": str(exc),
+            })
 
     total_processed = imported_count + updated_count + failed_count
     message = (
@@ -143,6 +155,7 @@ async def import_upload(
         "imported": imported_count,
         "updated": updated_count,
         "failed": failed_count,
+        "failed_rows": failed_rows,
         "skipped_invalid": len(error_summaries),
         "message": message,
     }

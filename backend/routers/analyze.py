@@ -1,9 +1,11 @@
+import logging
 from fastapi import APIRouter, File, UploadFile, HTTPException, Depends, Request
 from services.vision import extract_and_translate_text
 from services.safety import match_ingredients
 from database.mongo import get_db
-from main import limiter
-import traceback
+from core.limiter import limiter
+
+logger = logging.getLogger("fitmate.analyze")
 
 router = APIRouter(prefix="/api/v1/analyze", tags=["analyze"])
 
@@ -44,9 +46,14 @@ async def analyze_tcm_label(
                 "professional before consuming any TCM product."
             )
         }
+    except HTTPException:
+        raise
     except Exception as e:
-        traceback.print_exc()
-        raise HTTPException(status_code=500, detail=str(e))
+        logger.error(f"[Analyze] Analysis pipeline failed: {e}", exc_info=True)
+        raise HTTPException(
+            status_code=500,
+            detail="Gagal menganalisis gambar. Terjadi kendala teknis pada sistem pemrosesan."
+        )
 
 @router.get("/search")
 async def search_ingredients(q: str = "", limit: int = 20, db = Depends(get_db)):

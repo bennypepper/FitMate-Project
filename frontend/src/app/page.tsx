@@ -42,6 +42,7 @@ function HomeContent() {
       const response = await fetch(`${apiUrl}/api/v1/analyze/`, {
         method: "POST",
         body: formData,
+        signal: AbortSignal.timeout(45000),
       });
 
       if (!response.ok) {
@@ -252,6 +253,7 @@ function HomeContent() {
                   const uploadRes = await fetch(`${apiUrl}/api/v1/bridge/${sessionParam}/upload`, {
                     method: "POST",
                     body: formData,
+                    signal: AbortSignal.timeout(45000),
                   });
                   if (!uploadRes.ok) {
                     throw new Error("Gagal mengunggah foto ke sesi desktop");

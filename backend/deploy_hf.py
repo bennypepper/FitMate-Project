@@ -22,21 +22,29 @@ except Exception as e:
 
 print(f"\n[UPLOAD] Sedang mengupload folder backend ke Space: {REPO_ID}")
 print("Ini akan memakan waktu beberapa detik...\n")
+backend_dir = os.path.dirname(os.path.abspath(__file__))
 try:
     api.upload_folder(
-        folder_path=r"C:\Users\Benny Pepper\Documents\GitHub\FitMate-Project\backend",
+        folder_path=backend_dir,
         repo_id=REPO_ID,
         repo_type="space",
         ignore_patterns=[
             ".env", 
             ".env.example", 
+            "credentials/**",
+            "credentials",
+            "secrets/**",
+            "*.key",
+            "*.pem",
             "venv/**", 
+            ".venv/**",
             "__pycache__/**", 
             "*.pyc", 
             "evaluasi_model*", 
             "*.csv", 
             "*.log",
-            "deploy_hf.py"
+            "deploy_hf.py",
+            ".dockerignore"
         ],
         commit_message="Automated deployment backend API by VS Code AI"
     )
@@ -45,7 +53,7 @@ except Exception as e:
     print(f"[ERROR] Error saat upload folder: {e}")
 
 print("\n[SECRET] Sedang menginjeksi rahasia (Environment Secrets) dari .env ke server...")
-env_path = r"C:\Users\Benny Pepper\Documents\GitHub\FitMate-Project\backend\.env"
+env_path = os.path.join(backend_dir, ".env")
 if os.path.exists(env_path):
     with open(env_path, "r", encoding="utf-8") as f:
         for line in f:

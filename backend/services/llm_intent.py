@@ -16,8 +16,12 @@ references like "bahan itu", "yang tadi", "apakah aman?", etc.
 """
 import json
 import asyncio
+import random
+import logging
 import httpx
 from core.config import settings
+
+logger = logging.getLogger("fitmate.llm")
 
 OPENROUTER_BASE_URL = "https://openrouter.ai/api/v1/chat/completions"
 
@@ -33,16 +37,16 @@ def _get_headers() -> dict:
 _MAX_RETRIES = 2
 _RETRY_BASE_DELAY = 2
 
-async def _chat(
+async def chat_completion(
     messages: list[dict],
     temperature: float = 0.4,
     timeout: float = 15.0,
     model: str | None = None,
 ) -> str:
     """
-    Calls OpenRouter /chat/completions with a messages array (supports multi-turn).
+    Public interface for calling OpenRouter /chat/completions.
     Each message: {"role": "user"|"assistant"|"system", "content": "..."}
-    Retries on 429 / 5xx with exponential backoff.
+    Retries on 429 / 5xx with exponential backoff and randomized jitter.
     """
     payload = {
         "model": model or settings.OPENROUTER_CHATBOT_MODEL,
@@ -60,10 +64,10 @@ async def _chat(
                     json=payload,
                 )
                 if resp.status_code in (429, 502, 503, 504):
-                    wait = _RETRY_BASE_DELAY * (2 ** attempt)
-                    print(
+                    wait = (_RETRY_BASE_DELAY * (2 ** attempt)) + random.uniform(0.1, 0.5)
+                    logger.warning(
                         f"[OpenRouter] HTTP {resp.status_code} on attempt "
-                        f"{attempt + 1}/{_MAX_RETRIES}. Retrying in {wait}s..."
+                        f"{attempt + 1}/{_MAX_RETRIES}. Retrying in {wait:.2f}s with jitter..."
                     )
                     await asyncio.sleep(wait)
                     last_err = Exception(f"HTTP {resp.status_code}: {resp.text[:200]}")
@@ -74,15 +78,18 @@ async def _chat(
                 return data["choices"][0]["message"]["content"]
 
             except httpx.TimeoutException as e:
-                wait = _RETRY_BASE_DELAY * (2 ** attempt)
-                print(
+                wait = (_RETRY_BASE_DELAY * (2 ** attempt)) + random.uniform(0.1, 0.5)
+                logger.warning(
                     f"[OpenRouter] Timeout on attempt {attempt + 1}/{_MAX_RETRIES}. "
-                    f"Retrying in {wait}s..."
+                    f"Retrying in {wait:.2f}s with jitter..."
                 )
                 await asyncio.sleep(wait)
                 last_err = e
 
     raise last_err or Exception("OpenRouter: all retries exhausted")
+
+# Backwards compatibility alias for existing internal calls
+_chat = chat_completion
 
 def _build_context_snippet(history: list[dict], n_user_bubbles: int = 5) -> str:
     """

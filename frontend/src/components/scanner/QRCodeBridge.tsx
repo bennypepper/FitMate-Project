@@ -48,7 +48,10 @@ export default function QRCodeBridge({ onComplete }: QRCodeBridgeProps) {
         setStatus("waiting");
 
         // Asynchronously register session with backend (non-blocking)
-        fetch(`${apiUrl}/api/v1/bridge/session?custom_id=${sid}`, { method: "POST" }).catch((e) => {
+        fetch(`${apiUrl}/api/v1/bridge/session?custom_id=${sid}`, {
+          method: "POST",
+          signal: AbortSignal.timeout(5000),
+        }).catch((e) => {
           console.warn("[Bridge Session Register Warning]", e);
         });
       } catch (err) {
@@ -74,7 +77,9 @@ export default function QRCodeBridge({ onComplete }: QRCodeBridgeProps) {
 
     intervalRef.current = setInterval(async () => {
       try {
-        const res = await fetch(`${apiUrl}/api/v1/bridge/${sessionId}/status`);
+        const res = await fetch(`${apiUrl}/api/v1/bridge/${sessionId}/status`, {
+          signal: AbortSignal.timeout(5000),
+        });
         if (res.status === 404) {
           setStatus("error");
           if (intervalRef.current) clearInterval(intervalRef.current);

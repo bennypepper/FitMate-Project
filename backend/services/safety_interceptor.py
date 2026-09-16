@@ -281,10 +281,9 @@ async def _bko_context_llm_check(text: str, substance_name: str) -> str:
     )
 
     try:
+        from services.llm_intent import chat_completion
 
-        from services.llm_intent import _chat
-
-        result = await _chat(
+        result = await chat_completion(
             [{"role": "user", "content": prompt}],
             temperature=0.0,
             timeout=8.0,

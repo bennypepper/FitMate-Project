@@ -31,9 +31,9 @@ export default function WhatsAppFAB() {
   const [bounceReady, setBounceReady] = useState(false);
   const leaveTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
 
-  if (pathname?.startsWith("/admin")) return null;
-
   useEffect(() => {
+    if (pathname?.startsWith("/admin")) return;
+
     const bounceTimer = setTimeout(() => setBounceReady(true), BOUNCE_DELAY_MS);
 
     const nudgeShow = setTimeout(() => setNudgeOpen(true), BOUNCE_DONE_MS);
@@ -44,7 +44,7 @@ export default function WhatsAppFAB() {
       clearTimeout(nudgeShow);
       clearTimeout(nudgeHide);
     };
-  }, []);
+  }, [pathname]);
 
   const handleFabEnter = useCallback(() => {
     if (leaveTimer.current) clearTimeout(leaveTimer.current);
@@ -67,6 +67,8 @@ export default function WhatsAppFAB() {
       setNudgeOpen(false);
     }
   };
+
+  if (pathname?.startsWith("/admin")) return null;
 
   return (
     <>

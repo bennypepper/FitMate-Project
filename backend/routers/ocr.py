@@ -1,7 +1,9 @@
+import logging
 from fastapi import APIRouter, File, UploadFile, HTTPException, Request
 from services.vision import extract_and_translate_text
-from main import limiter
-import traceback
+from core.limiter import limiter
+
+logger = logging.getLogger("fitmate.ocr")
 
 router = APIRouter(prefix="/api/v1/ocr", tags=["ocr"])
 
@@ -31,5 +33,8 @@ async def process_image_ocr(
     except HTTPException:
         raise
     except Exception as e:
-        traceback.print_exc()
-        raise HTTPException(status_code=500, detail=str(e))
+        logger.error(f"[OCR] OCR processing failed: {e}", exc_info=True)
+        raise HTTPException(
+            status_code=500,
+            detail="Gagal mengekstraksi teks gambar. Terjadi kendala teknis pada sistem OCR."
+        )

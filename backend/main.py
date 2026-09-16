@@ -16,11 +16,9 @@ from starlette.responses import Response
 from database.mongo import connect_to_mongo, close_mongo_connection
 from contextlib import asynccontextmanager
 
-from slowapi import Limiter, _rate_limit_exceeded_handler
-from slowapi.util import get_remote_address
+from slowapi import _rate_limit_exceeded_handler
 from slowapi.errors import RateLimitExceeded
-
-limiter = Limiter(key_func=get_remote_address)
+from core.limiter import limiter
 
 class SecurityHeadersMiddleware(BaseHTTPMiddleware):
     """Adds standard security headers to all responses."""

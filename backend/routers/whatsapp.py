@@ -43,7 +43,7 @@ RATE_LIMIT_MAX = 20
 _conversation_store: TTLCache = TTLCache(maxsize=1000, ttl=7200)
 MAX_HISTORY_USER_BUBBLES = 15
 
-_welcomed_set: set[str] = set()
+_welcomed_cache: TTLCache = TTLCache(maxsize=10000, ttl=86400 * 30)
 
 DISCLAIMER = "*Disclaimer Medis:* Informasi ini bukan pengganti saran medis profesional.\n\n"
 
@@ -229,8 +229,8 @@ async def _process_message(sender: str, text: str):
         history = _get_history(sender)
         print(f"[Bot] History length: {len(history)} messages")
 
-        if sender not in _welcomed_set:
-            _welcomed_set.add(sender)
+        if sender not in _welcomed_cache:
+            _welcomed_cache[sender] = True
             _append_history(sender, "assistant", WELCOME_MESSAGE)
             await whatsapp_client.send_text_message(to_phone=sender, text=WELCOME_MESSAGE)
             await asyncio.sleep(0.8)
@@ -417,8 +417,8 @@ async def test_chat(req: TestChatRequest, db=Depends(get_db)):
     history = _get_history(sender)
 
     welcome_sent = False
-    if sender not in _welcomed_set:
-        _welcomed_set.add(sender)
+    if sender not in _welcomed_cache:
+        _welcomed_cache[sender] = True
         _append_history(sender, "assistant", WELCOME_MESSAGE)
         welcome_sent = True
 

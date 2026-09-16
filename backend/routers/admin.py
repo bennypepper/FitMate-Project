@@ -9,18 +9,15 @@ Endpoints:
 """
 
 from fastapi import APIRouter, HTTPException, Depends, status, Request
-from slowapi import Limiter
-from slowapi.util import get_remote_address
 from pydantic import BaseModel
 
 from core.config import settings
+from core.limiter import limiter
 from database.mongo import get_db
 from datetime import datetime, timezone
 from utils.auth import verify_password, get_password_hash, create_access_token, get_current_admin
 
 router = APIRouter(prefix="/api/v1/admin", tags=["admin"])
-
-limiter = Limiter(key_func=get_remote_address)
 
 class LoginRequest(BaseModel):
     username: str

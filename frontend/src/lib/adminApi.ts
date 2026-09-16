@@ -8,7 +8,7 @@
 
 import { getApiBaseUrl } from "./apiConfig";
 
-const API_BASE = getApiBaseUrl();
+const getBase = () => getApiBaseUrl();
 
 export function getToken(): string | null {
   if (typeof window === "undefined") return null;
@@ -30,8 +30,9 @@ export function setToken(token: string): void {
 export function isTokenExpired(token: string): boolean {
   try {
     const payloadBase64 = token.split(".")[1];
+    if (!payloadBase64) return true;
     const payload = JSON.parse(atob(payloadBase64));
-    return payload.exp * 1000 < Date.now();
+    return typeof payload.exp === "number" && payload.exp * 1000 < Date.now();
   } catch {
     return true;
   }
@@ -49,10 +50,11 @@ export async function adminLogin(
   username: string,
   password: string
 ): Promise<string> {
-  const res = await fetch(`${API_BASE}/api/v1/admin/login`, {
+  const res = await fetch(`${getBase()}/api/v1/admin/login`, {
     method: "POST",
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify({ username, password }),
+    signal: AbortSignal.timeout(10000),
   });
   if (!res.ok) {
     const err = await res.json().catch(() => ({}));
@@ -63,8 +65,9 @@ export async function adminLogin(
 }
 
 export async function getAdminStats() {
-  const res = await fetch(`${API_BASE}/api/v1/admin/stats`, {
+  const res = await fetch(`${getBase()}/api/v1/admin/stats`, {
     headers: adminHeaders(),
+    signal: AbortSignal.timeout(10000),
   });
   if (res.status === 401) {
     clearToken();
@@ -76,8 +79,11 @@ export async function getAdminStats() {
 
 export async function getIngredients(page = 1, limit = 20) {
   const res = await fetch(
-    `${API_BASE}/api/v1/admin/ingredients?page=${page}&limit=${limit}`,
-    { headers: adminHeaders() }
+    `${getBase()}/api/v1/admin/ingredients?page=${page}&limit=${limit}`,
+    {
+      headers: adminHeaders(),
+      signal: AbortSignal.timeout(10000),
+    }
   );
   if (res.status === 401) {
     clearToken();
