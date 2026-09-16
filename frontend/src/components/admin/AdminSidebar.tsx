@@ -59,7 +59,7 @@ export default function AdminSidebar() {
           <div className="font-serif italic font-bold text-heritage text-[17px]">
             FitMate TCM
           </div>
-          <div className="text-[11px] text-ink-faint mt-0.5">Admin Console</div>
+          <div className="text-[11px] text-ink-soft mt-0.5">Admin Console</div>
         </div>
 
         {/* Navigation Links */}
@@ -96,7 +96,7 @@ export default function AdminSidebar() {
               <strong className="text-[12.5px] text-ink leading-tight truncate">
                 Administrator
               </strong>
-              <span className="text-[10.5px] text-ink-faint leading-tight">
+              <span className="text-[11px] text-ink-soft leading-tight">
                 FitMate Admin
               </span>
             </div>
@@ -117,7 +117,7 @@ export default function AdminSidebar() {
           <span className="font-serif italic font-bold text-heritage text-[16px]">
             FitMate TCM
           </span>
-          <span className="text-[10px] text-ink-faint ml-2">Console</span>
+          <span className="text-[11px] text-ink-soft font-medium ml-2">Console</span>
         </div>
         <div className="flex items-center gap-2">
           {navItems.map((item) => (

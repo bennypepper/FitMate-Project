@@ -23,7 +23,7 @@ export default function UploadFallback({ onImageReady }: UploadFallbackProps) {
 
   return (
     <div className="w-full flex flex-col items-center">
-      <label className="w-full py-3 px-6 rounded-button bg-secondary text-white font-bold hover:bg-primary transition-colors flex items-center justify-center gap-2 text-sm cursor-pointer active:scale-95">
+      <label className="w-full py-3 px-6 rounded-button bg-trust hover:bg-trust-deep text-white font-bold transition-colors flex items-center justify-center gap-2 text-sm cursor-pointer shadow-sm active:scale-95">
         PILIH FILE
         <input
           type="file"

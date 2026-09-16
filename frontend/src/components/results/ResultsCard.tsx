@@ -133,10 +133,10 @@ export default function ResultsCard({
       ) : (
         /* State 3: Non-Herbal Product / No TCM Ingredients Detected */
         <div className="bg-paper-deep border border-line rounded-[16px] p-4 mb-5">
-          <div className="inline-flex items-center gap-1.5 bg-ink-soft text-white text-[11px] font-semibold px-2.5 py-1 rounded-full mb-2.5">
+          <div className="inline-flex items-center gap-1.5 bg-white text-ink border border-line text-[11.5px] font-bold px-3 py-1 rounded-full mb-2.5 shadow-2xs">
             <svg
-              width="12"
-              height="12"
+              width="13"
+              height="13"
               viewBox="0 0 24 24"
               fill="none"
               stroke="currentColor"
@@ -151,7 +151,7 @@ export default function ResultsCard({
           <h3 className="font-serif text-[17px] font-bold text-ink mb-1.5">
             Tidak Terdeteksi Komposisi Herbal TCM
           </h3>
-          <p className="text-[12.5px] leading-relaxed text-ink-soft">
+          <p className="text-[13px] leading-relaxed text-ink">
             Teks yang dipindai tidak cocok dengan monograf obat herbal TCM pada basis data kompilasi kami. Produk ini kemungkinan adalah makanan atau camilan umum, atau daftar komposisi tidak tertera secara jelas.
           </p>
         </div>
@@ -163,7 +163,7 @@ export default function ResultsCard({
           <h4 className="text-[12px] font-bold uppercase tracking-wider text-ink-soft">
             Rincian Teks &amp; Komposisi ({ingredients.length})
           </h4>
-          <span className="text-[11px] text-ink-faint">Rule-based lookup</span>
+          <span className="text-[11.5px] text-ink-soft font-semibold">Rule-based lookup</span>
         </div>
 
         <div className="flex flex-col gap-2">
@@ -191,7 +191,7 @@ export default function ResultsCard({
                   <span className="font-semibold text-[13.5px] text-ink">
                     {zh}
                   </span>
-                  <span className={`text-[11px] mt-0.5 ${isHerbal ? "text-ink-soft" : "text-ink-faint italic"}`}>
+                  <span className={`text-[11.5px] mt-0.5 ${isHerbal ? "text-ink-soft font-medium" : "text-ink-soft italic font-medium"}`}>
                     {sub}
                   </span>
                 </div>
@@ -206,7 +206,7 @@ export default function ResultsCard({
                       Aman
                     </span>
                   ) : (
-                    <span className="inline-block text-[10.5px] font-medium px-2 py-0.5 rounded-full bg-paper text-ink-faint border border-line">
+                    <span className="inline-block text-[10.5px] font-bold px-2.5 py-0.5 rounded-full bg-white text-ink border border-line shadow-2xs">
                       Bukan Herbal
                     </span>
                   )}
@@ -231,7 +231,7 @@ export default function ResultsCard({
           <strong className="block text-[13px] font-semibold text-white">
             Tanya Bot FitMate via WhatsApp
           </strong>
-          <span className="block text-[11px] text-white/75 mt-0.5">
+          <span className="block text-[11.5px] text-white/95 mt-0.5">
             Tanyakan rincian bahan atau hal yang perlu diperhatikan
           </span>
         </div>
@@ -242,7 +242,7 @@ export default function ResultsCard({
           fill="none"
           stroke="currentColor"
           strokeWidth="2"
-          className="text-white/60 group-hover:translate-x-0.5 transition-transform"
+          className="text-white/80 group-hover:translate-x-0.5 transition-transform"
         >
           <path d="M9 18l6-6-6-6" />
         </svg>
@@ -269,7 +269,7 @@ export default function ResultsCard({
 
       {/* Medical Disclaimer */}
       {disclaimer && (
-        <p className="text-[10px] text-ink-faint text-center mt-3 leading-relaxed border-t border-line/40 pt-2.5">
+        <p className="text-[11px] text-ink-soft font-medium text-center mt-3 leading-relaxed border-t border-line/40 pt-2.5">
           {disclaimer}
         </p>
       )}

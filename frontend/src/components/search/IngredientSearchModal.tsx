@@ -194,7 +194,7 @@ export default function IngredientSearchModal({
               autoFocus
               className="w-full bg-card border border-line rounded-[12px] pl-11 pr-10 py-3 text-[14px] text-ink focus:outline-none focus:border-trust focus:ring-2 focus:ring-trust-tint transition-all placeholder:text-ink-faint"
             />
-            <div className="absolute left-3.5 top-3.5 text-ink-faint">
+            <div className="absolute left-3.5 top-3.5 text-ink-soft">
               <svg
                 width="18"
                 height="18"
@@ -210,7 +210,7 @@ export default function IngredientSearchModal({
             {query && (
               <button
                 onClick={() => setQuery("")}
-                className="absolute right-3.5 top-3.5 text-ink-faint hover:text-ink transition-colors text-xs cursor-pointer p-1"
+                className="absolute right-3.5 top-3.5 text-ink-soft hover:text-ink transition-colors text-xs cursor-pointer p-1"
                 aria-label="Hapus pencarian"
               >
                 <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
@@ -301,7 +301,7 @@ export default function IngredientSearchModal({
           {!loading && displayedItems.length > 0 && (
             <>
               {/* Section Subtitle */}
-              <div className="flex items-center justify-between text-[11.5px] text-ink-faint px-1 pb-1">
+              <div className="flex items-center justify-between text-[11.5px] text-ink-soft font-semibold px-1 pb-1">
                 <span>
                   {query
                     ? `Hasil pencarian untuk "${query}"`
@@ -362,15 +362,15 @@ export default function IngredientSearchModal({
                     </p>
                   )}
 
-                  <div className="flex items-center justify-between text-[11px] text-ink-faint mt-2.5 pt-2 border-t border-line/60">
+                  <div className="flex items-center justify-between text-[11px] text-ink-soft mt-2.5 pt-2 border-t border-line/60">
                     <div className="flex items-center gap-1.5">
                       <span>Organ sasaran:</span>
-                      <span className="font-medium text-ink-soft">
+                      <span className="font-medium text-ink">
                         {item.target_organ || "Umum"}
                       </span>
                     </div>
                     {item.source_reference && (
-                      <span className="text-[10px] text-ink-faint bg-paper px-2 py-0.5 rounded-md border border-line">
+                      <span className="text-[10.5px] text-ink-soft font-medium bg-paper px-2 py-0.5 rounded-md border border-line">
                         Ref: {item.source_reference}
                       </span>
                     )}

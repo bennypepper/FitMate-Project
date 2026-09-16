@@ -38,7 +38,7 @@ export default function AdminLoginPage() {
         >
           FitMate TCM
         </Link>
-        <p className="text-[11px] uppercase tracking-widest text-ink-faint mt-1.5 font-semibold">
+        <p className="text-[11px] uppercase tracking-widest text-ink-soft mt-1.5 font-bold">
           Admin Console
         </p>
       </div>

@@ -14,13 +14,13 @@ interface AuthGuardProps {
  * Server renders a loading state to avoid hydration mismatch.
  */
 export default function AuthGuard({ children }: AuthGuardProps) {
-  const [authorized, setAuthorized] = useState(false);
   const router = useRouter();
   const pathname = usePathname();
+  const isLoginPage = pathname === "/admin/login";
+  const [authorized, setAuthorized] = useState(false);
 
   useEffect(() => {
-    if (pathname === "/admin/login") {
-      setAuthorized(true);
+    if (isLoginPage) {
       return;
     }
 
@@ -31,10 +31,12 @@ export default function AuthGuard({ children }: AuthGuardProps) {
       return;
     }
 
-    setAuthorized(true);
-  }, [pathname, router]);
+    queueMicrotask(() => {
+      setAuthorized(true);
+    });
+  }, [isLoginPage, pathname, router]);
 
-  if (!authorized) {
+  if (!authorized && !isLoginPage) {
     return (
       <div className="min-h-screen bg-surface flex items-center justify-center">
         <p className="font-sans text-on-surface-variant text-sm">

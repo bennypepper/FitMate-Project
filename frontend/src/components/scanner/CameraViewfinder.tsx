@@ -13,7 +13,6 @@ export default function CameraViewfinder({ onCapture, onReset }: CameraViewfinde
   const fileInputRef = useRef<HTMLInputElement>(null);
   const [error, setError] = useState<string | null>(null);
   const [facingMode, setFacingMode] = useState<"environment" | "user">("environment");
-  const [streamActive, setStreamActive] = useState(false);
 
   useEffect(() => {
     let currentStream: MediaStream | null = null;
@@ -35,12 +34,10 @@ export default function CameraViewfinder({ onCapture, onReset }: CameraViewfinde
         currentStream = stream;
         if (videoRef.current) {
           videoRef.current.srcObject = stream;
-          setStreamActive(true);
         }
-      } catch (err: any) {
+      } catch (err: unknown) {
         console.warn("[Camera] Camera access warning:", err);
         setError("Kamera tidak dapat diakses atau izin ditolak. Silakan gunakan tombol galeri/file.");
-        setStreamActive(false);
       }
     }
 
@@ -197,7 +194,7 @@ export default function CameraViewfinder({ onCapture, onReset }: CameraViewfinde
         {!error && (
           <>
             {/* Top Prompt Overlay */}
-            <div className="absolute top-4 inset-x-0 mx-auto max-w-max px-4 py-1.5 rounded-full bg-black/60 backdrop-blur-md border border-white/10 text-white/90 text-[11.5px] sm:text-[12.5px] font-medium shadow-md pointer-events-none text-center">
+            <div className="absolute top-4 inset-x-0 mx-auto max-w-max px-4 py-1.5 rounded-full bg-black/75 backdrop-blur-md border border-white/20 text-white text-[11.5px] sm:text-[12.5px] font-medium shadow-md pointer-events-none text-center">
               Posisikan teks komposisi / aksara Hanzi di dalam bingkai target
             </div>
 

@@ -732,7 +732,7 @@ function HomeContent() {
         </section>
 
         {/* Simple Footer with Prototype Notice */}
-        <footer className="mt-20 pt-8 border-t border-line text-center text-[12px] text-ink-faint flex flex-col items-center gap-2">
+        <footer className="mt-20 pt-8 border-t border-line text-center text-[12.5px] text-ink-soft flex flex-col items-center gap-2">
           <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-paper-deep text-ink-soft text-[11px] font-semibold border border-line">
             <span className="w-1.5 h-1.5 rounded-full bg-amber" />
             <span>Versi Prototipe Riset (Bukan Pelayanan Medis Resmi)</span>

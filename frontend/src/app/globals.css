@@ -5,14 +5,14 @@
   --paper-deep: #EFEAE0;
   --card: #FFFFFF;
   --ink: #211C17;
-  --ink-soft: #6E645A;
-  --ink-faint: #A79C8E;
+  --ink-soft: #4A4238;
+  --ink-faint: #5E5448;
   --heritage: #7A2230;
   --heritage-deep: #5B1622;
   --trust: #1F6F5C;
   --trust-deep: #134B3D;
   --trust-tint: #E4EFEB;
-  --amber: #C08A2E;
+  --amber: #8F5E0E;
   --amber-tint: #F5EAD7;
   --danger: #B93124;
   --danger-deep: #8C231A;
@@ -44,12 +44,12 @@
 
   --color-primary: #7A2230;
   --color-dark: #211C17;
-  --color-secondary: #C08A2E;
+  --color-secondary: #8F5E0E;
   --color-accent: #1F6F5C;
   --color-light: #EFEAE0;
   --color-background: #F7F4EE;
   --color-on-surface: #211C17;
-  --color-on-surface-variant: #6E645A;
+  --color-on-surface-variant: #4A4238;
   --color-error: #B93124;
   --color-error-container: #F7E4E0;
 

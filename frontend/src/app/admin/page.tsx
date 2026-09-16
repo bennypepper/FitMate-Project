@@ -169,7 +169,7 @@ export default function AdminDashboardPage() {
           <div className="font-bold text-[32px] text-ink tabular-nums">
             {loading ? "..." : fmt(stats?.total_ingredients)}
           </div>
-          <div className="text-[11.5px] text-ink-faint mt-1.5">
+          <div className="text-[11.5px] text-ink-soft mt-1.5 font-medium">
             {stats?.total_ingredients ? "Dataset terindeks di memori server" : "Belum ada data: silakan unggah dataset"}
           </div>
         </div>
@@ -190,7 +190,7 @@ export default function AdminDashboardPage() {
           <div className="font-bold text-[32px] text-danger-deep tabular-nums">
             {loading ? "..." : fmt(stats?.toxic_count)}
           </div>
-          <div className="text-[11.5px] text-danger-deep/80 mt-1.5">
+          <div className="text-[11.5px] text-danger-deep font-semibold mt-1.5">
             {stats?.toxic_count && stats.toxic_count > 0
               ? `${stats.toxic_count} bahan berisiko terdaftar di filter aktif`
               : "Akan menyala saat bahan berisiko terdeteksi"}
@@ -213,7 +213,7 @@ export default function AdminDashboardPage() {
           <div className="font-bold text-[32px] text-ink tabular-nums">
             {loading ? "..." : fmt(stats?.safe_count)}
           </div>
-          <div className="text-[11.5px] text-ink-faint mt-1.5">
+          <div className="text-[11.5px] text-ink-soft mt-1.5 font-medium">
             Terverifikasi terhadap basis data apoteker
           </div>
         </div>
@@ -286,16 +286,16 @@ export default function AdminDashboardPage() {
             <table className="w-full border-collapse text-left">
               <thead>
                 <tr className="border-b border-line bg-paper/50">
-                  <th className="py-3 px-4 text-[11px] font-bold uppercase tracking-wider text-ink-faint">
+                  <th className="py-3 px-4 text-[11px] font-bold uppercase tracking-wider text-ink-soft">
                     Waktu
                   </th>
-                  <th className="py-3 px-4 text-[11px] font-bold uppercase tracking-wider text-ink-faint">
+                  <th className="py-3 px-4 text-[11px] font-bold uppercase tracking-wider text-ink-soft">
                     Bahan Terdeteksi
                   </th>
-                  <th className="py-3 px-4 text-[11px] font-bold uppercase tracking-wider text-ink-faint">
+                  <th className="py-3 px-4 text-[11px] font-bold uppercase tracking-wider text-ink-soft">
                     Status
                   </th>
-                  <th className="py-3 px-4 text-[11px] font-bold uppercase tracking-wider text-ink-faint">
+                  <th className="py-3 px-4 text-[11px] font-bold uppercase tracking-wider text-ink-soft">
                     Sumber
                   </th>
                 </tr>
