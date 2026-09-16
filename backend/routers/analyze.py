@@ -56,10 +56,12 @@ async def analyze_tcm_label(
         )
 
 @router.get("/search")
-async def search_ingredients(q: str = "", limit: int = 20, db = Depends(get_db)):
+@limiter.limit("60/minute")
+async def search_ingredients(request: Request, q: str = "", limit: int = 20, db = Depends(get_db)):
     """
     Public lookup for TCM ingredients without requiring admin login.
     Returns matched ingredients sorted by relevance.
+    Rate limited: max 60 requests per minute per IP.
     """
     from database.ingredient_repository import ingredient_repository
     results = await ingredient_repository.search_ingredients(query=q, db=db, limit=limit)

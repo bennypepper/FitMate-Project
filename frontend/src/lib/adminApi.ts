@@ -40,6 +40,10 @@ export function isTokenExpired(token: string): boolean {
 
 function adminHeaders(): HeadersInit {
   const token = getToken();
+  if (token && isTokenExpired(token)) {
+    clearToken();
+    return { "Content-Type": "application/json" };
+  }
   return {
     "Content-Type": "application/json",
     ...(token ? { Authorization: `Bearer ${token}` } : {}),

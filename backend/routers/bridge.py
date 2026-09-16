@@ -8,11 +8,15 @@ results automatically appear on their desktop browser.
 
 import uuid
 import time
-from fastapi import APIRouter, UploadFile, File, HTTPException, Depends
+import logging
+from fastapi import APIRouter, UploadFile, File, HTTPException, Depends, Request
 from cachetools import TTLCache
 from database.mongo import get_db
 from services.vision import extract_and_translate_text
 from services.safety import match_ingredients
+from core.limiter import limiter
+
+logger = logging.getLogger("fitmate.bridge")
 
 router = APIRouter(prefix="/api/v1/bridge", tags=["bridge"])
 
@@ -20,7 +24,8 @@ router = APIRouter(prefix="/api/v1/bridge", tags=["bridge"])
 _sessions: TTLCache = TTLCache(maxsize=1000, ttl=300)
 
 @router.post("/session")
-async def create_session(custom_id: str = None):
+@limiter.limit("30/minute")
+async def create_session(request: Request, custom_id: str = None):
     """Creates or registers a temporary session ID for mobile-to-desktop bridging."""
     session_id = custom_id or f"fm_{uuid.uuid4().hex[:8]}"
     _sessions[session_id] = {
@@ -57,7 +62,9 @@ async def get_session_status(session_id: str):
     }
 
 @router.post("/{session_id}/upload")
+@limiter.limit("5/minute")
 async def upload_for_session(
+    request: Request,
     session_id: str,
     file: UploadFile = File(...),
     db = Depends(get_db)
@@ -76,10 +83,13 @@ async def upload_for_session(
     if not file.content_type or not file.content_type.startswith("image/"):
         raise HTTPException(status_code=400, detail="File harus berupa gambar")
 
+    content = await file.read()
+    if len(content) > 10 * 1024 * 1024:
+        raise HTTPException(status_code=413, detail="Ukuran gambar terlalu besar. Maksimum ukuran adalah 10MB.")
+
     session["status"] = "processing"
 
     try:
-        content = await file.read()
         ocr_blocks = await extract_and_translate_text(content)
         detected_texts = [block["text"] for block in ocr_blocks]
         safety_results = await match_ingredients(detected_texts, db)
@@ -102,7 +112,11 @@ async def upload_for_session(
             "message": "Hasil analisis berhasil diproses",
             **payload
         }
-    except Exception as e:
+    except HTTPException:
         session["status"] = "error"
-        session["error"] = str(e)
-        raise HTTPException(status_code=500, detail=f"Gagal memproses gambar: {str(e)}")
+        raise
+    except Exception as e:
+        logger.error(f"[Bridge] Failed processing image for session {session_id}: {e}", exc_info=True)
+        session["status"] = "error"
+        session["error"] = "Gagal memproses gambar pada server"
+        raise HTTPException(status_code=500, detail="Gagal memproses gambar. Terjadi kendala teknis pada sistem pemrosesan.")

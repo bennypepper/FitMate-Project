@@ -54,7 +54,11 @@ async def run_all_tests():
         # Root
         res = await client.get("/")
         assert res.status_code == 200
-        print("Root check: PASS")
+        assert res.headers.get("x-content-type-options") == "nosniff"
+        assert res.headers.get("x-frame-options") == "DENY"
+        assert "strict-origin-when-cross-origin" in res.headers.get("referrer-policy", "")
+        assert "max-age=31536000" in res.headers.get("strict-transport-security", "")
+        print("Root check & security headers: PASS")
 
         # Analyze endpoint with dummy file
         files = {"file": ("dummy.txt", b"dummy content", "text/plain")}
@@ -102,6 +106,26 @@ async def run_all_tests():
     assert fuzzy_doc is not None
     assert fuzzy_score >= 80
     print(f"Repository fuzzy_lookup: PASS (Matched '{fuzzy_doc.get('indonesian_name')}' with score {fuzzy_score})")
+
+    print("--- 5. Testing Proxy-Aware Client IP Extractor ---")
+    from core.limiter import get_client_ip
+    from starlette.requests import Request as StarletteRequest
+
+    # Test CF-Connecting-IP
+    scope_cf = {"type": "http", "headers": [(b"cf-connecting-ip", b"203.0.113.195")], "client": ("10.0.0.1", 12345)}
+    req_cf = StarletteRequest(scope_cf)
+    assert get_client_ip(req_cf) == "203.0.113.195"
+
+    # Test X-Forwarded-For
+    scope_xff = {"type": "http", "headers": [(b"x-forwarded-for", b"198.51.100.42, 10.0.0.2")], "client": ("10.0.0.1", 12345)}
+    req_xff = StarletteRequest(scope_xff)
+    assert get_client_ip(req_xff) == "198.51.100.42"
+
+    # Test direct client host fallback
+    scope_direct = {"type": "http", "headers": [], "client": ("192.0.2.1", 12345)}
+    req_direct = StarletteRequest(scope_direct)
+    assert get_client_ip(req_direct) == "192.0.2.1"
+    print("Proxy-aware client IP extractor: PASS")
 
     print("--- ALL INTEGRATION TESTS PASSED! ---")
 

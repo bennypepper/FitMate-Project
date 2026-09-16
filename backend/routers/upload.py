@@ -11,11 +11,12 @@ Max file size: 10MB.
 
 import os
 import logging
-from fastapi import APIRouter, Depends, HTTPException, UploadFile, File, status
+from fastapi import APIRouter, Depends, HTTPException, UploadFile, File, status, Request
 
 from utils.auth import get_current_admin
 from utils.excel_parser import parse_file, validate_all_rows
 from database.mongo import get_db
+from core.limiter import limiter
 
 logger = logging.getLogger("fitmate.upload")
 
@@ -37,7 +38,9 @@ def _check_extension(file: UploadFile) -> None:
         )
 
 @router.post("/validate")
+@limiter.limit("10/minute")
 async def validate_upload(
+    request: Request,
     file: UploadFile = File(...),
     admin: str = Depends(get_current_admin),
 ):
@@ -80,7 +83,9 @@ async def validate_upload(
     }
 
 @router.post("/import")
+@limiter.limit("10/minute")
 async def import_upload(
+    request: Request,
     file: UploadFile = File(...),
     admin: str = Depends(get_current_admin),
 ):
