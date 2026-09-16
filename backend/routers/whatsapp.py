@@ -34,6 +34,7 @@ from services.whatsapp_service import whatsapp_client
 from cachetools import TTLCache
 from core.config import settings
 from database.mongo import get_db
+from database.ingredient_repository import ingredient_repository
 
 router = APIRouter(prefix="/whatsapp", tags=["whatsapp"])
 
@@ -168,169 +169,6 @@ async def receive_message(
     background_tasks.add_task(_process_message, sender_phone, message_text)
     return {"status": "ok"}
 
-async def _fuzzy_lookup(ingredient_name: str, db) -> tuple[dict | None, int]:
-    """
-    Fuzzy match ingredient_name against all name variants in tcm_ingredients.
-    Returns (best_match_doc, score) or (None, 0).
-    """
-    from thefuzz import fuzz
-
-    ingredients = await db["tcm_ingredients"].find({}).to_list(length=2000)
-    print(f"[Bot] DB has {len(ingredients)} ingredients")
-
-    if not ingredients:
-        print("[Bot] [WARN] tcm_ingredients is EMPTY - run seed_100_tcm.py first!")
-        return None, 0
-
-    best_match = None
-    highest_score = 0
-    query = ingredient_name.lower()
-
-    for ing in ingredients:
-        candidates = [
-            ing.get("indonesian_name", ""),
-            ing.get("mandarin_name", ""),
-            ing.get("pinyin_name", "") or "",
-            ing.get("english_name", "") or "",
-            ing.get("latin_name", "") or "",
-        ]
-        score = max(
-            fuzz.token_set_ratio(query, str(c).lower())
-            for c in candidates if str(c).strip()
-        )
-        if score > highest_score:
-            highest_score = score
-            best_match = ing
-
-    matched_name = best_match.get("indonesian_name", "?") if best_match else "None"
-    print(f"[Bot] Best match for '{ingredient_name}': {matched_name} (score={highest_score})")
-    return best_match, highest_score
-
-async def _process_message(sender: str, text: str):
-    from services.llm_intent import (
-        parse_intent,
-        generate_chat_reply,
-        generate_ingredient_info_reply,
-        generate_safety_reply,
-    )
-    from services.safety_interceptor import (
-        check_emergency,
-        check_bko,
-        is_health_related,
-        OUT_OF_SCOPE_STATIC,
-        OUT_OF_SCOPE_TERSE,
-        OUT_OF_SCOPE_COOLDOWN,
-    )
-    from database.mongo import get_db
-
-    try:
-        print(f"[Bot] Processing from {sender}: '{text}'")
-
-        history = _get_history(sender)
-        print(f"[Bot] History length: {len(history)} messages")
-
-        if sender not in _welcomed_cache:
-            _welcomed_cache[sender] = True
-            _append_history(sender, "assistant", WELCOME_MESSAGE)
-            await whatsapp_client.send_text_message(to_phone=sender, text=WELCOME_MESSAGE)
-            await asyncio.sleep(0.8)
-
-        emergency_reply = check_emergency(text)
-        if emergency_reply:
-            _append_history(sender, "assistant", emergency_reply)
-            await whatsapp_client.send_text_message(to_phone=sender, text=emergency_reply)
-            return
-
-        bko_result = await check_bko(text)
-        bko_action = bko_result["action"]
-
-        if bko_action in ("block", "clarify"):
-            bko_reply = bko_result["response"]
-            _append_history(sender, "assistant", bko_reply)
-            await whatsapp_client.send_text_message(to_phone=sender, text=bko_reply)
-            return
-
-        bko_soft_warning = bko_result.get("soft_warning", "")
-
-        if _is_on_cooldown(sender):
-            cooldown_reply = OUT_OF_SCOPE_COOLDOWN
-            _append_history(sender, "assistant", cooldown_reply)
-            await whatsapp_client.send_text_message(to_phone=sender, text=cooldown_reply)
-            return
-
-        db = get_db()
-        reply = ""
-
-        intent = await parse_intent(text, history=history)
-        intent_type = intent.get("intent", "general_tcm_chat")
-        ingredient_name = (intent.get("ingredient_name") or "").strip()
-        print(f"[Bot] Intent: {intent_type}, ingredient: '{ingredient_name}'")
-
-        _append_history(sender, "user", text)
-
-        if intent_type == "general_tcm_chat" or not ingredient_name:
-
-            if not is_health_related(text):
-                count = _increment_offtopic(sender)
-                print(f"[Bot] Off-topic detected for {sender}, count={count}")
-                if count >= OFFTOPIC_TERSE_LIMIT:
-                    reply = OUT_OF_SCOPE_TERSE
-                else:
-
-                    reply = await generate_chat_reply(text, history=history)
-            else:
-                reply = await generate_chat_reply(text, history=history)
-            print(f"[Bot] General chat reply (len={len(reply)})")
-
-        elif intent_type == "ingredient_info_inquiry":
-            best_match, score = await _fuzzy_lookup(ingredient_name.lower(), db)
-            db_match = best_match if (best_match and score >= 65) else None
-            reply = await generate_ingredient_info_reply(ingredient_name, db_match, history=history)
-
-        else:
-            if _is_multi_ingredient(ingredient_name):
-
-                ingredient_list = _split_ingredient_list(ingredient_name)
-                print(f"[Bot] Multi-ingredient list: {ingredient_list}")
-                reply = await _handle_multi_ingredient(ingredient_list, db)
-            else:
-
-                best_match, highest_score = await _fuzzy_lookup(ingredient_name.lower(), db)
-                safety_verdict = _build_safety_verdict(best_match, highest_score)
-                print(f"[Bot] Safety verdict: {safety_verdict} (score={highest_score})")
-
-                llm_reply = await generate_safety_reply(
-                    ingredient_name=ingredient_name,
-                    db_match=best_match if safety_verdict != "not_found" else None,
-                    safety_verdict=safety_verdict,
-                    user_message=text,
-                    history=history,
-                )
-
-                llm_reply = re.sub(r"(?i)(?:\[Catatan Medis\]|\*?Disclaimer(?: Medis)?\*?:?)\s*.*?(?:\n+|$)", "", llm_reply).strip()
-                reply = DISCLAIMER + llm_reply
-
-        if bko_soft_warning and reply:
-            reply = reply.rstrip() + bko_soft_warning
-
-        if reply:
-            clean_reply_for_history = reply.replace(DISCLAIMER, "").strip()
-            _append_history(sender, "assistant", clean_reply_for_history)
-            await whatsapp_client.send_text_message(to_phone=sender, text=reply)
-
-    except Exception as e:
-        print(f"[Bot ERROR] {e}")
-        traceback.print_exc()
-        error_reply = (
-            "Aduh, ada kendala teknis dari sistem kami. Silakan kirim pesan kembali beberapa saat lagi.\n"
-            "Jika masih terjadi kendala, silakan coba kembali nanti."
-        )
-        _append_history(sender, "assistant", error_reply)
-        try:
-            await whatsapp_client.send_text_message(to_phone=sender, text=error_reply)
-        except Exception as send_err:
-            print(f"[Bot ERROR] Cannot send error message: {send_err}")
-
 async def _handle_multi_ingredient(ingredient_list: list[str], db) -> str:
     """
     Batch DB lookup for a list of ingredient names.
@@ -341,7 +179,7 @@ async def _handle_multi_ingredient(ingredient_list: list[str], db) -> str:
     has_unknown = False
 
     for name in ingredient_list[:6]:
-        best_match, score = await _fuzzy_lookup(name.lower(), db)
+        best_match, score = await ingredient_repository.fuzzy_lookup(name.lower(), db)
         safety_verdict = _build_safety_verdict(best_match, score)
 
         display_name = (
@@ -383,17 +221,17 @@ async def _handle_multi_ingredient(ingredient_list: list[str], db) -> str:
     reply += "Ada yang ingin kamu tahu lebih lanjut tentang salah satunya?"
     return reply
 
-class TestChatRequest(BaseModel):
-    sender: str = "test_user"
-    message: str
-    model: str | None = None
 
-@router.post("/test-chat")
-async def test_chat(req: TestChatRequest, db=Depends(get_db)):
+async def process_chat_message(
+    sender: str,
+    text: str,
+    db,
+    model_override: str | None = None,
+) -> dict:
     """
-    Test endpoint to bypass Twilio sandbox limits.
-    Acts like the real webhook but returns JSON instead of relying on Twilio API.
-    All safety interceptor layers are active here so batch testing reflects real behavior.
+    Unified chat message evaluation pipeline.
+    Shared by Twilio webhook background worker and test-chat test endpoint.
+    Handles safety interceptors, intent parsing, repository lookups, and response generation.
     """
     from services.llm_intent import (
         parse_intent,
@@ -405,16 +243,14 @@ async def test_chat(req: TestChatRequest, db=Depends(get_db)):
         check_emergency,
         check_bko,
         is_health_related,
-        OUT_OF_SCOPE_STATIC,
         OUT_OF_SCOPE_TERSE,
         OUT_OF_SCOPE_COOLDOWN,
     )
 
-    sender = req.sender
-    text = req.message
-    model_override = req.model
+    print(f"[Bot] Processing from {sender}: '{text}'")
 
     history = _get_history(sender)
+    print(f"[Bot] History length: {len(history)} messages")
 
     welcome_sent = False
     if sender not in _welcomed_cache:
@@ -472,12 +308,14 @@ async def test_chat(req: TestChatRequest, db=Depends(get_db)):
     intent = await parse_intent(text, history=history, model=model_override)
     intent_type = intent.get("intent", "general_tcm_chat")
     ingredient_name = (intent.get("ingredient_name") or "").strip()
+    print(f"[Bot] Intent: {intent_type}, ingredient: '{ingredient_name}'")
 
     _append_history(sender, "user", text)
 
     if intent_type == "general_tcm_chat" or not ingredient_name:
         if not is_health_related(text):
             count = _increment_offtopic(sender)
+            print(f"[Bot] Off-topic detected for {sender}, count={count}")
             if count >= OFFTOPIC_TERSE_LIMIT:
                 reply = OUT_OF_SCOPE_TERSE
                 intercepted_by = f"offtopic_terse_count_{count}"
@@ -486,17 +324,24 @@ async def test_chat(req: TestChatRequest, db=Depends(get_db)):
                 intercepted_by = f"offtopic_warned_count_{count}"
         else:
             reply = await generate_chat_reply(text, history=history, model=model_override)
+        print(f"[Bot] General chat reply (len={len(reply)})")
+
     elif intent_type == "ingredient_info_inquiry":
-        best_match, score = await _fuzzy_lookup(ingredient_name.lower(), db)
+        best_match, score = await ingredient_repository.fuzzy_lookup(ingredient_name.lower(), db)
         db_match = best_match if (best_match and score >= 65) else None
-        reply = await generate_ingredient_info_reply(ingredient_name, db_match, history=history, model=model_override)
+        reply = await generate_ingredient_info_reply(
+            ingredient_name, db_match, history=history, model=model_override
+        )
+
     else:
         if _is_multi_ingredient(ingredient_name):
             ingredient_list = _split_ingredient_list(ingredient_name)
+            print(f"[Bot] Multi-ingredient list: {ingredient_list}")
             reply = await _handle_multi_ingredient(ingredient_list, db)
         else:
-            best_match, highest_score = await _fuzzy_lookup(ingredient_name.lower(), db)
+            best_match, highest_score = await ingredient_repository.fuzzy_lookup(ingredient_name.lower(), db)
             safety_verdict = _build_safety_verdict(best_match, highest_score)
+            print(f"[Bot] Safety verdict: {safety_verdict} (score={highest_score})")
 
             llm_reply = await generate_safety_reply(
                 ingredient_name=ingredient_name,
@@ -506,7 +351,10 @@ async def test_chat(req: TestChatRequest, db=Depends(get_db)):
                 history=history,
                 model=model_override,
             )
-            llm_reply = re.sub(r"(?i)(?:\[Catatan Medis\]|\*?Disclaimer(?: Medis)?\*?:?)\s*.*?(?:\n+|$)", "", llm_reply).strip()
+
+            llm_reply = re.sub(
+                r"(?i)(?:\[Catatan Medis\]|\*?Disclaimer(?: Medis)?\*?:?)\s*.*?(?:\n+|$)", "", llm_reply
+            ).strip()
             reply = DISCLAIMER + llm_reply
 
     if bko_soft_warning and reply:
@@ -525,3 +373,52 @@ async def test_chat(req: TestChatRequest, db=Depends(get_db)):
         "intercepted_by": intercepted_by,
         "reply": reply,
     }
+
+
+async def _process_message(sender: str, text: str):
+    """Background worker task for processing WhatsApp incoming webhook messages."""
+    try:
+        db = get_db()
+        result = await process_chat_message(sender=sender, text=text, db=db)
+
+        if result.get("welcome_sent"):
+            await whatsapp_client.send_text_message(to_phone=sender, text=WELCOME_MESSAGE)
+            await asyncio.sleep(0.8)
+
+        reply = result.get("reply")
+        if reply:
+            await whatsapp_client.send_text_message(to_phone=sender, text=reply)
+
+    except Exception as e:
+        print(f"[Bot ERROR] {e}")
+        traceback.print_exc()
+        error_reply = (
+            "Aduh, ada kendala teknis dari sistem kami. Silakan kirim pesan kembali beberapa saat lagi.\n"
+            "Jika masih terjadi kendala, silakan coba kembali nanti."
+        )
+        _append_history(sender, "assistant", error_reply)
+        try:
+            await whatsapp_client.send_text_message(to_phone=sender, text=error_reply)
+        except Exception as send_err:
+            print(f"[Bot ERROR] Cannot send error message: {send_err}")
+
+
+class TestChatRequest(BaseModel):
+    sender: str = "test_user"
+    message: str
+    model: str | None = None
+
+
+@router.post("/test-chat")
+async def test_chat(req: TestChatRequest, db=Depends(get_db)):
+    """
+    Test endpoint to bypass Twilio sandbox limits.
+    Acts like the real webhook but returns JSON instead of relying on Twilio API.
+    All safety interceptor layers are active here so batch testing reflects real behavior.
+    """
+    return await process_chat_message(
+        sender=req.sender,
+        text=req.message,
+        db=db,
+        model_override=req.model,
+    )

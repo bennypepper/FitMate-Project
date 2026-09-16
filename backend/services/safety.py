@@ -1,5 +1,6 @@
 import re
 from thefuzz import process, fuzz
+from database.ingredient_repository import ingredient_repository
 
 async def match_ingredients(detected_texts: list[str], db) -> dict:
     """
@@ -14,18 +15,7 @@ async def match_ingredients(detected_texts: list[str], db) -> dict:
         "unknown": []
     }
 
-    cursor = db["tcm_ingredients"].find({})
-    ingredients = await cursor.to_list(length=1000)
-
-    # Build lookup index across all available names
-    lookup_keys = {}
-    for item in ingredients:
-        for field in ["mandarin_name", "pinyin_name", "indonesian_name", "english_name", "latin_name"]:
-            val = item.get(field)
-            if val and isinstance(val, str):
-                cleaned = val.strip().lower()
-                if cleaned and cleaned not in ("-", "unknown", "none"):
-                    lookup_keys[cleaned] = item
+    lookup_keys = await ingredient_repository.get_lookup_keys(db)
 
     matched_texts = set()
 

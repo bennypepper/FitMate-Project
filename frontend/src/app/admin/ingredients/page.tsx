@@ -47,28 +47,42 @@ export default function IngredientsPage() {
   const [page, setPage] = useState(1);
   const [loading, setLoading] = useState(true);
   const [search, setSearch] = useState("");
+  const [debouncedSearch, setDebouncedSearch] = useState("");
   const router = useRouter();
 
   useEffect(() => {
-    setLoading(true);
-    getIngredients(page, 20)
+    const timer = setTimeout(() => {
+      setDebouncedSearch(search);
+      setPage(1);
+    }, 300);
+    return () => clearTimeout(timer);
+  }, [search]);
+
+  useEffect(() => {
+    let isCurrent = true;
+    getIngredients(page, 20, debouncedSearch)
       .then((data: { ingredients: Ingredient[]; total: number; pages: number }) => {
-        setIngredients(data.ingredients);
-        setTotal(data.total);
-        setPages(data.pages);
+        if (isCurrent) {
+          setIngredients(data.ingredients);
+          setTotal(data.total);
+          setPages(data.pages);
+        }
       })
       .catch((err: Error) => {
-        if (err.message === "Unauthorized") router.replace("/admin/login");
+        if (isCurrent && err.message === "Unauthorized") {
+          router.replace("/admin/login");
+        }
       })
-      .finally(() => setLoading(false));
-  }, [page, router]);
+      .finally(() => {
+        if (isCurrent) setLoading(false);
+      });
 
-  const filtered = ingredients.filter((ing) =>
-    search === "" ||
-    ing.mandarin_name.includes(search) ||
-    ing.indonesian_name.toLowerCase().includes(search.toLowerCase()) ||
-    (ing.latin_name ?? "").toLowerCase().includes(search.toLowerCase())
-  );
+    return () => {
+      isCurrent = false;
+    };
+  }, [page, debouncedSearch, router]);
+
+  const filtered = ingredients;
 
   const getBadge = (ing: Ingredient): BadgeConfig => {
     if (!ing.is_toxic) return SAFE_BADGE;
@@ -105,7 +119,10 @@ export default function IngredientsPage() {
                 id="ingredient-search"
                 type="text"
                 value={search}
-                onChange={(e) => setSearch(e.target.value)}
+                onChange={(e) => {
+                  setSearch(e.target.value);
+                  setLoading(true);
+                }}
                 placeholder="Cari nama Mandarin, Indonesia, atau Latin..."
                 className="bg-transparent border-none focus:outline-none focus:ring-0 w-full font-body text-sm text-dark placeholder:text-on-surface-variant/50"
               />
@@ -200,7 +217,10 @@ export default function IngredientsPage() {
             </span>
             <div className="flex gap-2 items-center">
               <button
-                onClick={() => setPage(Math.max(1, page - 1))}
+                onClick={() => {
+                  setPage(Math.max(1, page - 1));
+                  setLoading(true);
+                }}
                 disabled={page === 1}
                 className="w-8 h-8 rounded flex items-center justify-center hover:bg-light/10 disabled:opacity-30 transition-colors"
               >
@@ -209,7 +229,10 @@ export default function IngredientsPage() {
               {pageNumbers.map((p) => (
                 <button
                   key={p}
-                  onClick={() => setPage(p)}
+                  onClick={() => {
+                    setPage(p);
+                    setLoading(true);
+                  }}
                   className={`w-8 h-8 rounded flex items-center justify-center text-xs font-bold transition-colors ${
                     p === page ? "bg-primary text-white" : "hover:bg-light/20 text-on-surface-variant"
                   }`}
@@ -218,7 +241,10 @@ export default function IngredientsPage() {
                 </button>
               ))}
               <button
-                onClick={() => setPage(Math.min(pages, page + 1))}
+                onClick={() => {
+                  setPage(Math.min(pages, page + 1));
+                  setLoading(true);
+                }}
                 disabled={page === pages}
                 className="w-8 h-8 rounded flex items-center justify-center hover:bg-light/10 disabled:opacity-30 transition-colors"
               >

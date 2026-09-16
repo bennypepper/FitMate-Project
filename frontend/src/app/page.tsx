@@ -7,17 +7,22 @@ import ProcessingLoader from "@/components/scanner/ProcessingLoader";
 import ResultsCard from "@/components/results/ResultsCard";
 import QRCodeBridge from "@/components/scanner/QRCodeBridge";
 import { getApiBaseUrl } from "@/lib/apiConfig";
+import {
+  ScanResultPayload,
+  AnalyzeApiResponse,
+  normalizeScanResults,
+} from "@/types/tcm";
 
 function HomeContent() {
   const searchParams = useSearchParams();
   const sessionParam = searchParams.get("session");
   const [bridgeUploaded, setBridgeUploaded] = useState(false);
   const [bridgeUploading, setBridgeUploading] = useState(false);
-  const [bridgeResults, setBridgeResults] = useState<any | null>(null);
+  const [bridgeResults, setBridgeResults] = useState<ScanResultPayload | null>(null);
 
-  const [image, setImage] = useState<string | null>(null);
+  const [, setImage] = useState<string | null>(null);
   const [isProcessing, setIsProcessing] = useState(false);
-  const [results, setResults] = useState<any | null>(null);
+  const [results, setResults] = useState<ScanResultPayload | null>(null);
   const [networkError, setNetworkError] = useState<string | null>(null);
   const [showLiveCamera, setShowLiveCamera] = useState(false);
   const [showQrBridge, setShowQrBridge] = useState(false);
@@ -54,30 +59,20 @@ function HomeContent() {
         throw new Error(detail);
       }
 
-      const data = await response.json();
-      const sa = data.safety_analysis || {};
-      const allIngredients = [
-        ...(sa.toxic || []).map((i: any) => ({ ...i, category: "toxic", is_toxic: true })),
-        ...(sa.contraindicated || []).map((i: any) => ({ ...i, category: "contraindicated", is_toxic: true })),
-        ...(sa.safe || []).map((i: any) => ({ ...i, category: "safe", is_toxic: false })),
-        ...(sa.unknown || []).map((i: any) => ({ ...i, category: "unknown", is_toxic: false })),
-      ];
-
-      setResults({
-        ingredients: allIngredients,
-        disclaimer: data.disclaimer || "",
-        ocr_blocks: data.ocr_blocks || [],
-      });
-    } catch (error: any) {
+      const data: AnalyzeApiResponse = await response.json();
+      setResults(normalizeScanResults(data));
+    } catch (error: unknown) {
       console.error("[Scan Error]", error);
+      const errorMessage =
+        error instanceof Error
+          ? error.message
+          : "Server tidak dapat dijangkau. Silakan coba lagi dalam beberapa saat.";
       if (typeof navigator !== "undefined" && !navigator.onLine) {
         setNetworkError(
           "Tidak ada koneksi internet. Pastikan perangkat Anda terhubung ke internet."
         );
       } else {
-        setNetworkError(
-          error.message || "Server tidak dapat dijangkau. Silakan coba lagi dalam beberapa saat."
-        );
+        setNetworkError(errorMessage);
       }
     } finally {
       setIsProcessing(false);
@@ -162,19 +157,8 @@ function HomeContent() {
     reader.readAsDataURL(file);
   };
 
-  const handleBridgeComplete = (data: any) => {
-    const sa = data.safety_analysis || {};
-    const allIngredients = [
-      ...(sa.toxic || []).map((i: any) => ({ ...i, category: "toxic", is_toxic: true })),
-      ...(sa.contraindicated || []).map((i: any) => ({ ...i, category: "contraindicated", is_toxic: true })),
-      ...(sa.safe || []).map((i: any) => ({ ...i, category: "safe", is_toxic: false })),
-      ...(sa.unknown || []).map((i: any) => ({ ...i, category: "unknown", is_toxic: false })),
-    ];
-    setResults({
-      ingredients: allIngredients,
-      disclaimer: data.disclaimer || "",
-      ocr_blocks: data.ocr_blocks || [],
-    });
+  const handleBridgeComplete = (data: AnalyzeApiResponse) => {
+    setResults(normalizeScanResults(data));
   };
 
   // Mobile Bridge Mode: When opened via QR Code scan on smartphone
@@ -258,22 +242,15 @@ function HomeContent() {
                   if (!uploadRes.ok) {
                     throw new Error("Gagal mengunggah foto ke sesi desktop");
                   }
-                  const uploadData = await uploadRes.json();
-                  const sa = uploadData.safety_analysis || {};
-                  const allIngredients = [
-                    ...(sa.toxic || []).map((i: any) => ({ ...i, category: "toxic", is_toxic: true })),
-                    ...(sa.contraindicated || []).map((i: any) => ({ ...i, category: "contraindicated", is_toxic: true })),
-                    ...(sa.safe || []).map((i: any) => ({ ...i, category: "safe", is_toxic: false })),
-                    ...(sa.unknown || []).map((i: any) => ({ ...i, category: "unknown", is_toxic: false })),
-                  ];
-                  setBridgeResults({
-                    ingredients: allIngredients,
-                    disclaimer: uploadData.disclaimer || "",
-                    ocr_blocks: uploadData.ocr_blocks || [],
-                  });
+                  const uploadData: AnalyzeApiResponse = await uploadRes.json();
+                  setBridgeResults(normalizeScanResults(uploadData));
                   setBridgeUploaded(true);
-                } catch (err: any) {
-                  alert(err.message || "Gagal mengirim foto. Coba lagi.");
+                } catch (err: unknown) {
+                  const msg =
+                    err instanceof Error
+                      ? err.message
+                      : "Gagal mengirim foto. Coba lagi.";
+                  alert(msg);
                 } finally {
                   setBridgeUploading(false);
                 }

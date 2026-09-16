@@ -1,12 +1,13 @@
 "use client";
 
 import { useState } from "react";
+import { ScannedIngredient } from "@/types/tcm";
 
 interface ScanResultCopyProps {
-  ingredients: any[];
+  ingredients: ScannedIngredient[];
 }
 
-function buildCopyText(ingredients: any[]): string {
+function buildCopyText(ingredients: ScannedIngredient[]): string {
   if (!ingredients || ingredients.length === 0) {
     return "Tidak ada bahan yang terdeteksi.";
   }

@@ -137,37 +137,25 @@ async def list_ingredients(
     admin: str = Depends(get_current_admin),
     page: int = 1,
     limit: int = 20,
+    q: str = "",
+    db = Depends(get_db),
 ):
     """
     Paginated ingredient list for the admin table.
-    Sorted by mandarin_name ascending.
+    Supports catalog-wide search across all ingredients via 'q'.
     """
-    db = get_db()
-    skip = (page - 1) * limit
-    total = await db.tcm_ingredients.count_documents({})
-
-    cursor = db.tcm_ingredients.find(
-        {},
-        {
-            "mandarin_name": 1,
-            "indonesian_name": 1,
-            "latin_name": 1,
-            "english_name": 1,
-            "is_toxic": 1,
-            "toxicity_level": 1,
-            "_id": 1,
-        },
-    ).skip(skip).limit(limit).sort("mandarin_name", 1)
-
-    ingredients = []
-    async for doc in cursor:
-        doc["_id"] = str(doc["_id"])
-        ingredients.append(doc)
+    from database.ingredient_repository import ingredient_repository
+    ingredients, total, pages = await ingredient_repository.admin_list(
+        db=db,
+        page=page,
+        limit=limit,
+        search_query=q,
+    )
 
     return {
         "ingredients": ingredients,
         "total": total,
         "page": page,
         "limit": limit,
-        "pages": max(1, (total + limit - 1) // limit),
+        "pages": pages,
     }

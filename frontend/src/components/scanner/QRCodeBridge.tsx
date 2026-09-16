@@ -3,9 +3,10 @@
 import { useEffect, useState, useRef } from "react";
 import QRCode from "qrcode";
 import { getApiBaseUrl } from "@/lib/apiConfig";
+import { AnalyzeApiResponse } from "@/types/tcm";
 
 interface QRCodeBridgeProps {
-  onComplete: (results: any) => void;
+  onComplete: (results: AnalyzeApiResponse) => void;
 }
 
 export default function QRCodeBridge({ onComplete }: QRCodeBridgeProps) {

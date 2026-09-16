@@ -77,9 +77,10 @@ export async function getAdminStats() {
   return res.json();
 }
 
-export async function getIngredients(page = 1, limit = 20) {
+export async function getIngredients(page = 1, limit = 20, search = "") {
+  const queryParam = search ? `&q=${encodeURIComponent(search)}` : "";
   const res = await fetch(
-    `${getBase()}/api/v1/admin/ingredients?page=${page}&limit=${limit}`,
+    `${getBase()}/api/v1/admin/ingredients?page=${page}&limit=${limit}${queryParam}`,
     {
       headers: adminHeaders(),
       signal: AbortSignal.timeout(10000),

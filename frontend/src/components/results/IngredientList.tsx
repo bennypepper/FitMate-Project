@@ -1,7 +1,8 @@
 import React from "react";
+import { ScannedIngredient } from "@/types/tcm";
 
 interface IngredientListProps {
-  ingredients: any[];
+  ingredients: ScannedIngredient[];
 }
 
 export default function IngredientList({ ingredients }: IngredientListProps) {

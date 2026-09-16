@@ -61,33 +61,6 @@ async def search_ingredients(q: str = "", limit: int = 20, db = Depends(get_db))
     Public lookup for TCM ingredients without requiring admin login.
     Returns matched ingredients sorted by relevance.
     """
-    query = (q or "").strip().lower()
-    cursor = db.tcm_ingredients.find({}, {"_id": 0})
-    all_ingredients = await cursor.to_list(length=1000)
-
-    if not query:
-        return {"total": min(len(all_ingredients), limit), "items": all_ingredients[:limit]}
-
-    matches = []
-    for ing in all_ingredients:
-        names = [
-            str(ing.get("indonesian_name") or "").lower(),
-            str(ing.get("mandarin_name") or "").lower(),
-            str(ing.get("pinyin_name") or "").lower(),
-            str(ing.get("english_name") or "").lower(),
-            str(ing.get("latin_name") or "").lower(),
-        ]
-        score = 0
-        for n in names:
-            if not n:
-                continue
-            if query == n:
-                score = max(score, 100)
-            elif query in n or n in query:
-                score = max(score, 80)
-        if score > 0:
-            matches.append((score, ing))
-
-    matches.sort(key=lambda x: x[0], reverse=True)
-    results = [m[1] for m in matches[:limit]]
+    from database.ingredient_repository import ingredient_repository
+    results = await ingredient_repository.search_ingredients(query=q, db=db, limit=limit)
     return {"total": len(results), "items": results}

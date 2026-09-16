@@ -142,6 +142,10 @@ async def import_upload(
                 "reason": str(exc),
             })
 
+    if imported_count + updated_count > 0:
+        from database.ingredient_repository import ingredient_repository
+        ingredient_repository.invalidate_cache()
+
     total_processed = imported_count + updated_count + failed_count
     message = (
         f"Impor selesai: {imported_count} bahan baru ditambahkan, "

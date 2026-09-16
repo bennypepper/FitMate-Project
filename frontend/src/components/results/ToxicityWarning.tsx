@@ -1,7 +1,8 @@
 import React from "react";
+import { ScannedIngredient } from "@/types/tcm";
 
 interface ToxicityWarningProps {
-  ingredients: any[];
+  ingredients: ScannedIngredient[];
 }
 
 export default function ToxicityWarning({ ingredients }: ToxicityWarningProps) {

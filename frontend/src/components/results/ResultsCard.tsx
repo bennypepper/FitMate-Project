@@ -1,17 +1,17 @@
 "use client";
 
 import React from "react";
+import { ScannedIngredient, OcrBlock } from "@/types/tcm";
 
 interface ResultsCardProps {
-  ingredients: any[];
-  ocrBlocks?: any[];
+  ingredients: ScannedIngredient[];
+  ocrBlocks?: OcrBlock[];
   disclaimer?: string;
   onReset: () => void;
 }
 
 export default function ResultsCard({
   ingredients,
-  ocrBlocks = [],
   disclaimer,
   onReset,
 }: ResultsCardProps) {
@@ -21,7 +21,6 @@ export default function ResultsCard({
   const safeItems = ingredients.filter(
     (i) => !i.is_toxic && i.category === "safe"
   );
-  const unknownItems = ingredients.filter((i) => i.category === "unknown");
 
   // Primary highlight item if toxic, otherwise first safe item
   const primaryToxic = toxicItems[0];

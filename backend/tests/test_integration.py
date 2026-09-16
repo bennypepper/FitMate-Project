@@ -2,6 +2,7 @@ import asyncio
 import httpx
 from main import app
 from database.mongo import get_db
+from database.ingredient_repository import ingredient_repository
 from services.safety import match_ingredients
 
 async def run_all_tests():
@@ -80,6 +81,27 @@ async def run_all_tests():
         assert bridge_st.status_code == 200
         assert bridge_st.json()["status"] == "waiting"
         print("Bridge session status check: PASS")
+
+        # Analyze Search endpoint
+        search_res = await client.get("/api/v1/analyze/search?q=ginseng&limit=5")
+        assert search_res.status_code == 200
+        search_data = search_res.json()
+        assert "items" in search_data
+        assert len(search_data["items"]) > 0
+        print(f"Analyze search check: PASS (Found {len(search_data['items'])} matches for 'ginseng')")
+
+    print("--- 4. Testing Ingredient Repository & Admin Search ---")
+    admin_items, admin_total, admin_pages = await ingredient_repository.admin_list(
+        db, page=1, limit=10, search_query="ginseng"
+    )
+    assert admin_total > 0
+    assert len(admin_items) <= 10
+    print(f"Repository admin_list search: PASS (Found {admin_total} total matches across catalog)")
+
+    fuzzy_doc, fuzzy_score = await ingredient_repository.fuzzy_lookup("ren shen", db)
+    assert fuzzy_doc is not None
+    assert fuzzy_score >= 80
+    print(f"Repository fuzzy_lookup: PASS (Matched '{fuzzy_doc.get('indonesian_name')}' with score {fuzzy_score})")
 
     print("--- ALL INTEGRATION TESTS PASSED! ---")
 
