@@ -181,7 +181,7 @@ class FallbackDatabase:
             if not json_path.exists():
                 json_path = data_dir / "tcm_500_ingredients.json"
             if json_path.exists():
-                with open(json_path, "r", encoding="utf-8") as f:
+                with open(json_path, encoding="utf-8") as f:
                     raw_items = json.load(f)
                 for idx, it in enumerate(raw_items, 1):
                     doc = dict(it)

@@ -32,7 +32,7 @@ import json
 import re
 import sys
 from collections import Counter, defaultdict
-from datetime import datetime, timezone
+from datetime import UTC, datetime
 from pathlib import Path
 from typing import Any
 
@@ -41,7 +41,7 @@ BACKEND_DIR = REPO_ROOT / "backend"
 if str(BACKEND_DIR) not in sys.path:
     sys.path.insert(0, str(BACKEND_DIR))
 
-from database.schemas import TCMIngredient
+from database.schemas import TCMIngredient  # noqa: E402
 
 RAW_DIR = REPO_ROOT / "data" / "scraper" / "output"
 BASELINE_PATH = BACKEND_DIR / "database" / "data" / "tcm_500_ingredients.json"
@@ -679,12 +679,11 @@ class CatalogBuilder:
                         rec["toxicity_level"] = "moderate"
                         rec["toxicity_class"] = "toxic"
                         desc = f"Herbal TCM berkategori toksik (有毒 / Poisonous) dalam SymMap v2.0. {desc}".strip()
-                elif "小毒" in sym_props_zh:
-                    if not rec.get("is_toxic"):
-                        rec["is_toxic"] = True
-                        rec["toxicity_level"] = "low"
-                        rec["toxicity_class"] = "toxic"
-                        desc = f"Herbal TCM berkategori toksisitas ringan (小毒 / Slightly Toxic) dalam SymMap v2.0. {desc}".strip()
+                elif "小毒" in sym_props_zh and not rec.get("is_toxic"):
+                    rec["is_toxic"] = True
+                    rec["toxicity_level"] = "low"
+                    rec["toxicity_class"] = "toxic"
+                    desc = f"Herbal TCM berkategori toksisitas ringan (小毒 / Slightly Toxic) dalam SymMap v2.0. {desc}".strip()
             elif SYNTHETIC_SM_RE.match(src):
                 # 11 unmatched synthetic SM0xxx entries: check TCM-MKG D6 first, else curated official fallback
                 mkg = self.repo.mkg_by_zh.get(zh) if zh else None
@@ -1359,7 +1358,7 @@ def build_provenance_summary(records: list[dict[str, Any]], tier_counts: Counter
     }
 
     return {
-        "generated_at": datetime.now(timezone.utc).isoformat(),
+        "generated_at": datetime.now(UTC).isoformat(),
         "pipeline_version": VALIDATED_BY,
         "total_records": len(records),
         "toxic_records": sum(1 for r in records if r["is_toxic"]),

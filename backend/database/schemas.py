@@ -5,7 +5,7 @@ These schemas validate data BEFORE inserting into MongoDB.
 Zero-hallucination guarantee: every ingredient must have a source_reference.
 """
 
-from datetime import datetime, timezone
+from datetime import UTC, datetime
 from typing import Literal
 
 from pydantic import BaseModel, Field, field_validator, model_validator
@@ -25,7 +25,7 @@ class TCMIngredient(BaseModel):
     description: str | None = None
     source_reference: str = Field(..., min_length=1, description="SymMap ID or BPOM reference — REQUIRED for zero hallucination")
     validated_by: str | None = "pharmacy_team"
-    created_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))
+    created_at: datetime = Field(default_factory=lambda: datetime.now(UTC))
 
     @field_validator("mandarin_name")
     @classmethod

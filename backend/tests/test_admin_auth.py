@@ -67,14 +67,14 @@ def test_protected_route_with_invalid_token(client):
 
 def test_expired_token_returns_401(client):
     """AUTH-01: Token past its exp claim → HTTP 401."""
-    from datetime import datetime, timedelta, timezone
+    from datetime import UTC, datetime, timedelta
 
     import jwt
     from core.config import settings
 
     expired_payload = {
         "sub": "admin",
-        "exp": datetime.now(timezone.utc) - timedelta(hours=1),
+        "exp": datetime.now(UTC) - timedelta(hours=1),
     }
     expired_token = jwt.encode(
         expired_payload, settings.JWT_SECRET_KEY, algorithm=settings.JWT_ALGORITHM
