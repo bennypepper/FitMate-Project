@@ -9,14 +9,15 @@ Both endpoints require valid admin JWT (Depends(get_current_admin)).
 Max file size: 10MB.
 """
 
-import os
 import logging
-from fastapi import APIRouter, Depends, HTTPException, UploadFile, File, status, Request
+import os
+from typing import Annotated
 
+from core.limiter import limiter
+from database.mongo import get_db
+from fastapi import APIRouter, Depends, File, HTTPException, Request, UploadFile, status
 from utils.auth import get_current_admin
 from utils.excel_parser import parse_file, validate_all_rows
-from database.mongo import get_db
-from core.limiter import limiter
 
 logger = logging.getLogger("fitmate.upload")
 
@@ -37,11 +38,22 @@ def _check_extension(file: UploadFile) -> None:
             ),
         )
 
+
+def build_upsert_filter(doc: dict) -> dict:
+    """Build compound natural-key filter so non-Mandarin BPOM/FHI herbs don't collide."""
+    mandarin = (doc.get("mandarin_name") or "").strip()
+    if mandarin:
+        return {"mandarin_name": mandarin}
+    return {
+        "indonesian_name": (doc.get("indonesian_name") or "").strip(),
+        "latin_name": (doc.get("latin_name") or "").strip(),
+    }
+
 @router.post("/validate")
 @limiter.limit("10/minute")
 async def validate_upload(
     request: Request,
-    file: UploadFile = File(...),
+    file: Annotated[UploadFile, File(...)],
     admin: str = Depends(get_current_admin),
 ):
     """
@@ -86,7 +98,7 @@ async def validate_upload(
 @limiter.limit("10/minute")
 async def import_upload(
     request: Request,
-    file: UploadFile = File(...),
+    file: Annotated[UploadFile, File(...)],
     admin: str = Depends(get_current_admin),
 ):
     """
@@ -127,8 +139,9 @@ async def import_upload(
     failed_rows = []
     for row_data in valid_rows:
         try:
+            upsert_filter = build_upsert_filter(row_data)
             result = await db.tcm_ingredients.update_one(
-                {"mandarin_name": row_data["mandarin_name"]},
+                upsert_filter,
                 {"$set": row_data},
                 upsert=True,
             )
@@ -137,13 +150,13 @@ async def import_upload(
             else:
                 updated_count += 1
         except Exception as exc:
-            logger.error(
-                f"[Upload] Failed to upsert ingredient '{row_data.get('mandarin_name')}': {exc}",
-                exc_info=True,
+            logger.exception(
+                f"[Upload] Failed to upsert ingredient '{row_data.get('mandarin_name') or row_data.get('indonesian_name')}'",
             )
             failed_count += 1
             failed_rows.append({
                 "mandarin_name": row_data.get("mandarin_name"),
+                "indonesian_name": row_data.get("indonesian_name"),
                 "reason": str(exc),
             })
 
@@ -151,7 +164,6 @@ async def import_upload(
         from database.ingredient_repository import ingredient_repository
         ingredient_repository.invalidate_cache()
 
-    total_processed = imported_count + updated_count + failed_count
     message = (
         f"Impor selesai: {imported_count} bahan baru ditambahkan, "
         f"{updated_count} bahan diperbarui."

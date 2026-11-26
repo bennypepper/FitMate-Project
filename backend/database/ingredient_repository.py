@@ -1,8 +1,20 @@
-import re
+import asyncio
 import logging
+
 from thefuzz import fuzz
 
 logger = logging.getLogger("fitmate.repository")
+
+_TOXICITY_RANK = {"high": 3, "moderate": 2, "low": 1, "unknown": 0, "none": 0}
+
+
+def _severity_priority(item: dict) -> tuple[int, int]:
+    """Fail-safe precedence so toxic/higher-severity entries are never shadowed by safe aliases."""
+    return (
+        1 if bool(item.get("is_toxic", False)) else 0,
+        _TOXICITY_RANK.get(str(item.get("toxicity_level", "")).lower(), 0),
+    )
+
 
 class IngredientRepository:
     """
@@ -12,6 +24,7 @@ class IngredientRepository:
     def __init__(self):
         self._cached_ingredients: list[dict] | None = None
         self._cached_lookup_keys: dict[str, dict] | None = None
+        self._lock = asyncio.Lock()
 
     def invalidate_cache(self) -> None:
         """Invalidate the in-memory cache (e.g., after database mutations or uploads)."""
@@ -24,23 +37,34 @@ class IngredientRepository:
         if self._cached_ingredients is not None:
             return self._cached_ingredients
 
-        logger.info("[Repository] Loading TCM ingredients into cache from database...")
-        cursor = db["tcm_ingredients"].find({})
-        ingredients = await cursor.to_list(length=3000)
+        async with self._lock:
+            if self._cached_ingredients is not None:
+                return self._cached_ingredients
 
-        lookup_keys = {}
-        for item in ingredients:
-            for field in ["mandarin_name", "pinyin_name", "indonesian_name", "english_name", "latin_name"]:
-                val = item.get(field)
-                if val and isinstance(val, str):
-                    cleaned = val.strip().lower()
-                    if cleaned and cleaned not in ("-", "unknown", "none"):
-                        lookup_keys[cleaned] = item
+            logger.info("[Repository] Loading TCM ingredients into cache from database...")
+            cursor = db["tcm_ingredients"].find({})
+            raw_ingredients = await cursor.to_list(length=None)
 
-        self._cached_ingredients = ingredients
-        self._cached_lookup_keys = lookup_keys
-        logger.info(f"[Repository] Cached {len(ingredients)} ingredients with {len(lookup_keys)} lookup keys.")
-        return self._cached_ingredients
+            ingredients = []
+            lookup_keys = {}
+            for raw_item in raw_ingredients:
+                item = dict(raw_item)
+                if "_id" in item and item["_id"] is not None:
+                    item["_id"] = str(item["_id"])
+                ingredients.append(item)
+                for field in ["mandarin_name", "pinyin_name", "indonesian_name", "english_name", "latin_name"]:
+                    val = item.get(field)
+                    if val and isinstance(val, str):
+                        cleaned = val.strip().lower()
+                        if cleaned and cleaned not in ("-", "unknown", "none"):
+                            existing = lookup_keys.get(cleaned)
+                            if existing is None or _severity_priority(item) > _severity_priority(existing):
+                                lookup_keys[cleaned] = item
+
+            self._cached_ingredients = ingredients
+            self._cached_lookup_keys = lookup_keys
+            logger.info(f"[Repository] Cached {len(ingredients)} ingredients with {len(lookup_keys)} lookup keys.")
+            return self._cached_ingredients
 
     async def get_lookup_keys(self, db) -> dict[str, dict]:
         """Return the precomputed normalized name lookup dictionary."""
@@ -126,9 +150,11 @@ class IngredientRepository:
     ) -> tuple[list[dict], int, int]:
         """
         Paginated ingredient listing for admin portal.
-        Supports filtering across all 500 ingredients.
+        Supports filtering across all 1,500 ingredients.
         Returns: (items, total_count, total_pages)
         """
+        page = max(1, page)
+        limit = max(1, limit)
         all_ingredients = await self.get_all_ingredients(db)
         q = search_query.strip().lower()
 
