@@ -41,7 +41,7 @@ BACKEND_DIR = REPO_ROOT / "backend"
 if str(BACKEND_DIR) not in sys.path:
     sys.path.insert(0, str(BACKEND_DIR))
 
-from database.schemas import TCMIngredient  # noqa: E402
+from database.schemas import TCMIngredient
 
 RAW_DIR = REPO_ROOT / "data" / "scraper" / "output"
 BASELINE_PATH = BACKEND_DIR / "database" / "data" / "tcm_500_ingredients.json"
