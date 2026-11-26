@@ -1,1 +1,0 @@
-{"detail":"File must be an image"}

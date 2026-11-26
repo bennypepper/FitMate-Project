@@ -1,6 +1,39 @@
 import re
-from thefuzz import process, fuzz
+
 from database.ingredient_repository import ingredient_repository
+from thefuzz import fuzz, process
+
+# Everyday culinary staple words may appear on non-herbal food packaging
+# (e.g., "Krekers Beras Rasa Asin"); require exact or Latin/Mandarin match rather than substring hit.
+_FOOD_STAPLE_EXACT_ONLY_KEYS = frozenset({
+    "beras",
+    "rice",
+    "gula",
+    "sugar",
+    "garam",
+    "salt",
+    "air",
+    "water",
+    "tepung",
+    "flour",
+    "minyak",
+    "oil",
+    "susu",
+    "milk",
+    "telur",
+    "egg",
+    "madu",
+    "honey",
+    "teh",
+    "tea",
+    "kopi",
+    "coffee",
+    "jagung",
+    "corn",
+    "kedelai",
+    "soy",
+})
+
 
 async def match_ingredients(detected_texts: list[str], db) -> dict:
     """
@@ -32,20 +65,36 @@ async def match_ingredients(detected_texts: list[str], db) -> dict:
             matched_texts.add(raw_text)
             continue
 
-        # 2. Strict word boundary check (Requires full word match, not loose partial letters)
-        matched_item = None
-        matched_score = 0
+        # 2. Substring (CJK) / strict word-boundary (Latin/ID/EN) scan — collect ALL distinct matched items
+        matched_items: list[dict] = []
+        seen_item_keys: set[tuple[str, str, str]] = set()
         for name_key, item in lookup_keys.items():
-            if len(name_key) >= 3 or re.search(r'[\u4e00-\u9fff]', name_key):
-                p1 = r'(?:\b|^)' + re.escape(name_key) + r'(?:\b|$)'
-                p2 = r'(?:\b|^)' + re.escape(lower_text) + r'(?:\b|$)'
+            if name_key in _FOOD_STAPLE_EXACT_ONLY_KEYS:
+                continue
+            is_cjk = bool(re.search(r"[\u4e00-\u9fff]", name_key))
+            is_match = False
+            if is_cjk:
+                if name_key in lower_text or (len(lower_text) >= 4 and lower_text in name_key):
+                    is_match = True
+            elif len(name_key) >= 3:
+                p1 = r"(?:\b|^)" + re.escape(name_key) + r"(?:\b|$)"
+                p2 = r"(?:\b|^)" + re.escape(lower_text) + r"(?:\b|$)"
                 if re.search(p1, lower_text) or (len(lower_text) >= 4 and re.search(p2, name_key)):
-                    matched_item = item
-                    matched_score = 95
-                    break
+                    is_match = True
 
-        if matched_item:
-            _categorize_item(matched_item, raw_text, results, matched_score)
+            if is_match:
+                canonical_key = (
+                    str(item.get("mandarin_name") or ""),
+                    str(item.get("indonesian_name") or ""),
+                    str(item.get("latin_name") or ""),
+                )
+                if canonical_key not in seen_item_keys:
+                    seen_item_keys.add(canonical_key)
+                    matched_items.append(item)
+
+        if matched_items:
+            for matched_item in matched_items:
+                _categorize_item(matched_item, raw_text, results, 95)
             matched_texts.add(raw_text)
             continue
 
@@ -98,10 +147,10 @@ def _categorize_item(item, detected_text: str, results: dict, score: int):
         "source_reference": item.get("source_reference", "")
     }
 
-    if "target_organ" in item and item["target_organ"]:
+    if item.get("target_organ"):
         payload["target_organ"] = item["target_organ"]
 
-    if is_toxic or severity in ("toxic", "highly_toxic", "high"):
+    if is_toxic or severity in ("toxic", "highly_toxic", "high", "moderate"):
         results["toxic"].append(payload)
     elif severity == "contraindicated":
         results["contraindicated"].append(payload)

@@ -1,6 +1,7 @@
 import logging
-from motor.motor_asyncio import AsyncIOMotorClient
+
 from core.config import settings
+from motor.motor_asyncio import AsyncIOMotorClient
 
 logger = logging.getLogger("fitmate.db")
 
@@ -25,7 +26,7 @@ class FallbackCursor:
         )
         return self
 
-    async def to_list(self, length: int = None):
+    async def to_list(self, length: int | None = None):
         if length is not None:
             return self._data[:length]
         return self._data
@@ -47,7 +48,7 @@ class FallbackCollection:
         self.name = name
         self.data = list(data)
 
-    async def count_documents(self, filter_query: dict = None) -> int:
+    async def count_documents(self, filter_query: dict | None = None) -> int:
         if not filter_query:
             return len(self.data)
         count = 0
@@ -61,7 +62,7 @@ class FallbackCollection:
                 count += 1
         return count
 
-    def find(self, filter_query: dict = None, projection: dict = None):
+    def find(self, filter_query: dict | None = None, projection: dict | None = None):
         filtered = []
         for doc in self.data:
             match = True
@@ -89,7 +90,7 @@ class FallbackCollection:
                     filtered.append(dict(doc))
         return FallbackCursor(filtered)
 
-    async def find_one(self, filter_query: dict = None) -> dict | None:
+    async def find_one(self, filter_query: dict | None = None) -> dict | None:
         for doc in self.data:
             match = True
             if filter_query:
@@ -130,6 +131,7 @@ class FallbackCollection:
             class UpdateResult:
                 matched_count = 1
                 modified_count = 1
+                upserted_id = None
             return UpdateResult()
         elif upsert:
             new_doc = dict(filter_query)
@@ -137,15 +139,17 @@ class FallbackCollection:
                 new_doc.update(update["$set"])
             else:
                 new_doc.update(update)
-            await self.insert_one(new_doc)
+            insert_res = await self.insert_one(new_doc)
             class UpsertResult:
                 matched_count = 0
                 modified_count = 1
+                upserted_id = insert_res.inserted_id
             return UpsertResult()
 
         class NoOpResult:
             matched_count = 0
             modified_count = 0
+            upserted_id = None
         return NoOpResult()
 
     async def delete_one(self, filter_query: dict):
@@ -166,15 +170,18 @@ class FallbackCollection:
 
 
 class FallbackDatabase:
-    """In-memory database preloaded with 100 TCM ingredients."""
+    """In-memory database preloaded with 1,500 validated TCM & herbal ingredients."""
     def __init__(self):
         tcm_data = []
         try:
             import json
             from pathlib import Path
-            json_path = Path(__file__).parent / "data" / "tcm_500_ingredients.json"
+            data_dir = Path(__file__).parent / "data"
+            json_path = data_dir / "tcm_1500_ingredients.json"
+            if not json_path.exists():
+                json_path = data_dir / "tcm_500_ingredients.json"
             if json_path.exists():
-                with open(json_path, "r", encoding="utf-8") as f:
+                with open(json_path, encoding="utf-8") as f:
                     raw_items = json.load(f)
                 for idx, it in enumerate(raw_items, 1):
                     doc = dict(it)
@@ -199,7 +206,7 @@ class FallbackDatabase:
                         "source_reference": source,
                         "validated_by": "fitmate_verified"
                     })
-        except Exception as e:
+        except (OSError, ValueError, ImportError) as e:
             logger.warning(f"Could not load TCM ingredients into fallback: {e}")
 
         self._collections = {
@@ -236,16 +243,28 @@ async def connect_to_mongo():
         database = client[settings.MONGODB_DB_NAME]
         count = await database["tcm_ingredients"].count_documents({})
         if count == 0:
-            print("[DB] Remote MongoDB collection 'tcm_ingredients' is empty. Seeding from POPULAR_TCM...")
+            print("[DB] Remote MongoDB collection 'tcm_ingredients' is empty. Seeding from 1,500-entry dataset...")
             try:
-                fallback_items = [dict(item) for item in db.fallback_db["tcm_ingredients"].data]
+                fallback_items = [
+                    {k: v for k, v in item.items() if k != "_id"}
+                    for item in db.fallback_db["tcm_ingredients"].data
+                ]
                 if fallback_items:
                     await database["tcm_ingredients"].insert_many(fallback_items)
                     count = await database["tcm_ingredients"].count_documents({})
                     print(f"[DB] Successfully seeded remote MongoDB — {count} ingredients.")
-            except Exception as seed_err:
+            except Exception as seed_err:  # noqa: BLE001 — resilient fallback boundary when remote seeding fails
                 print(f"[DB] Seeding remote failed ({seed_err}). Falling back to in-memory store.")
                 db.is_fallback = True
+
+        # Ensure lookup indexes exist idempotently on real MongoDB
+        if not db.is_fallback:
+            try:
+                await database["tcm_ingredients"].create_index("mandarin_name")
+                await database["tcm_ingredients"].create_index("indonesian_name")
+                await database["tcm_ingredients"].create_index("latin_name")
+            except Exception as idx_err:  # noqa: BLE001 — index creation is best-effort on startup
+                logger.warning(f"[DB] Could not ensure indexes on tcm_ingredients: {idx_err}")
 
         db.client = client
         if count > 0 and not db.is_fallback:
@@ -254,7 +273,7 @@ async def connect_to_mongo():
         else:
             db.is_fallback = True
             print("[DB] Using in-memory dataset.")
-    except Exception as e:
+    except Exception as e:  # noqa: BLE001 — resilient fallback boundary when MongoDB is unreachable
         db.client = None
         db.is_fallback = True
         total_fallback = await db.fallback_db["tcm_ingredients"].count_documents({})
@@ -272,5 +291,5 @@ def get_db():
         return db.fallback_db
     try:
         return db.client[settings.MONGODB_DB_NAME]
-    except Exception:
+    except Exception:  # noqa: BLE001 — fallback to in-memory store if client handle is invalid
         return db.fallback_db

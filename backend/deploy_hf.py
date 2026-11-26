@@ -29,22 +29,25 @@ try:
         repo_id=REPO_ID,
         repo_type="space",
         ignore_patterns=[
-            ".env", 
-            ".env.example", 
+            ".env",
+            ".env.*",
+            "*.env",
+            ".env.example",
             "credentials/**",
             "credentials",
             "secrets/**",
             "*.key",
             "*.pem",
-            "venv/**", 
+            "venv/**",
             ".venv/**",
-            "__pycache__/**", 
-            "*.pyc", 
-            "evaluasi_model*", 
-            "*.csv", 
+            "__pycache__/**",
+            "*.pyc",
+            "evaluasi_model*",
+            "response.txt",
+            "*.csv",
             "*.log",
             "deploy_hf.py",
-            ".dockerignore"
+            ".dockerignore",
         ],
         commit_message="Automated deployment backend API by VS Code AI"
     )
@@ -63,7 +66,7 @@ if os.path.exists(env_path):
             if "=" in line:
                 key, val = line.split("=", 1)
                 key = key.strip()
-                val = val.strip()
+                val = val.strip().strip('"').strip("'")
 
                 if "YOUR-PASSWORD" in val or "huggingspace token" in line or key == "HF_TOKEN":
                     continue

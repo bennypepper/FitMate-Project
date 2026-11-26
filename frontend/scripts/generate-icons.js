@@ -3,7 +3,7 @@ const fs = require("fs");
 const path = require("path");
 
 const publicDir = path.join(__dirname, "..", "public");
-const iconPath = path.join(publicDir, "icon.png");
+const iconPath = path.join(__dirname, "icon-source.png");
 const iconsDir = path.join(publicDir, "icons");
 
 if (!fs.existsSync(iconsDir)) {

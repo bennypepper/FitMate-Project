@@ -27,6 +27,9 @@ export default function AuthGuard({ children }: AuthGuardProps) {
     const token = getToken();
     if (!token || isTokenExpired(token)) {
       clearToken();
+      queueMicrotask(() => {
+        setAuthorized(false);
+      });
       router.replace("/admin/login");
       return;
     }
@@ -38,8 +41,8 @@ export default function AuthGuard({ children }: AuthGuardProps) {
 
   if (!authorized && !isLoginPage) {
     return (
-      <div className="min-h-screen bg-surface flex items-center justify-center">
-        <p className="font-sans text-on-surface-variant text-sm">
+      <div className="min-h-screen bg-paper flex items-center justify-center">
+        <p className="font-sans text-ink-soft text-sm">
           Memverifikasi sesi...
         </p>
       </div>

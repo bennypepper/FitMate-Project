@@ -9,32 +9,59 @@ interface QRCodeBridgeProps {
   onComplete: (results: AnalyzeApiResponse) => void;
 }
 
+const SESSION_DEADLINE_MS = 300_000;
+const BASE_POLL_INTERVAL_MS = 2_000;
+const MAX_BACKOFF_MS = 16_000;
+
 export default function QRCodeBridge({ onComplete }: QRCodeBridgeProps) {
   const [sessionId, setSessionId] = useState<string | null>(null);
   const [qrUrl, setQrUrl] = useState<string | null>(null);
   const [mobileLink, setMobileLink] = useState<string>("");
-  const [status, setStatus] = useState<"loading" | "waiting" | "processing" | "completed" | "error">("loading");
+  const [status, setStatus] = useState<
+    "loading" | "waiting" | "processing" | "completed" | "error"
+  >("loading");
   const [copied, setCopied] = useState(false);
-  const intervalRef = useRef<NodeJS.Timeout | null>(null);
 
-  const apiUrl = getApiBaseUrl();
+  const onCompleteRef = useRef(onComplete);
+  useEffect(() => {
+    onCompleteRef.current = onComplete;
+  }, [onComplete]);
 
-  // 1. Create session & render QR instantly on mount (<10ms)
+  // 1. Register bridge session with backend to receive session_id & upload_token, then render QR
   useEffect(() => {
     let isMounted = true;
+    const controller = new AbortController();
 
     async function initSession() {
       try {
-        // Generate unique session ID client-side immediately
-        const sid = `fm_${Math.random().toString(36).substring(2, 8)}${Date.now().toString(36).slice(-4)}`;
-        const origin = typeof window !== "undefined" ? window.location.origin : "https://fitmate-project.vercel.app";
-        const targetUrl = `${origin}/?session=${sid}`;
+        const apiUrl = getApiBaseUrl();
+        const timeoutId = setTimeout(() => controller.abort(), 10_000);
+        const res = await fetch(`${apiUrl}/api/v1/bridge/session`, {
+          method: "POST",
+          signal: controller.signal,
+        });
+        clearTimeout(timeoutId);
 
-        if (!isMounted) return;
-        setSessionId(sid);
-        setMobileLink(targetUrl);
+        if (!res.ok) {
+          throw new Error(`Gagal membuat sesi jembatan (${res.status})`);
+        }
 
-        // Generate dynamic QR Code Data URL instantly in browser memory
+        const data: { session_id?: string; upload_token?: string } = await res.json();
+        const sid = data.session_id;
+        if (!sid) {
+          throw new Error("Respons sesi jembatan tidak valid");
+        }
+
+        const uploadToken = data.upload_token;
+        const origin =
+          typeof window !== "undefined"
+            ? window.location.origin
+            : "https://fitmate-project.vercel.app";
+        const tokenQuery = uploadToken
+          ? `&token=${encodeURIComponent(uploadToken)}`
+          : "";
+        const targetUrl = `${origin}/?session=${encodeURIComponent(sid)}${tokenQuery}`;
+
         const qrData = await QRCode.toDataURL(targetUrl, {
           margin: 1.5,
           width: 200,
@@ -45,17 +72,12 @@ export default function QRCodeBridge({ onComplete }: QRCodeBridgeProps) {
         });
 
         if (!isMounted) return;
+        setSessionId(sid);
+        setMobileLink(targetUrl);
         setQrUrl(qrData);
         setStatus("waiting");
-
-        // Asynchronously register session with backend (non-blocking)
-        fetch(`${apiUrl}/api/v1/bridge/session?custom_id=${sid}`, {
-          method: "POST",
-          signal: AbortSignal.timeout(5000),
-        }).catch((e) => {
-          console.warn("[Bridge Session Register Warning]", e);
-        });
       } catch (err) {
+        if (controller.signal.aborted) return;
         console.error("[Bridge Init Error]", err);
         if (isMounted) setStatus("error");
       }
@@ -65,49 +87,99 @@ export default function QRCodeBridge({ onComplete }: QRCodeBridgeProps) {
 
     return () => {
       isMounted = false;
-      if (intervalRef.current) clearInterval(intervalRef.current);
+      controller.abort();
     };
-  }, [apiUrl]);
+  }, []);
 
-  // 2. Poll session status every 2 seconds when waiting or processing
+  // 2. Poll session status via recursive setTimeout with AbortController, 5-min deadline, and backoff
   useEffect(() => {
     if (!sessionId || status === "completed" || status === "error") {
-      if (intervalRef.current) clearInterval(intervalRef.current);
       return;
     }
 
-    intervalRef.current = setInterval(async () => {
+    let isMounted = true;
+    let timerId: ReturnType<typeof setTimeout> | null = null;
+    let activeController: AbortController | null = null;
+    let consecutiveFailures = 0;
+    const deadline = Date.now() + SESSION_DEADLINE_MS;
+    const apiUrl = getApiBaseUrl();
+
+    const scheduleNext = (delayMs: number) => {
+      if (!isMounted) return;
+      timerId = setTimeout(pollOnce, delayMs);
+    };
+
+    const pollOnce = async () => {
+      if (!isMounted) return;
+
+      if (Date.now() >= deadline) {
+        setStatus("error");
+        return;
+      }
+
+      activeController = new AbortController();
+      const timeoutId = setTimeout(() => activeController?.abort(), 5_000);
+
       try {
-        const res = await fetch(`${apiUrl}/api/v1/bridge/${sessionId}/status`, {
-          signal: AbortSignal.timeout(5000),
-        });
+        const res = await fetch(
+          `${apiUrl}/api/v1/bridge/${encodeURIComponent(sessionId)}/status`,
+          { signal: activeController.signal }
+        );
+        clearTimeout(timeoutId);
+
+        if (!isMounted) return;
+
         if (res.status === 404) {
           setStatus("error");
-          if (intervalRef.current) clearInterval(intervalRef.current);
           return;
         }
-        if (!res.ok) return;
 
+        if (!res.ok) {
+          consecutiveFailures += 1;
+          const backoff = Math.min(
+            BASE_POLL_INTERVAL_MS * Math.pow(2, consecutiveFailures),
+            MAX_BACKOFF_MS
+          );
+          scheduleNext(backoff);
+          return;
+        }
+
+        consecutiveFailures = 0;
         const data = await res.json();
+        if (!isMounted) return;
+
         if (data.status === "processing") {
           setStatus("processing");
+          scheduleNext(BASE_POLL_INTERVAL_MS);
         } else if (data.status === "completed" && data.results) {
           setStatus("completed");
-          if (intervalRef.current) clearInterval(intervalRef.current);
-          onComplete(data.results);
+          onCompleteRef.current(data.results);
         } else if (data.status === "error") {
           setStatus("error");
-          if (intervalRef.current) clearInterval(intervalRef.current);
+        } else {
+          scheduleNext(BASE_POLL_INTERVAL_MS);
         }
       } catch (err) {
+        clearTimeout(timeoutId);
+        if (!isMounted) return;
         console.warn("[Bridge Polling Warning]", err);
+        consecutiveFailures += 1;
+        const backoff = Math.min(
+          BASE_POLL_INTERVAL_MS * Math.pow(2, consecutiveFailures),
+          MAX_BACKOFF_MS
+        );
+        scheduleNext(backoff);
       }
-    }, 2000);
+    };
+
+    scheduleNext(BASE_POLL_INTERVAL_MS);
 
     return () => {
-      if (intervalRef.current) clearInterval(intervalRef.current);
+      isMounted = false;
+      if (timerId) clearTimeout(timerId);
+      if (activeController) activeController.abort();
     };
-  }, [sessionId, status, apiUrl, onComplete]);
+  }, [sessionId, status]);
 
   const handleCopyLink = () => {
     if (!mobileLink) return;
@@ -122,9 +194,25 @@ export default function QRCodeBridge({ onComplete }: QRCodeBridgeProps) {
       <div className="w-[110px] h-[110px] sm:w-[120px] sm:h-[120px] bg-white p-1.5 rounded-[12px] border border-line shadow-xs flex items-center justify-center flex-shrink-0">
         {status === "loading" && (
           <div className="text-[11px] text-ink-soft font-medium flex flex-col items-center gap-1.5">
-            <svg className="animate-spin h-5 w-5 text-trust" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
-              <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
-              <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z" />
+            <svg
+              className="animate-spin h-5 w-5 text-trust"
+              xmlns="http://www.w3.org/2000/svg"
+              fill="none"
+              viewBox="0 0 24 24"
+            >
+              <circle
+                className="opacity-25"
+                cx="12"
+                cy="12"
+                r="10"
+                stroke="currentColor"
+                strokeWidth="4"
+              />
+              <path
+                className="opacity-75"
+                fill="currentColor"
+                d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"
+              />
             </svg>
             <span>Membuat QR...</span>
           </div>
@@ -163,26 +251,33 @@ export default function QRCodeBridge({ onComplete }: QRCodeBridgeProps) {
           {status === "processing" && (
             <>
               <span className="w-2 h-2 rounded-full bg-amber animate-spin" />
-              <span className="text-amber font-semibold">Sedang menganalisis label dari HP...</span>
+              <span className="text-amber font-semibold">
+                Sedang menganalisis label dari HP...
+              </span>
             </>
           )}
           {status === "completed" && (
             <>
               <span className="w-2 h-2 rounded-full bg-trust" />
-              <span className="text-trust-deep font-semibold">Selesai! Menampilkan di layar...</span>
+              <span className="text-trust-deep font-semibold">
+                Selesai! Menampilkan di layar...
+              </span>
             </>
           )}
           {status === "loading" && <span>Menghubungkan ke server...</span>}
           {status === "error" && (
-            <span className="text-danger">Sesi kadaluarsa. Refresh untuk mengulang.</span>
+            <span className="text-danger">
+              Sesi kadaluarsa. Refresh untuk mengulang.
+            </span>
           )}
         </div>
 
         <p className="text-[11.5px] leading-relaxed text-ink-soft mb-2.5">
-          Buka kamera smartphone dan scan kode di samping untuk memotret label. Hasil analisis otomatis muncul di monitor ini.
+          Buka kamera smartphone dan scan kode di samping untuk memotret label.
+          Hasil analisis otomatis muncul di monitor ini.
         </p>
 
-        {mobileLink && (
+        {mobileLink && status !== "error" && (
           <div className="flex items-center gap-3 flex-wrap">
             <button
               type="button"
@@ -190,11 +285,28 @@ export default function QRCodeBridge({ onComplete }: QRCodeBridgeProps) {
               className="text-[11px] font-semibold text-trust hover:text-trust-deep underline decoration-trust/40 underline-offset-2 flex items-center gap-1 cursor-pointer"
             >
               {copied ? (
-                <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" className="text-trust-deep">
+                <svg
+                  width="12"
+                  height="12"
+                  viewBox="0 0 24 24"
+                  fill="none"
+                  stroke="currentColor"
+                  strokeWidth="2.5"
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  className="text-trust-deep"
+                >
                   <polyline points="20 6 9 17 4 12" />
                 </svg>
               ) : (
-                <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                <svg
+                  width="12"
+                  height="12"
+                  viewBox="0 0 24 24"
+                  fill="none"
+                  stroke="currentColor"
+                  strokeWidth="2"
+                >
                   <rect x="9" y="9" width="13" height="13" rx="2" />
                   <path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1" />
                 </svg>
@@ -207,7 +319,16 @@ export default function QRCodeBridge({ onComplete }: QRCodeBridgeProps) {
               rel="noopener noreferrer"
               className="text-[11px] font-semibold text-ink-soft hover:text-ink underline decoration-line underline-offset-2 flex items-center gap-1"
             >
-              <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round">
+              <svg
+                width="11"
+                height="11"
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="currentColor"
+                strokeWidth="2.2"
+                strokeLinecap="round"
+                strokeLinejoin="round"
+              >
                 <path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6" />
                 <polyline points="15 3 21 3 21 9" />
                 <line x1="10" y1="14" x2="21" y2="3" />

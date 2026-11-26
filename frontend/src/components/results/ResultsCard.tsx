@@ -52,7 +52,7 @@ export default function ResultsCard({
 
   const handleOpenWhatsApp = () => {
     const text = encodeURIComponent(generateWhatsAppMessage());
-    window.open(`https://wa.me/14155238886?text=${text}`, "_blank");
+    window.open(`https://wa.me/14155238886?text=${text}`, "_blank", "noopener,noreferrer");
   };
 
   return (
@@ -61,6 +61,7 @@ export default function ResultsCard({
       <div className="flex items-center justify-between pb-3 border-b border-line mb-4">
         <button
           onClick={onReset}
+          aria-label="Kembali ke pemindai"
           className="w-[34px] h-[34px] rounded-full bg-paper-deep text-ink hover:bg-paper transition flex items-center justify-center cursor-pointer"
           title="Kembali"
         >

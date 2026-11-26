@@ -5,9 +5,9 @@ Requirements covered: DATA-03
 """
 
 import io
-import pytest
-import openpyxl
 from unittest.mock import AsyncMock, MagicMock, patch
+
+import openpyxl
 
 VALID_HEADERS = [
     "mandarin_name",

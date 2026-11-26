@@ -4,13 +4,12 @@ test_admin_auth.py — Tests for JWT admin authentication (Plan 05-01).
 Requirements covered: AUTH-01, AUTH-02
 """
 
-import pytest
 from unittest.mock import patch
-from passlib.context import CryptContext
 
-pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
+from utils.auth import get_password_hash
+
 TEST_PASSWORD = "testpassword123"
-TEST_HASH = pwd_context.hash(TEST_PASSWORD)
+TEST_HASH = get_password_hash(TEST_PASSWORD)
 
 def test_login_returns_token(client):
     """AUTH-01: Valid credentials return a JWT access token."""
@@ -68,13 +67,14 @@ def test_protected_route_with_invalid_token(client):
 
 def test_expired_token_returns_401(client):
     """AUTH-01: Token past its exp claim → HTTP 401."""
+    from datetime import UTC, datetime, timedelta
+
     import jwt
-    from datetime import datetime, timezone, timedelta
     from core.config import settings
 
     expired_payload = {
         "sub": "admin",
-        "exp": datetime.now(timezone.utc) - timedelta(hours=1),
+        "exp": datetime.now(UTC) - timedelta(hours=1),
     }
     expired_token = jwt.encode(
         expired_payload, settings.JWT_SECRET_KEY, algorithm=settings.JWT_ALGORITHM

@@ -1,0 +1,98 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+
+permissions:
+  contents: read
+
+jobs:
+  backend-ci:
+    name: Backend (Python 3.11)
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: .
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+          cache: pip
+          cache-dependency-path: backend/requirements.txt
+
+      - name: Install dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install -r backend/requirements.txt pytest anyio ruff
+
+      - name: Run Ruff lint on core backend modules
+        run: |
+          ruff check \
+            backend/core/config.py \
+            backend/core/limiter.py \
+            backend/database/schemas.py \
+            backend/database/mongo.py \
+            backend/database/ingredient_repository.py \
+            backend/database/sync_mongodb.py \
+            backend/database/build_1500_dataset.py \
+            backend/database/validate_seed.py \
+            backend/utils/excel_parser.py \
+            backend/utils/upload_validation.py \
+            backend/services/safety.py \
+            backend/tests/test_dataset_1500.py \
+            backend/tests/test_safety_1500.py \
+            backend/tests/test_security_hardening.py \
+            backend/tests/test_admin_auth.py \
+            backend/tests/test_admin_upload.py
+
+      - name: Run pytest suite
+        env:
+          PYTHONPATH: backend
+        run: pytest backend/tests/ -v
+
+      - name: Run integration smoke test
+        env:
+          PYTHONPATH: backend
+        run: python backend/tests/test_integration.py
+
+      - name: Verify MongoDB sync dry-run (1,500 records)
+        working-directory: backend
+        run: python -m database.sync_mongodb --dry-run
+
+  frontend-ci:
+    name: Frontend (Node 22)
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: frontend
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+          cache: npm
+          cache-dependency-path: frontend/package-lock.json
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Audit production dependencies
+        run: npm audit --omit=dev --audit-level=high
+
+      - name: Lint
+        run: npm run lint
+
+      - name: Typecheck
+        run: npm run typecheck
+
+      - name: Unit tests
+        run: npm test
+
+      - name: Production build
+        run: npm run build

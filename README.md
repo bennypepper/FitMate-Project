@@ -1,10 +1,10 @@
 # FitMate
 
-FitMate is an intelligent Traditional Chinese Medicine (TCM) safety scanner and automated advisory assistant built as a Progressive Web App (PWA) with a WhatsApp chatbot companion. The system enables consumers to inspect TCM and herbal product packaging using their device camera or file upload, extracts Mandarin Hanzi and Latin ingredient text, cross-references findings against a curated 500-ingredient TCM database derived from BPOM and SymMap publications, and flags hazardous adulterants or contraindications with zero AI hallucination.
+FitMate is an intelligent Traditional Chinese Medicine (TCM) safety scanner and automated advisory assistant built as a Progressive Web App (PWA) with a WhatsApp chatbot companion. The system enables consumers to inspect TCM and herbal product packaging using their device camera or file upload, extracts Mandarin Hanzi and Latin ingredient text, cross-references findings against a curated 1,500-ingredient TCM and herbal database (320 toxic/restricted, 1,180 safe) derived from official BPOM OTSKK & PerBPOM No. 25/2023 Lampiran VIII, Kemenkes RI Farmakope Herbal Indonesia (FHI Edisi II & Suplemen 1–2), SymMap v2.0, HKCMMS Vol. 1–11, TCM-MKG (ChP 2020 + NCBI Taxonomy), and EFSA Compendium of Botanicals, and flags hazardous adulterants or contraindications with zero AI hallucination.
 
 When risk indicators or unfamiliar substances are identified, users can seamlessly transition to an automated WhatsApp advisory bot via prefilled deep links for follow-up inquiries.
 
-> **Status Prototipe Riset:** FitMate merupakan prototipe sistem berbasis kecerdasan buatan (AI bot) untuk tujuan edukasi dan skrining awal. Basis data 500 bahan TCM dikompilasi dari publikasi resmi BPOM dan literatur SymMap, namun belum divalidasi secara klinis oleh apoteker atau dokter manusia. Sistem ini bukan pengganti diagnosis atau resep medis profesional.
+> **Status Prototipe Riset:** FitMate merupakan prototipe sistem berbasis kecerdasan buatan (AI bot) untuk tujuan edukasi dan skrining awal. Basis data 1.500 bahan TCM dan herbal dikompilasi dari publikasi resmi BPOM OTSKK & PerBPOM No. 25/2023 Lampiran VIII, Kemenkes RI Farmakope Herbal Indonesia (Edisi II & Suplemen 1–2), SymMap v2.0, HKCMMS Vol. 1–11, TCM-MKG (ChP 2020 + NCBI Taxonomy), serta EFSA Compendium of Botanicals, namun belum divalidasi secara klinis oleh apoteker atau dokter manusia. Sistem ini bukan pengganti diagnosis atau resep medis profesional.
 
 ---
 
@@ -17,9 +17,17 @@ When risk indicators or unfamiliar substances are identified, users can seamless
 - **Fleksibilitas Alur Penggunaan (Standalone & Bridge Mode):**
   - *Standalone:* Pengguna dapat memindai atau mengunggah foto langsung di satu perangkat (baik HP maupun laptop/desktop).
   - *Bridge Mode (Dua Arah):* Pengguna desktop dapat menampilkan kode QR interaktif ber-UUID unik. Saat dipindai dengan smartphone, hasil analisis kamera ponsel langsung tersinkronisasi kembali ke layar desktop secara otomatis.
-- **Kamus TCM 500 Bahan:** Pencarian cepat bahan herbal dengan dukungan nama Indonesia, Mandarin, Pinyin, nama Latin, status toksisitas, dan kontraindikasi.
+- **Kamus TCM & Herbal 1.500 Bahan:** Pencarian cepat bahan herbal (320 toksik/dibatasi, 1.180 aman) dengan dukungan nama Indonesia, Mandarin, Pinyin, nama Latin, status toksisitas, referensi sumber resmi, dan kontraindikasi.
 - **Asisten WhatsApp Terintegrasi:** Bot edukasi WhatsApp dengan pencegah darurat medis (119 SPGDT) dan filter deteksi Bahan Kimia Obat (BKO) ilegal sebelum pesan diproses.
 - **Desain Modern Apothecary:** Antarmuka bersih bernuansa botani modern menggunakan palet Forest Green, Sage, Sand/Paper, dan Crimson Warning, bebas dari emoji kasual dan didukung ikon SVG bertema.
+
+### Sumber Data Resmi Basis Pengetahuan (1.500 Bahan)
+- **BPOM RI (OTSKK & PerBPOM No. 25/2023 Lampiran VIII):** Daftar bahan yang dilarang digunakan dalam obat tradisional, Jamu Sederhana, klaim disetujui OTSKK, peringatan/perhatian label wajib, dan BPOM TI.
+- **Kemenkes RI Farmakope Herbal Indonesia (FHI):** Monografi simplisia resmi FHI Edisi II beserta Suplemen 1 dan Suplemen 2.
+- **SymMap v2.0:** Basis data pemetaan bahan herbal Traditional Chinese Medicine (TCM) dan target klinis.
+- **HKCMMS Vol. 1–11:** Hong Kong Chinese Materia Medica Standards.
+- **TCM-MKG (ChP 2020 + NCBI Taxonomy):** Knowledge graph Farmakope Tiongkok (*Chinese Pharmacopoeia* 2020) dan taksonomi botani terstandar.
+- **EFSA Compendium of Botanicals:** Referensi botani dengan senyawa perhatian (*substances of concern*) dari European Food Safety Authority.
 
 ---
 
@@ -28,11 +36,11 @@ When risk indicators or unfamiliar substances are identified, users can seamless
 ```
 +-------------------------------------------------------------------------+
 |                              FRONTEND                                   |
-|  Next.js 14 App Router | Tailwind CSS | Modern Apothecary Theme         |
+|  Next.js 16 App Router | Tailwind CSS | Modern Apothecary Theme         |
 |                                                                         |
 |  +------------------------+  +-------------------+  +----------------+  |
 |  | Standalone Mode        |  | Bridge Mode (QR)  |  | Kamus TCM      |  |
-|  | (Camera / File Upload) |  | (Cross-Device)    |  | (500 Bahan)    |  |
+|  | (Camera / File Upload) |  | (Cross-Device)    |  | (1.500 Bahan)  |  |
 |  +------------------------+  +-------------------+  +----------------+  |
 +-----------------------------------|-------------------------------------+
                                     | REST API / Polling
@@ -59,7 +67,7 @@ When risk indicators or unfamiliar substances are identified, users can seamless
 +-----------------------------+       +-----------------------------------+
 |       DATABASE LAYER        |       |         EXTERNAL SERVICES         |
 |  MongoDB Atlas              |       |  OpenRouter (Gemini 2.5 Flash)    |
-|  - 500 TCM Ingredients      |       |  Twilio WhatsApp Cloud API        |
+|  - 1,500 TCM Ingredients    |       |  Twilio WhatsApp Cloud API        |
 |  - Bridge Sessions (TTL)    |       +-----------------------------------+
 +-----------------------------+
 ```
@@ -68,7 +76,7 @@ When risk indicators or unfamiliar substances are identified, users can seamless
 
 ## Tech Stack
 
-- **Frontend:** Next.js 14 (App Router), React 18, TypeScript, Tailwind CSS, Custom SVGs
+- **Frontend:** Next.js 16 (App Router), React 19, TypeScript, Tailwind CSS, Custom SVGs
 - **Backend:** Python 3.11, FastAPI, Pydantic v2, Motor (Async MongoDB Driver)
 - **Database:** MongoDB Atlas (Koleksi `tcm_ingredients`, `bridge_sessions`)
 - **Model Kecerdasan Buatan:** Gemini 2.5 Flash Lite via OpenRouter
@@ -135,9 +143,9 @@ Buka peramban di `http://localhost:3000`.
 
 ## Endpoint API Utama
 
-- `POST /api/scan`: Menerima berkas gambar label atau base64, menjalankan OCR multimodal, memverifikasi batas herbal vs pangan, dan mencocokkan kandungan pada basis data 500 bahan.
+- `POST /api/scan`: Menerima berkas gambar label atau base64, menjalankan OCR multimodal, memverifikasi batas herbal vs pangan, dan mencocokkan kandungan pada basis data 1.500 bahan.
 - `GET /api/tcm/search?q={query}`: Pencarian fuzzy multibahasa untuk bahan TCM.
-- `GET /api/tcm/list?limit=500`: Mengambil katalog bahan TCM terdaftar.
+- `GET /api/tcm/list?limit=1500`: Mengambil katalog bahan TCM terdaftar.
 - `POST /api/bridge/create`: Membuat sesi bridge cross-device baru dengan token UUID dan URL QR code.
 - `GET /api/bridge/poll/{session_id}`: Polling berkala untuk sinkronisasi hasil pindai dari smartphone ke desktop.
 - `POST /api/bridge/complete/{session_id}`: Mengunggah hasil pemindaian smartphone ke sesi bridge desktop.

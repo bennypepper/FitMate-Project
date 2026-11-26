@@ -1,8 +1,10 @@
-import os
 import base64
 import json
+import os
+
 import httpx
 from core.config import settings
+from utils.upload_validation import detect_image_mime
 
 OPENROUTER_BASE_URL = "https://openrouter.ai/api/v1/chat/completions"
 
@@ -13,21 +15,17 @@ async def extract_and_translate_text(image_bytes: bytes) -> list[dict]:
     Returns a list of dicts: [{"text": <ingredient_name>, "bounding_box": [...]}, ...]
     Returns an empty list (not an exception) when no ingredients are found.
     """
-    if os.environ.get("MOCK_VISION_API", "false").lower() == "true":
+    if settings.MOCK_VISION_API or os.environ.get("MOCK_VISION_API", "false").lower() == "true":
         return [
             {"text": "人参", "bounding_box": [{"x": 10, "y": 10}, {"x": 50, "y": 10}, {"x": 50, "y": 30}, {"x": 10, "y": 30}]},
             {"text": "当归", "bounding_box": [{"x": 10, "y": 40}, {"x": 50, "y": 40}, {"x": 50, "y": 60}, {"x": 10, "y": 60}]},
         ]
 
-    b64_img = base64.b64encode(image_bytes).decode("utf-8")
+    media_type = detect_image_mime(image_bytes)
+    if not media_type:
+        raise ValueError("Unsupported or invalid image format")
 
-    media_type = "image/jpeg"
-    if image_bytes[:4] == b"\x89PNG":
-        media_type = "image/png"
-    elif image_bytes[:6] in (b"GIF87a", b"GIF89a"):
-        media_type = "image/gif"
-    elif image_bytes[:4] == b"RIFF" and image_bytes[8:12] == b"WEBP":
-        media_type = "image/webp"
+    b64_img = base64.b64encode(image_bytes).decode("utf-8")
 
     prompt = (
         "You are a TCM (Traditional Chinese Medicine) ingredient extractor. "
@@ -90,10 +88,8 @@ async def extract_and_translate_text(image_bytes: bytes) -> list[dict]:
 
     content = content.strip()
     for fence in ("```json", "```"):
-        if content.startswith(fence):
-            content = content[len(fence):]
-        if content.endswith("```"):
-            content = content[:-3]
+        content = content.removeprefix(fence)
+        content = content.removesuffix("```")
     content = content.strip()
 
     try:

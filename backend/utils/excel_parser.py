@@ -10,16 +10,26 @@ Column mapping — Excel headers must match these names (case-insensitive, space
   is_toxic, target_organ, toxicity_level, description, source_reference
 """
 
-import io
 import csv
+import io
+
 import openpyxl
 
-REQUIRED_COLUMNS = {"mandarin_name", "indonesian_name", "is_toxic", "source_reference"}
+REQUIRED_COLUMNS = {"indonesian_name", "is_toxic", "source_reference"}
 
-VALID_TOXICITY_LEVELS = {"low", "moderate", "high", "unknown"}
+MAX_ROWS = 5000
+
+VALID_TOXICITY_LEVELS = {"none", "low", "moderate", "high", "unknown"}
 
 TRUTHY_VALUES = {"true", "1", "yes", "ya", "benar"}
 FALSY_VALUES = {"false", "0", "no", "tidak", "salah"}
+
+
+def _clean_cell(val: object) -> str:
+    """Convert an Excel/CSV cell value to a stripped string without turning None into 'None'."""
+    if val is None:
+        return ""
+    return str(val).strip()
 
 def parse_file(file_bytes: bytes, filename: str) -> list[dict]:
     """
@@ -37,25 +47,37 @@ def parse_file(file_bytes: bytes, filename: str) -> list[dict]:
         )
 
 def _parse_xlsx(file_bytes: bytes) -> list[dict]:
-    wb = openpyxl.load_workbook(io.BytesIO(file_bytes), data_only=True)
-    sheet = wb.active
+    wb = openpyxl.load_workbook(io.BytesIO(file_bytes), data_only=True, read_only=True)
+    try:
+        sheet = wb.active
+        row_iter = sheet.iter_rows(values_only=True)
+        try:
+            header_row = next(row_iter)
+        except StopIteration:
+            return []
 
-    headers = []
-    for cell in sheet[1]:
-        val = cell.value
-        headers.append(str(val).strip().lower() if val is not None else "")
+        headers = [
+            str(val).strip().lower() if val is not None else ""
+            for val in header_row
+        ]
 
-    rows = []
-    for row in sheet.iter_rows(min_row=2, values_only=True):
-        if all(v is None for v in row):
-            continue
-        row_dict = {}
-        for col_idx, value in enumerate(row):
-            if col_idx < len(headers) and headers[col_idx]:
-                row_dict[headers[col_idx]] = value
-        rows.append(row_dict)
+        rows = []
+        for row in row_iter:
+            if all(v is None for v in row):
+                continue
+            if len(rows) >= MAX_ROWS:
+                raise ValueError(
+                    f"Jumlah baris melebihi batas maksimum ({MAX_ROWS} baris)."
+                )
+            row_dict = {}
+            for col_idx, value in enumerate(row):
+                if col_idx < len(headers) and headers[col_idx]:
+                    row_dict[headers[col_idx]] = value
+            rows.append(row_dict)
 
-    return rows
+        return rows
+    finally:
+        wb.close()
 
 def _parse_csv(file_bytes: bytes) -> list[dict]:
 
@@ -75,6 +97,10 @@ def _parse_csv(file_bytes: bytes) -> list[dict]:
             if k
         }
         if any(v for v in normalized.values()):
+            if len(rows) >= MAX_ROWS:
+                raise ValueError(
+                    f"Jumlah baris melebihi batas maksimum ({MAX_ROWS} baris)."
+                )
             rows.append(normalized)
 
     return rows
@@ -87,15 +113,20 @@ def validate_row(row: dict, row_number: int) -> list[dict]:
     """
     errors = []
 
-    mandarin = row.get("mandarin_name")
-    if not mandarin or str(mandarin).strip() == "":
+    mandarin = _clean_cell(row.get("mandarin_name"))
+    pinyin = _clean_cell(row.get("pinyin_name"))
+    latin = _clean_cell(row.get("latin_name"))
+    indonesian = _clean_cell(row.get("indonesian_name"))
+
+    # Allow empty mandarin_name for non-TCM Indonesian/BPOM/FHI herbs when latin_name
+    # and indonesian_name are both present and no pinyin_name indicates a TCM entry.
+    if not mandarin and (pinyin or not (latin and indonesian)):
         errors.append({"field": "mandarin_name", "message": "Nama Mandarin wajib diisi"})
 
-    indonesian = row.get("indonesian_name")
-    if not indonesian or str(indonesian).strip() == "":
+    if not indonesian:
         errors.append({"field": "indonesian_name", "message": "Nama Indonesia wajib diisi"})
 
-    is_toxic_raw = str(row.get("is_toxic", "")).strip().lower()
+    is_toxic_raw = _clean_cell(row.get("is_toxic")).lower()
     if is_toxic_raw not in TRUTHY_VALUES and is_toxic_raw not in FALSY_VALUES:
         errors.append({
             "field": "is_toxic",
@@ -105,20 +136,20 @@ def validate_row(row: dict, row_number: int) -> list[dict]:
             ),
         })
 
-    source = str(row.get("source_reference", "")).strip().lower()
+    source = _clean_cell(row.get("source_reference")).lower()
     if not source or source in ("", "unknown", "none", "-", "n/a"):
         errors.append({
             "field": "source_reference",
             "message": "Referensi sumber wajib diisi (contoh: SymMap ID atau nomor BPOM)",
         })
 
-    toxicity_level = str(row.get("toxicity_level", "")).strip().lower()
+    toxicity_level = _clean_cell(row.get("toxicity_level")).lower()
     if toxicity_level and toxicity_level not in VALID_TOXICITY_LEVELS:
         errors.append({
             "field": "toxicity_level",
             "message": (
                 f"Nilai toxicity_level tidak valid: '{toxicity_level}'. "
-                "Gunakan: low, moderate, high, unknown"
+                "Gunakan: none, low, moderate, high, unknown"
             ),
         })
 
@@ -129,28 +160,29 @@ def normalize_row(row: dict) -> dict:
     Convert a validated row dict to the exact TCMIngredient field types.
     Call ONLY after validate_row() returns an empty error list.
     """
-    is_toxic_raw = str(row.get("is_toxic", "false")).strip().lower()
+    is_toxic_raw = _clean_cell(row.get("is_toxic")).lower()
     is_toxic = is_toxic_raw in TRUTHY_VALUES
 
-    toxicity_level = str(row.get("toxicity_level", "unknown")).strip().lower()
+    toxicity_level = _clean_cell(row.get("toxicity_level")).lower()
     if toxicity_level not in VALID_TOXICITY_LEVELS:
-        toxicity_level = "unknown"
+        toxicity_level = "unknown" if is_toxic else "none"
 
     def _str_or_none(key: str) -> str | None:
-        val = str(row.get(key, "")).strip()
+        val = _clean_cell(row.get(key))
         return val if val else None
 
     return {
-        "mandarin_name": str(row.get("mandarin_name", "")).strip(),
+        "mandarin_name": _clean_cell(row.get("mandarin_name")),
         "pinyin_name": _str_or_none("pinyin_name"),
         "latin_name": _str_or_none("latin_name"),
-        "indonesian_name": str(row.get("indonesian_name", "")).strip(),
+        "indonesian_name": _clean_cell(row.get("indonesian_name")),
         "english_name": _str_or_none("english_name"),
         "is_toxic": is_toxic,
         "target_organ": _str_or_none("target_organ"),
         "toxicity_level": toxicity_level,
+        "toxicity_class": "toxic" if is_toxic else "safe",
         "description": _str_or_none("description"),
-        "source_reference": str(row.get("source_reference", "")).strip(),
+        "source_reference": _clean_cell(row.get("source_reference")),
         "validated_by": "pharmacy_team",
     }
 

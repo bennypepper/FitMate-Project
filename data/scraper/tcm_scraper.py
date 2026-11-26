@@ -16,10 +16,10 @@ from pathlib import Path
 OUTPUT_DIR = Path(__file__).parent / "output"
 OUTPUT_DIR.mkdir(exist_ok=True)
 
-# SymMap v2.0 public download URLs (verify at http://www.symmap.org/download)
+# SymMap v2.0 public download URLs (verify at https://www.symmap.org/download)
 SYMMAP_URLS = {
-    "herbs": "http://www.symmap.org/static/download/V2.0/SymMap%20v2.0%2C%20SMHB%20file.xlsx",
-    "ingredients": "http://www.symmap.org/static/download/V2.0/SymMap%20v2.0%2C%20SMIT%20file.xlsx",
+    "herbs": "https://www.symmap.org/static/download/V2.0/SymMap%20v2.0%2C%20SMHB%20file.xlsx",
+    "ingredients": "https://www.symmap.org/static/download/V2.0/SymMap%20v2.0%2C%20SMIT%20file.xlsx",
 }
 
 HEADERS = {

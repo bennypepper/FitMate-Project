@@ -13,12 +13,17 @@ export interface ScannedIngredient {
   pinyin_name?: string;
   detected_text?: string;
   is_toxic: boolean;
+  is_herbal?: boolean;
+  status_label?: string;
   category: IngredientCategory;
   toxicity_level?: "high" | "moderate" | "low" | "unknown" | string;
+  risk_level?: "high" | "moderate" | "low" | "unknown" | string;
   target_organ?: string;
   severity_warning?: string;
   description?: string;
+  match_score?: number;
   score?: number;
+  source_reference?: string;
   source?: string;
 }
 
@@ -35,9 +40,12 @@ export interface SafetyAnalysisData {
   unknown?: Partial<ScannedIngredient>[];
   meta?: {
     total_detected?: number;
+    total_toxic?: number;
+    total_safe?: number;
+    total_unknown?: number;
     toxic_count?: number;
     is_herbal_product?: boolean;
-    classification?: string;
+    classification?: "toxic" | "safe" | "non_herbal" | string;
     [key: string]: unknown;
   };
 }
@@ -58,11 +66,36 @@ export interface ScanResultPayload {
   ocr_blocks: OcrBlock[];
 }
 
+function mapIngredient(
+  item: Partial<ScannedIngredient>,
+  category: IngredientCategory,
+  isToxic: boolean
+): ScannedIngredient {
+  const resolvedScore = item.match_score ?? item.score;
+  const resolvedSource = item.source_reference ?? item.source;
+
+  return {
+    ...item,
+    category,
+    is_toxic: isToxic,
+    ...(resolvedScore !== undefined
+      ? { match_score: resolvedScore, score: resolvedScore }
+      : {}),
+    ...(resolvedSource !== undefined
+      ? { source_reference: resolvedSource, source: resolvedSource }
+      : {}),
+  };
+}
+
 /**
  * Normalizes raw backend analysis response into a strongly-typed ScanResultPayload.
- * Unifies mapping across file uploads, bridge sessions, and demo data.
+ * Unifies mapping across file uploads, bridge sessions, and demo data while keeping
+ * backward compatibility between backend safety.py fields (match_score, source_reference)
+ * and legacy frontend aliases (score, source).
  */
-export function normalizeScanResults(data: Partial<AnalyzeApiResponse> | null | undefined): ScanResultPayload {
+export function normalizeScanResults(
+  data: Partial<AnalyzeApiResponse> | null | undefined
+): ScanResultPayload {
   if (!data) {
     return {
       ingredients: [],
@@ -73,26 +106,12 @@ export function normalizeScanResults(data: Partial<AnalyzeApiResponse> | null | 
 
   const sa = data.safety_analysis || {};
   const allIngredients: ScannedIngredient[] = [
-    ...(sa.toxic || []).map((i) => ({
-      ...i,
-      category: "toxic" as IngredientCategory,
-      is_toxic: true,
-    })),
-    ...(sa.contraindicated || []).map((i) => ({
-      ...i,
-      category: "contraindicated" as IngredientCategory,
-      is_toxic: true,
-    })),
-    ...(sa.safe || []).map((i) => ({
-      ...i,
-      category: "safe" as IngredientCategory,
-      is_toxic: false,
-    })),
-    ...(sa.unknown || []).map((i) => ({
-      ...i,
-      category: "unknown" as IngredientCategory,
-      is_toxic: false,
-    })),
+    ...(sa.toxic || []).map((i) => mapIngredient(i, "toxic", true)),
+    ...(sa.contraindicated || []).map((i) =>
+      mapIngredient(i, "contraindicated", true)
+    ),
+    ...(sa.safe || []).map((i) => mapIngredient(i, "safe", false)),
+    ...(sa.unknown || []).map((i) => mapIngredient(i, "unknown", false)),
   ];
 
   return {

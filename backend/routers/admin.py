@@ -8,7 +8,7 @@ Endpoints:
   GET  /api/v1/admin/ingredients — Protected: paginated ingredient list
 """
 
-from fastapi import APIRouter, HTTPException, Depends, status, Request
+from fastapi import APIRouter, HTTPException, Depends, Query, status, Request
 from pydantic import BaseModel
 
 from core.config import settings
@@ -18,6 +18,9 @@ from datetime import datetime, timezone
 from utils.auth import verify_password, get_password_hash, create_access_token, get_current_admin
 
 router = APIRouter(prefix="/api/v1/admin", tags=["admin"])
+
+# Precomputed dummy bcrypt hash to equalize timing on unknown usernames
+_DUMMY_BCRYPT_HASH = get_password_hash("dummy-timing-equalization-password")
 
 class LoginRequest(BaseModel):
     username: str
@@ -52,16 +55,13 @@ async def login(request: Request, credentials: LoginRequest, db = Depends(get_db
         expected_hash = user_doc.get("hashed_password")
     elif credentials.username == settings.ADMIN_USERNAME:
         expected_hash = settings.ADMIN_PASSWORD_HASH
-    else:
+
+    if not expected_hash:
+        # Equalize response timing and status code to prevent username enumeration
+        verify_password(credentials.password, _DUMMY_BCRYPT_HASH)
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,
             detail="Username atau password salah",
-        )
-
-    if not expected_hash:
-        raise HTTPException(
-            status_code=status.HTTP_503_SERVICE_UNAVAILABLE,
-            detail="Admin auth not configured. Set ADMIN_PASSWORD_HASH in .env",
         )
 
     if not verify_password(credentials.password, expected_hash):
@@ -74,7 +74,9 @@ async def login(request: Request, credentials: LoginRequest, db = Depends(get_db
     return TokenResponse(access_token=token)
 
 @router.post("/change-password")
+@limiter.limit("5/minute")
 async def change_password(
+    request: Request,
     req: ChangePasswordRequest,
     admin: str = Depends(get_current_admin),
     db = Depends(get_db),
@@ -135,8 +137,8 @@ async def get_stats(admin: str = Depends(get_current_admin)):
 @router.get("/ingredients")
 async def list_ingredients(
     admin: str = Depends(get_current_admin),
-    page: int = 1,
-    limit: int = 20,
+    page: int = Query(default=1, ge=1),
+    limit: int = Query(default=20, ge=1, le=100),
     q: str = "",
     db = Depends(get_db),
 ):
