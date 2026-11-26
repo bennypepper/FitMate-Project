@@ -25,11 +25,9 @@ HEADERS = {
 }
 
 def scrape_bpom_page(url: str) -> list[dict]:
-    """Scrape the BPOM ingredient table."""
-    import urllib3
-    urllib3.disable_warnings(urllib3.exceptions.InsecureRequestWarning)
+    """Scrape the BPOM ingredient table with TLS verification enabled."""
     try:
-        response = requests.get(url, headers=HEADERS, timeout=30, verify=False)
+        response = requests.get(url, headers=HEADERS, timeout=30, verify=True)
         response.raise_for_status()
         soup = BeautifulSoup(response.text, "lxml")
 
