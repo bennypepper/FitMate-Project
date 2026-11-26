@@ -2,7 +2,6 @@
 
 import { useState, useEffect, useMemo } from "react";
 import { getApiBaseUrl } from "@/lib/apiConfig";
-import rawTcmData from "@/data/tcmIngredients.json";
 
 export interface IngredientItem {
   mandarin_name: string;
@@ -17,7 +16,29 @@ export interface IngredientItem {
   source_reference?: string;
 }
 
-const DEFAULT_INGREDIENTS: IngredientItem[] = rawTcmData as IngredientItem[];
+const PAGE_SIZE = 50;
+
+let cachedCatalog: IngredientItem[] | null = null;
+let catalogPromise: Promise<IngredientItem[]> | null = null;
+
+async function loadTcmCatalog(): Promise<IngredientItem[]> {
+  if (cachedCatalog) return cachedCatalog;
+  if (!catalogPromise) {
+    catalogPromise = import("@/data/tcmIngredients.json")
+      .then((mod) => {
+        const items = (
+          (mod as { default?: IngredientItem[] }).default ?? mod
+        ) as IngredientItem[];
+        cachedCatalog = items;
+        return items;
+      })
+      .catch((err) => {
+        catalogPromise = null;
+        throw err;
+      });
+  }
+  return catalogPromise;
+}
 
 interface IngredientSearchModalProps {
   isOpen: boolean;
@@ -30,19 +51,60 @@ export default function IngredientSearchModal({
 }: IngredientSearchModalProps) {
   const [query, setQuery] = useState("");
   const [filterType, setFilterType] = useState<"all" | "toxic" | "safe">("all");
+  const [visibleCount, setVisibleCount] = useState(PAGE_SIZE);
+  const [catalogItems, setCatalogItems] = useState<IngredientItem[]>(
+    () => cachedCatalog ?? []
+  );
+  const [catalogLoading, setCatalogLoading] = useState(false);
+  const [catalogError, setCatalogError] = useState(false);
   const [searchResults, setSearchResults] = useState<IngredientItem[] | null>(null);
   const [loading, setLoading] = useState(false);
 
-  // Reset states on modal open/close
+  // Lazy-load the 1,500-item catalog only on first modal open
+  useEffect(() => {
+    if (!isOpen) return;
+    if (cachedCatalog) {
+      setCatalogItems(cachedCatalog);
+      setCatalogLoading(false);
+      setCatalogError(false);
+      return;
+    }
+
+    let cancelled = false;
+    setCatalogLoading(true);
+    setCatalogError(false);
+    loadTcmCatalog()
+      .then((items) => {
+        if (!cancelled) {
+          setCatalogItems(items);
+          setCatalogLoading(false);
+        }
+      })
+      .catch((err) => {
+        console.error("Failed to load TCM catalog:", err);
+        if (!cancelled) {
+          setCatalogError(true);
+          setCatalogLoading(false);
+        }
+      });
+
+    return () => {
+      cancelled = true;
+    };
+  }, [isOpen]);
+
+  // Reset states on modal close
   useEffect(() => {
     if (!isOpen) {
       setQuery("");
       setFilterType("all");
+      setVisibleCount(PAGE_SIZE);
       setSearchResults(null);
+      setLoading(false);
     }
   }, [isOpen]);
 
-  // Handle Search
+  // Handle Search with AbortController + 5s timeout
   useEffect(() => {
     if (!isOpen) return;
 
@@ -53,45 +115,83 @@ export default function IngredientSearchModal({
       return;
     }
 
-    const fetchIngredients = async () => {
-      setLoading(true);
+    let cancelled = false;
+    let activeController: AbortController | null = null;
+    let timeoutId: ReturnType<typeof setTimeout> | null = null;
+
+    const performClientFallback = async (searchTerm: string) => {
       try {
-        const apiUrl = getApiBaseUrl();
-        const res = await fetch(
-          `${apiUrl}/api/v1/analyze/search?q=${encodeURIComponent(trimmed)}&limit=30`
-        );
-        if (res.ok) {
-          const data = await res.json();
-          setSearchResults(data.items || []);
-        } else {
-          // Client-side fallback if API is unreachable or returned 404
-          performClientFallback(trimmed);
-        }
+        const items = cachedCatalog ?? (await loadTcmCatalog());
+        if (cancelled) return;
+        const q = searchTerm.toLowerCase();
+        const matched = items.filter((item) => {
+          return (
+            item.indonesian_name?.toLowerCase().includes(q) ||
+            item.mandarin_name?.toLowerCase().includes(q) ||
+            item.pinyin_name?.toLowerCase().includes(q) ||
+            (item.english_name && item.english_name.toLowerCase().includes(q)) ||
+            (item.latin_name && item.latin_name.toLowerCase().includes(q)) ||
+            (item.target_organ && item.target_organ.toLowerCase().includes(q)) ||
+            (item.description && item.description.toLowerCase().includes(q)) ||
+            (item.source_reference && item.source_reference.toLowerCase().includes(q))
+          );
+        });
+        setSearchResults(matched);
       } catch (err) {
-        console.warn("API search failed, falling back to local dataset:", err);
-        performClientFallback(trimmed);
-      } finally {
-        setLoading(false);
+        console.warn("Local catalog search fallback failed:", err);
+        if (!cancelled) {
+          setSearchResults([]);
+        }
       }
     };
 
-    const performClientFallback = (searchTerm: string) => {
-      const q = searchTerm.toLowerCase();
-      const matched = DEFAULT_INGREDIENTS.filter((item) => {
-        return (
-          item.indonesian_name?.toLowerCase().includes(q) ||
-          item.mandarin_name?.toLowerCase().includes(q) ||
-          item.pinyin_name?.toLowerCase().includes(q) ||
-          (item.english_name && item.english_name.toLowerCase().includes(q)) ||
-          (item.target_organ && item.target_organ.toLowerCase().includes(q)) ||
-          (item.description && item.description.toLowerCase().includes(q))
+    const fetchIngredients = async () => {
+      setLoading(true);
+      const controller = new AbortController();
+      activeController = controller;
+      let timedOut = false;
+      timeoutId = setTimeout(() => {
+        timedOut = true;
+        controller.abort();
+      }, 5000);
+
+      try {
+        const apiUrl = getApiBaseUrl();
+        const res = await fetch(
+          `${apiUrl}/api/v1/analyze/search?q=${encodeURIComponent(trimmed)}&limit=50`,
+          { signal: controller.signal }
         );
-      });
-      setSearchResults(matched);
+        if (timeoutId) clearTimeout(timeoutId);
+        if (cancelled) return;
+
+        if (res.ok) {
+          const data = await res.json();
+          if (!cancelled) {
+            setSearchResults(data.items || []);
+          }
+        } else {
+          // Client-side fallback if API is unreachable or returned non-OK
+          await performClientFallback(trimmed);
+        }
+      } catch (err) {
+        if (timeoutId) clearTimeout(timeoutId);
+        if (cancelled && !timedOut) return;
+        console.warn("API search failed, falling back to local dataset:", err);
+        await performClientFallback(trimmed);
+      } finally {
+        if (!cancelled) {
+          setLoading(false);
+        }
+      }
     };
 
     const debounceTimer = setTimeout(fetchIngredients, 250);
-    return () => clearTimeout(debounceTimer);
+    return () => {
+      cancelled = true;
+      clearTimeout(debounceTimer);
+      if (timeoutId) clearTimeout(timeoutId);
+      if (activeController) activeController.abort();
+    };
   }, [query, isOpen]);
 
   // Close on Escape key
@@ -105,26 +205,39 @@ export default function IngredientSearchModal({
     return () => window.removeEventListener("keydown", handleKeyDown);
   }, [isOpen, onClose]);
 
+  const activeBaseList = useMemo(
+    () => (searchResults !== null ? searchResults : catalogItems),
+    [searchResults, catalogItems]
+  );
+
   // Compute displayed list with filterType applied
   const displayedItems = useMemo(() => {
-    const baseList = searchResults !== null ? searchResults : DEFAULT_INGREDIENTS;
     if (filterType === "toxic") {
-      return baseList.filter((item) => item.is_toxic);
+      return activeBaseList.filter((item) => item.is_toxic);
     }
     if (filterType === "safe") {
-      return baseList.filter((item) => !item.is_toxic);
+      return activeBaseList.filter((item) => !item.is_toxic);
     }
-    return baseList;
-  }, [searchResults, filterType]);
+    return activeBaseList;
+  }, [activeBaseList, filterType]);
 
+  const visibleItems = useMemo(
+    () => displayedItems.slice(0, visibleCount),
+    [displayedItems, visibleCount]
+  );
+
+  const totalAll = activeBaseList.length;
   const totalToxic = useMemo(
-    () => DEFAULT_INGREDIENTS.filter((item) => item.is_toxic).length,
-    []
+    () => activeBaseList.filter((item) => item.is_toxic).length,
+    [activeBaseList]
   );
   const totalSafe = useMemo(
-    () => DEFAULT_INGREDIENTS.filter((item) => !item.is_toxic).length,
-    []
+    () => activeBaseList.filter((item) => !item.is_toxic).length,
+    [activeBaseList]
   );
+
+  const formattedCatalogCount =
+    catalogItems.length > 0 ? catalogItems.length.toLocaleString("id-ID") : "1.500";
 
   if (!isOpen) return null;
 
@@ -134,6 +247,9 @@ export default function IngredientSearchModal({
       onClick={onClose}
     >
       <div
+        role="dialog"
+        aria-modal="true"
+        aria-label="Kamus Bahan TCM dan Toksisitas"
         className="bg-paper w-full max-w-2xl rounded-[20px] border border-line shadow-2xl overflow-hidden flex flex-col max-h-[88vh]"
         onClick={(e) => e.stopPropagation()}
       >
@@ -160,7 +276,7 @@ export default function IngredientSearchModal({
                 Kamus Bahan TCM &amp; Toksisitas
               </h3>
               <p className="text-[12px] text-ink-soft">
-                Katalog kompilasi 500 bahan TCM rujukan resmi BPOM OTSKK dan SymMap
+                Katalog kompilasi {formattedCatalogCount} bahan TCM &amp; herbal rujukan resmi BPOM, Kemenkes FHI, SymMap, HKCMMS, ChP 2020 &amp; EFSA
               </p>
             </div>
           </div>
@@ -189,7 +305,10 @@ export default function IngredientSearchModal({
             <input
               type="text"
               value={query}
-              onChange={(e) => setQuery(e.target.value)}
+              onChange={(e) => {
+                setQuery(e.target.value);
+                setVisibleCount(PAGE_SIZE);
+              }}
               placeholder="Cari nama herbal (contoh: Fu Zi, Ginseng, Aconite, Gan Cao)..."
               autoFocus
               className="w-full bg-card border border-line rounded-[12px] pl-11 pr-10 py-3 text-[14px] text-ink focus:outline-none focus:border-trust focus:ring-2 focus:ring-trust-tint transition-all placeholder:text-ink-faint"
@@ -209,7 +328,10 @@ export default function IngredientSearchModal({
             </div>
             {query && (
               <button
-                onClick={() => setQuery("")}
+                onClick={() => {
+                  setQuery("");
+                  setVisibleCount(PAGE_SIZE);
+                }}
                 className="absolute right-3.5 top-3.5 text-ink-soft hover:text-ink transition-colors text-xs cursor-pointer p-1"
                 aria-label="Hapus pencarian"
               >
@@ -224,17 +346,23 @@ export default function IngredientSearchModal({
           {/* Quick Filter Chips */}
           <div className="flex items-center gap-2 overflow-x-auto pb-1 text-xs">
             <button
-              onClick={() => setFilterType("all")}
+              onClick={() => {
+                setFilterType("all");
+                setVisibleCount(PAGE_SIZE);
+              }}
               className={`px-3 py-1.5 rounded-full font-medium transition-all cursor-pointer whitespace-nowrap ${
                 filterType === "all"
                   ? "bg-trust text-white shadow-xs"
                   : "bg-card border border-line text-ink-soft hover:text-ink"
               }`}
             >
-              Semua Bahan ({searchResults !== null ? searchResults.length : DEFAULT_INGREDIENTS.length})
+              Semua Bahan ({totalAll.toLocaleString("id-ID")})
             </button>
             <button
-              onClick={() => setFilterType("toxic")}
+              onClick={() => {
+                setFilterType("toxic");
+                setVisibleCount(PAGE_SIZE);
+              }}
               className={`px-3 py-1.5 rounded-full font-medium transition-all cursor-pointer whitespace-nowrap flex items-center gap-1.5 ${
                 filterType === "toxic"
                   ? "bg-danger text-white shadow-xs"
@@ -246,10 +374,13 @@ export default function IngredientSearchModal({
                 <line x1="12" y1="9" x2="12" y2="13" />
                 <line x1="12" y1="17" x2="12.01" y2="17" />
               </svg>
-              <span>Berisiko / Toksik ({totalToxic})</span>
+              <span>Toksik / Dibatasi ({totalToxic.toLocaleString("id-ID")})</span>
             </button>
             <button
-              onClick={() => setFilterType("safe")}
+              onClick={() => {
+                setFilterType("safe");
+                setVisibleCount(PAGE_SIZE);
+              }}
               className={`px-3 py-1.5 rounded-full font-medium transition-all cursor-pointer whitespace-nowrap flex items-center gap-1.5 ${
                 filterType === "safe"
                   ? "bg-trust-deep text-white shadow-xs"
@@ -259,24 +390,37 @@ export default function IngredientSearchModal({
               <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.4" strokeLinecap="round" strokeLinejoin="round">
                 <polyline points="20 6 9 17 4 12" />
               </svg>
-              <span>Aman / Suplemen ({totalSafe})</span>
+              <span>Aman ({totalSafe.toLocaleString("id-ID")})</span>
             </button>
           </div>
         </div>
 
         {/* Results / Default List */}
         <div className="flex-1 overflow-y-auto p-4 sm:p-6 space-y-3">
-          {loading && (
+          {(loading || (catalogLoading && searchResults === null)) && (
             <div className="py-12 text-center text-ink-soft text-sm flex items-center justify-center gap-2">
               <svg className="animate-spin h-4 w-4 text-trust" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
                 <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
                 <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z" />
               </svg>
-              <span>Mencari bahan herbal...</span>
+              <span>
+                {loading ? "Mencari bahan herbal..." : "Memuat katalog 1.500 bahan herbal..."}
+              </span>
             </div>
           )}
 
-          {!loading && displayedItems.length === 0 && (
+          {!loading && !catalogLoading && catalogError && searchResults === null && catalogItems.length === 0 && (
+            <div className="py-12 text-center">
+              <p className="text-[14px] font-semibold text-ink mb-1">
+                Gagal memuat katalog lokal
+              </p>
+              <p className="text-[12px] text-ink-soft">
+                Silakan tutup dan buka kembali kamus, atau gunakan kotak pencarian untuk mencari via server.
+              </p>
+            </div>
+          )}
+
+          {!loading && !(catalogLoading && searchResults === null) && !(catalogError && searchResults === null && catalogItems.length === 0) && displayedItems.length === 0 && (
             <div className="py-12 text-center">
               <p className="text-[14px] font-semibold text-ink mb-1">
                 {query
@@ -290,6 +434,7 @@ export default function IngredientSearchModal({
                 onClick={() => {
                   setQuery("");
                   setFilterType("all");
+                  setVisibleCount(PAGE_SIZE);
                 }}
                 className="px-4 py-2 text-xs font-semibold bg-trust-tint text-trust-deep rounded-full hover:bg-trust/20 transition-colors cursor-pointer"
               >
@@ -298,7 +443,7 @@ export default function IngredientSearchModal({
             </div>
           )}
 
-          {!loading && displayedItems.length > 0 && (
+          {!loading && !(catalogLoading && searchResults === null) && displayedItems.length > 0 && (
             <>
               {/* Section Subtitle */}
               <div className="flex items-center justify-between text-[11.5px] text-ink-soft font-semibold px-1 pb-1">
@@ -309,14 +454,14 @@ export default function IngredientSearchModal({
                     ? "Daftar bahan berisiko & diawasi ketat"
                     : filterType === "safe"
                     ? "Daftar herbal umum & suplemen aman"
-                    : "Daftar herbal TCM terpopuler"}
+                    : "Daftar herbal TCM & suplemen terkurasi"}
                 </span>
-                <span>{displayedItems.length} bahan</span>
+                <span>{displayedItems.length.toLocaleString("id-ID")} bahan</span>
               </div>
 
-              {displayedItems.map((item, idx) => (
+              {visibleItems.map((item, idx) => (
                 <div
-                  key={idx}
+                  key={`${item.mandarin_name}-${item.indonesian_name}-${idx}`}
                   className={`p-4 rounded-[14px] border transition-all ${
                     item.is_toxic
                       ? "bg-danger-tint/30 border-danger/30 hover:border-danger/60"
@@ -377,13 +522,26 @@ export default function IngredientSearchModal({
                   </div>
                 </div>
               ))}
+
+              {visibleItems.length < displayedItems.length && (
+                <div className="pt-2 pb-1 flex justify-center">
+                  <button
+                    type="button"
+                    onClick={() => setVisibleCount((prev) => prev + PAGE_SIZE)}
+                    className="px-4 py-2.5 text-xs font-semibold bg-card border border-line text-ink hover:border-trust/50 hover:bg-trust-tint/30 rounded-[12px] transition-colors cursor-pointer"
+                  >
+                    Muat lebih banyak (menampilkan {visibleItems.length.toLocaleString("id-ID")} dari{" "}
+                    {displayedItems.length.toLocaleString("id-ID")} bahan)
+                  </button>
+                </div>
+              )}
             </>
           )}
         </div>
 
         {/* Footer */}
         <div className="p-3.5 sm:p-4 border-t border-line bg-paper-deep text-center text-[11.5px] text-ink-soft">
-          Basis data dikompilasi dari publikasi resmi BPOM OTSKK dan SymMap sebagai referensi edukasi awal, bukan pengganti konsultasi dokter.
+          Basis data dikompilasi dari rujukan resmi BPOM, Kemenkes FHI, SymMap, HKCMMS, ChP 2020 &amp; EFSA sebagai referensi edukasi awal, bukan pengganti konsultasi dokter.
         </div>
       </div>
     </div>
