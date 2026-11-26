@@ -14,17 +14,21 @@ interface Stats {
 export default function AdminDashboardPage() {
   const [stats, setStats] = useState<Stats | null>(null);
   const [loading, setLoading] = useState(true);
+  const [statsError, setStatsError] = useState<string | null>(null);
   const router = useRouter();
 
   useEffect(() => {
     getAdminStats()
       .then((data) => {
         setStats(data);
+        setStatsError(null);
       })
       .catch((err: Error) => {
         if (err.message === "Unauthorized") {
           router.replace("/admin/login");
+          return;
         }
+        setStatsError(err.message || "Gagal memuat statistik admin.");
       })
       .finally(() => setLoading(false));
   }, [router]);
@@ -85,6 +89,7 @@ export default function AdminDashboardPage() {
     document.body.appendChild(link);
     link.click();
     document.body.removeChild(link);
+    URL.revokeObjectURL(url);
   };
 
   return (
@@ -146,6 +151,16 @@ export default function AdminDashboardPage() {
           </button>
         </div>
       </div>
+
+      {/* Stats fetch error banner */}
+      {statsError && (
+        <div
+          role="alert"
+          className="mb-6 rounded-[14px] bg-danger-tint border border-danger/30 px-4 py-3 text-[13px] text-danger-deep font-medium"
+        >
+          {statsError}
+        </div>
+      )}
 
       {/* KPI Row (3 Cards: Neutral, Danger Highlight, Safe) */}
       <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-7">

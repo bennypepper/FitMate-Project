@@ -15,14 +15,39 @@ export default function CameraViewfinder({ onCapture, onReset }: CameraViewfinde
   const [facingMode, setFacingMode] = useState<"environment" | "user">("environment");
 
   useEffect(() => {
+    let cancelled = false;
     let currentStream: MediaStream | null = null;
+    const videoEl = videoRef.current;
+
+    const stopCurrentStream = () => {
+      if (currentStream) {
+        currentStream.getTracks().forEach((track) => track.stop());
+        currentStream = null;
+      }
+      if (videoRef.current) {
+        videoRef.current.srcObject = null;
+      } else if (videoEl) {
+        videoEl.srcObject = null;
+      }
+    };
 
     async function startCamera() {
+      if (
+        typeof navigator === "undefined" ||
+        !navigator.mediaDevices?.getUserMedia
+      ) {
+        if (!cancelled) {
+          setError(
+            "Browser atau perangkat ini tidak mendukung akses kamera langsung. Silakan gunakan tombol galeri/file."
+          );
+        }
+        return;
+      }
+
       try {
         setError(null);
-        if (currentStream) {
-          currentStream.getTracks().forEach((t) => t.stop());
-        }
+        stopCurrentStream();
+
         const stream = await navigator.mediaDevices.getUserMedia({
           video: {
             facingMode: facingMode,
@@ -31,22 +56,40 @@ export default function CameraViewfinder({ onCapture, onReset }: CameraViewfinde
           },
           audio: false,
         });
+
+        if (cancelled || document.hidden) {
+          stream.getTracks().forEach((track) => track.stop());
+          return;
+        }
+
         currentStream = stream;
         if (videoRef.current) {
           videoRef.current.srcObject = stream;
         }
       } catch (err: unknown) {
+        if (cancelled) return;
         console.warn("[Camera] Camera access warning:", err);
-        setError("Kamera tidak dapat diakses atau izin ditolak. Silakan gunakan tombol galeri/file.");
+        setError(
+          "Kamera tidak dapat diakses atau izin ditolak. Silakan gunakan tombol galeri/file."
+        );
       }
     }
 
+    const handleVisibilityChange = () => {
+      if (document.hidden) {
+        stopCurrentStream();
+      } else if (!cancelled) {
+        startCamera();
+      }
+    };
+
+    document.addEventListener("visibilitychange", handleVisibilityChange);
     startCamera();
 
     return () => {
-      if (currentStream) {
-        currentStream.getTracks().forEach((track) => track.stop());
-      }
+      cancelled = true;
+      document.removeEventListener("visibilitychange", handleVisibilityChange);
+      stopCurrentStream();
     };
   }, [facingMode]);
 
@@ -69,6 +112,7 @@ export default function CameraViewfinder({ onCapture, onReset }: CameraViewfinde
 
   const handleFileUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
+    e.target.value = "";
     if (!file) return;
     const reader = new FileReader();
     reader.onload = () => {

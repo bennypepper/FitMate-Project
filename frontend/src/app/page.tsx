@@ -13,14 +13,17 @@ import {
   normalizeScanResults,
 } from "@/types/tcm";
 
+const MAX_IMAGE_BYTES = 10 * 1024 * 1024;
+
 function HomeContent() {
   const searchParams = useSearchParams();
   const sessionParam = searchParams.get("session");
+  const tokenParam = searchParams.get("token");
   const [bridgeUploaded, setBridgeUploaded] = useState(false);
   const [bridgeUploading, setBridgeUploading] = useState(false);
   const [bridgeResults, setBridgeResults] = useState<ScanResultPayload | null>(null);
+  const [bridgeError, setBridgeError] = useState<string | null>(null);
 
-  const [, setImage] = useState<string | null>(null);
   const [isProcessing, setIsProcessing] = useState(false);
   const [results, setResults] = useState<ScanResultPayload | null>(null);
   const [networkError, setNetworkError] = useState<string | null>(null);
@@ -28,19 +31,44 @@ function HomeContent() {
   const [showQrBridge, setShowQrBridge] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
+  const validateImageFile = (file: File): string | null => {
+    if (!file.type || !file.type.startsWith("image/")) {
+      return "Format file tidak didukung. Pilih file gambar (JPG, PNG, atau WebP).";
+    }
+    if (file.size > MAX_IMAGE_BYTES) {
+      return "Ukuran gambar terlalu besar. Maksimum ukuran file adalah 10MB.";
+    }
+    return null;
+  };
+
   // Send captured or uploaded image to backend for OCR + Safety Analysis
-  const handleImageReady = async (base64: string) => {
-    setImage(base64);
+  const handleImageReady = async (input: File | Blob | string) => {
     setIsProcessing(true);
     setResults(null);
     setNetworkError(null);
 
     try {
-      const resMsg = await fetch(base64);
-      const blob = await resMsg.blob();
+      let uploadBlob: Blob;
+      let filename = "scan.jpg";
+
+      if (typeof input === "string") {
+        const resMsg = await fetch(input);
+        uploadBlob = await resMsg.blob();
+      } else {
+        uploadBlob = input;
+        if (input instanceof File && input.name) {
+          filename = input.name;
+        }
+      }
+
+      if (uploadBlob.size > MAX_IMAGE_BYTES) {
+        throw new Error(
+          "Ukuran gambar terlalu besar. Maksimum ukuran file adalah 10MB."
+        );
+      }
 
       const formData = new FormData();
-      formData.append("file", blob, "scan.jpg");
+      formData.append("file", uploadBlob, filename);
       formData.append("user_id", "web_consumer");
 
       const apiUrl = getApiBaseUrl();
@@ -121,7 +149,6 @@ function HomeContent() {
   };
 
   const handleReset = () => {
-    setImage(null);
     setResults(null);
     setNetworkError(null);
     setShowLiveCamera(false);
@@ -129,14 +156,14 @@ function HomeContent() {
 
   const handleFileInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
+    e.target.value = "";
     if (!file) return;
-    const reader = new FileReader();
-    reader.onload = () => {
-      if (typeof reader.result === "string") {
-        handleImageReady(reader.result);
-      }
-    };
-    reader.readAsDataURL(file);
+    const validationErr = validateImageFile(file);
+    if (validationErr) {
+      setNetworkError(validationErr);
+      return;
+    }
+    void handleImageReady(file);
   };
 
   // Drag & drop handlers
@@ -148,13 +175,12 @@ function HomeContent() {
     e.preventDefault();
     const file = e.dataTransfer.files?.[0];
     if (!file) return;
-    const reader = new FileReader();
-    reader.onload = () => {
-      if (typeof reader.result === "string") {
-        handleImageReady(reader.result);
-      }
-    };
-    reader.readAsDataURL(file);
+    const validationErr = validateImageFile(file);
+    if (validationErr) {
+      setNetworkError(validationErr);
+      return;
+    }
+    void handleImageReady(file);
   };
 
   const handleBridgeComplete = (data: AnalyzeApiResponse) => {
@@ -207,7 +233,7 @@ function HomeContent() {
             />
           </div>
         ) : bridgeUploading ? (
-          <div className="bg-card border border-line rounded-[24px] p-10 max-w-sm w-full text-center shadow-xl">
+          <div className="relative bg-card border border-line rounded-[24px] p-10 min-h-[280px] max-w-sm w-full text-center shadow-xl overflow-hidden flex flex-col items-center justify-center">
             <ProcessingLoader />
             <p className="text-[13.5px] font-medium text-ink mt-5">
               Menganalisis label &amp; menghubungkan ke desktop...
@@ -224,23 +250,59 @@ function HomeContent() {
               <span>Jembatan Aktif: Foto akan otomatis disinkronkan ke komputer &amp; HP ini.</span>
             </div>
 
+            {bridgeError && (
+              <div
+                role="alert"
+                className="w-full mb-3 p-3.5 rounded-[12px] bg-danger-tint border border-danger/30 flex items-center justify-between gap-3 text-left"
+              >
+                <p className="text-[12.5px] text-danger-deep font-medium">
+                  {bridgeError}
+                </p>
+                <button
+                  type="button"
+                  onClick={() => setBridgeError(null)}
+                  className="px-2.5 py-1 rounded-md bg-danger text-white text-[11px] font-semibold cursor-pointer flex-shrink-0"
+                >
+                  Tutup
+                </button>
+              </div>
+            )}
+
             <CameraViewfinder
               onCapture={async (base64) => {
                 setBridgeUploading(true);
+                setBridgeError(null);
                 try {
                   const resMsg = await fetch(base64);
                   const blob = await resMsg.blob();
+                  if (blob.size > MAX_IMAGE_BYTES) {
+                    throw new Error(
+                      "Ukuran gambar terlalu besar. Maksimum ukuran adalah 10MB."
+                    );
+                  }
                   const formData = new FormData();
                   formData.append("file", blob, "mobile_scan.jpg");
 
                   const apiUrl = getApiBaseUrl();
-                  const uploadRes = await fetch(`${apiUrl}/api/v1/bridge/${sessionParam}/upload`, {
-                    method: "POST",
-                    body: formData,
-                    signal: AbortSignal.timeout(45000),
-                  });
+                  const headers: HeadersInit | undefined = tokenParam
+                    ? { "X-Bridge-Token": tokenParam }
+                    : undefined;
+                  const uploadRes = await fetch(
+                    `${apiUrl}/api/v1/bridge/${encodeURIComponent(sessionParam)}/upload`,
+                    {
+                      method: "POST",
+                      headers,
+                      body: formData,
+                      signal: AbortSignal.timeout(45000),
+                    }
+                  );
                   if (!uploadRes.ok) {
-                    throw new Error("Gagal mengunggah foto ke sesi desktop");
+                    let detail = "Gagal mengunggah foto ke sesi desktop";
+                    try {
+                      const errBody = await uploadRes.json();
+                      if (errBody?.detail) detail = errBody.detail;
+                    } catch {}
+                    throw new Error(detail);
                   }
                   const uploadData: AnalyzeApiResponse = await uploadRes.json();
                   setBridgeResults(normalizeScanResults(uploadData));
@@ -250,7 +312,7 @@ function HomeContent() {
                     err instanceof Error
                       ? err.message
                       : "Gagal mengirim foto. Coba lagi.";
-                  alert(msg);
+                  setBridgeError(msg);
                 } finally {
                   setBridgeUploading(false);
                 }
@@ -294,7 +356,7 @@ function HomeContent() {
 
           {/* Active Loader State */}
           {isProcessing && (
-            <div className="p-12 md:p-20 flex flex-col items-center justify-center">
+            <div className="relative min-h-[280px] p-12 md:p-20 flex flex-col items-center justify-center">
               <ProcessingLoader />
             </div>
           )}
@@ -436,10 +498,19 @@ function HomeContent() {
                 <div className="bg-card border border-line rounded-[20px] p-6 shadow-sm flex flex-col">
                   {/* Standalone Dropzone */}
                   <div
+                    role="button"
+                    tabIndex={0}
+                    aria-label="Unggah foto label komposisi"
                     onDragOver={handleDragOver}
                     onDrop={handleDrop}
                     onClick={() => fileInputRef.current?.click()}
-                    className="border-[1.5px] border-dashed border-trust/40 bg-trust-tint/70 hover:bg-trust-tint rounded-[16px] p-8 text-center cursor-pointer transition-colors group"
+                    onKeyDown={(e) => {
+                      if (e.key === "Enter" || e.key === " ") {
+                        e.preventDefault();
+                        fileInputRef.current?.click();
+                      }
+                    }}
+                    className="border-[1.5px] border-dashed border-trust/40 bg-trust-tint/70 hover:bg-trust-tint focus:outline-none focus:ring-2 focus:ring-trust rounded-[16px] p-8 text-center cursor-pointer transition-colors group"
                   >
                     <div className="w-[50px] h-[50px] rounded-full bg-white text-trust-deep flex items-center justify-center mx-auto mb-3 shadow-xs group-hover:scale-105 transition-transform">
                       <svg

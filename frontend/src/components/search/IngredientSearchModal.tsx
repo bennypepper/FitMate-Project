@@ -49,35 +49,42 @@ export default function IngredientSearchModal({
   isOpen,
   onClose,
 }: IngredientSearchModalProps) {
+  if (!isOpen) return null;
+  return <IngredientSearchModalContent onClose={onClose} />;
+}
+
+function IngredientSearchModalContent({ onClose }: { onClose: () => void }) {
   const [query, setQuery] = useState("");
   const [filterType, setFilterType] = useState<"all" | "toxic" | "safe">("all");
   const [visibleCount, setVisibleCount] = useState(PAGE_SIZE);
   const [catalogItems, setCatalogItems] = useState<IngredientItem[]>(
     () => cachedCatalog ?? []
   );
-  const [catalogLoading, setCatalogLoading] = useState(false);
+  const [catalogLoading, setCatalogLoading] = useState(() => !cachedCatalog);
   const [catalogError, setCatalogError] = useState(false);
   const [searchResults, setSearchResults] = useState<IngredientItem[] | null>(null);
   const [loading, setLoading] = useState(false);
 
+  const handleQueryChange = (nextValue: string) => {
+    setQuery(nextValue);
+    setVisibleCount(PAGE_SIZE);
+    if (!nextValue.trim()) {
+      setSearchResults(null);
+      setLoading(false);
+    }
+  };
+
   // Lazy-load the 1,500-item catalog only on first modal open
   useEffect(() => {
-    if (!isOpen) return;
-    if (cachedCatalog) {
-      setCatalogItems(cachedCatalog);
-      setCatalogLoading(false);
-      setCatalogError(false);
-      return;
-    }
+    if (cachedCatalog) return;
 
     let cancelled = false;
-    setCatalogLoading(true);
-    setCatalogError(false);
     loadTcmCatalog()
       .then((items) => {
         if (!cancelled) {
           setCatalogItems(items);
           setCatalogLoading(false);
+          setCatalogError(false);
         }
       })
       .catch((err) => {
@@ -91,29 +98,12 @@ export default function IngredientSearchModal({
     return () => {
       cancelled = true;
     };
-  }, [isOpen]);
-
-  // Reset states on modal close
-  useEffect(() => {
-    if (!isOpen) {
-      setQuery("");
-      setFilterType("all");
-      setVisibleCount(PAGE_SIZE);
-      setSearchResults(null);
-      setLoading(false);
-    }
-  }, [isOpen]);
+  }, []);
 
   // Handle Search with AbortController + 5s timeout
   useEffect(() => {
-    if (!isOpen) return;
-
     const trimmed = query.trim();
-    if (!trimmed) {
-      setSearchResults(null);
-      setLoading(false);
-      return;
-    }
+    if (!trimmed) return;
 
     let cancelled = false;
     let activeController: AbortController | null = null;
@@ -192,18 +182,16 @@ export default function IngredientSearchModal({
       if (timeoutId) clearTimeout(timeoutId);
       if (activeController) activeController.abort();
     };
-  }, [query, isOpen]);
+  }, [query]);
 
   // Close on Escape key
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
       if (e.key === "Escape") onClose();
     };
-    if (isOpen) {
-      window.addEventListener("keydown", handleKeyDown);
-    }
+    window.addEventListener("keydown", handleKeyDown);
     return () => window.removeEventListener("keydown", handleKeyDown);
-  }, [isOpen, onClose]);
+  }, [onClose]);
 
   const activeBaseList = useMemo(
     () => (searchResults !== null ? searchResults : catalogItems),
@@ -238,8 +226,6 @@ export default function IngredientSearchModal({
 
   const formattedCatalogCount =
     catalogItems.length > 0 ? catalogItems.length.toLocaleString("id-ID") : "1.500";
-
-  if (!isOpen) return null;
 
   return (
     <div
@@ -305,10 +291,7 @@ export default function IngredientSearchModal({
             <input
               type="text"
               value={query}
-              onChange={(e) => {
-                setQuery(e.target.value);
-                setVisibleCount(PAGE_SIZE);
-              }}
+              onChange={(e) => handleQueryChange(e.target.value)}
               placeholder="Cari nama herbal (contoh: Fu Zi, Ginseng, Aconite, Gan Cao)..."
               autoFocus
               className="w-full bg-card border border-line rounded-[12px] pl-11 pr-10 py-3 text-[14px] text-ink focus:outline-none focus:border-trust focus:ring-2 focus:ring-trust-tint transition-all placeholder:text-ink-faint"
@@ -328,10 +311,7 @@ export default function IngredientSearchModal({
             </div>
             {query && (
               <button
-                onClick={() => {
-                  setQuery("");
-                  setVisibleCount(PAGE_SIZE);
-                }}
+                onClick={() => handleQueryChange("")}
                 className="absolute right-3.5 top-3.5 text-ink-soft hover:text-ink transition-colors text-xs cursor-pointer p-1"
                 aria-label="Hapus pencarian"
               >

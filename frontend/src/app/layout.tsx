@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import { Inter, Source_Serif_4, Noto_Sans_SC } from "next/font/google";
 import TopAppBar from "@/components/layout/TopAppBar";
+import ServiceWorkerRegistrar from "@/components/pwa/ServiceWorkerRegistrar";
 import "./globals.css";
 
 const inter = Inter({
@@ -45,15 +46,7 @@ export default function RootLayout({
       <body className="font-body bg-paper-deep text-ink min-h-screen flex flex-col selection:bg-trust-tint selection:text-trust-deep">
         <TopAppBar />
         <main className="flex-1 flex flex-col">{children}</main>
-        <script
-          dangerouslySetInnerHTML={{
-            __html: `
-              if (typeof window !== 'undefined' && 'serviceWorker' in navigator) {
-                navigator.serviceWorker.register('/sw.js');
-              }
-            `,
-          }}
-        />
+        <ServiceWorkerRegistrar />
       </body>
     </html>
   );
