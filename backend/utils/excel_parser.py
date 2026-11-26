@@ -10,16 +10,24 @@ Column mapping — Excel headers must match these names (case-insensitive, space
   is_toxic, target_organ, toxicity_level, description, source_reference
 """
 
-import io
 import csv
+import io
+
 import openpyxl
 
-REQUIRED_COLUMNS = {"mandarin_name", "indonesian_name", "is_toxic", "source_reference"}
+REQUIRED_COLUMNS = {"indonesian_name", "is_toxic", "source_reference"}
 
-VALID_TOXICITY_LEVELS = {"low", "moderate", "high", "unknown"}
+VALID_TOXICITY_LEVELS = {"none", "low", "moderate", "high", "unknown"}
 
 TRUTHY_VALUES = {"true", "1", "yes", "ya", "benar"}
 FALSY_VALUES = {"false", "0", "no", "tidak", "salah"}
+
+
+def _clean_cell(val: object) -> str:
+    """Convert an Excel/CSV cell value to a stripped string without turning None into 'None'."""
+    if val is None:
+        return ""
+    return str(val).strip()
 
 def parse_file(file_bytes: bytes, filename: str) -> list[dict]:
     """
@@ -87,15 +95,20 @@ def validate_row(row: dict, row_number: int) -> list[dict]:
     """
     errors = []
 
-    mandarin = row.get("mandarin_name")
-    if not mandarin or str(mandarin).strip() == "":
+    mandarin = _clean_cell(row.get("mandarin_name"))
+    pinyin = _clean_cell(row.get("pinyin_name"))
+    latin = _clean_cell(row.get("latin_name"))
+    indonesian = _clean_cell(row.get("indonesian_name"))
+
+    # Allow empty mandarin_name for non-TCM Indonesian/BPOM/FHI herbs when latin_name
+    # and indonesian_name are both present and no pinyin_name indicates a TCM entry.
+    if not mandarin and (pinyin or not (latin and indonesian)):
         errors.append({"field": "mandarin_name", "message": "Nama Mandarin wajib diisi"})
 
-    indonesian = row.get("indonesian_name")
-    if not indonesian or str(indonesian).strip() == "":
+    if not indonesian:
         errors.append({"field": "indonesian_name", "message": "Nama Indonesia wajib diisi"})
 
-    is_toxic_raw = str(row.get("is_toxic", "")).strip().lower()
+    is_toxic_raw = _clean_cell(row.get("is_toxic")).lower()
     if is_toxic_raw not in TRUTHY_VALUES and is_toxic_raw not in FALSY_VALUES:
         errors.append({
             "field": "is_toxic",
@@ -105,20 +118,20 @@ def validate_row(row: dict, row_number: int) -> list[dict]:
             ),
         })
 
-    source = str(row.get("source_reference", "")).strip().lower()
+    source = _clean_cell(row.get("source_reference")).lower()
     if not source or source in ("", "unknown", "none", "-", "n/a"):
         errors.append({
             "field": "source_reference",
             "message": "Referensi sumber wajib diisi (contoh: SymMap ID atau nomor BPOM)",
         })
 
-    toxicity_level = str(row.get("toxicity_level", "")).strip().lower()
+    toxicity_level = _clean_cell(row.get("toxicity_level")).lower()
     if toxicity_level and toxicity_level not in VALID_TOXICITY_LEVELS:
         errors.append({
             "field": "toxicity_level",
             "message": (
                 f"Nilai toxicity_level tidak valid: '{toxicity_level}'. "
-                "Gunakan: low, moderate, high, unknown"
+                "Gunakan: none, low, moderate, high, unknown"
             ),
         })
 
@@ -129,28 +142,29 @@ def normalize_row(row: dict) -> dict:
     Convert a validated row dict to the exact TCMIngredient field types.
     Call ONLY after validate_row() returns an empty error list.
     """
-    is_toxic_raw = str(row.get("is_toxic", "false")).strip().lower()
+    is_toxic_raw = _clean_cell(row.get("is_toxic")).lower()
     is_toxic = is_toxic_raw in TRUTHY_VALUES
 
-    toxicity_level = str(row.get("toxicity_level", "unknown")).strip().lower()
+    toxicity_level = _clean_cell(row.get("toxicity_level")).lower()
     if toxicity_level not in VALID_TOXICITY_LEVELS:
-        toxicity_level = "unknown"
+        toxicity_level = "unknown" if is_toxic else "none"
 
     def _str_or_none(key: str) -> str | None:
-        val = str(row.get(key, "")).strip()
+        val = _clean_cell(row.get(key))
         return val if val else None
 
     return {
-        "mandarin_name": str(row.get("mandarin_name", "")).strip(),
+        "mandarin_name": _clean_cell(row.get("mandarin_name")),
         "pinyin_name": _str_or_none("pinyin_name"),
         "latin_name": _str_or_none("latin_name"),
-        "indonesian_name": str(row.get("indonesian_name", "")).strip(),
+        "indonesian_name": _clean_cell(row.get("indonesian_name")),
         "english_name": _str_or_none("english_name"),
         "is_toxic": is_toxic,
         "target_organ": _str_or_none("target_organ"),
         "toxicity_level": toxicity_level,
+        "toxicity_class": "toxic" if is_toxic else "safe",
         "description": _str_or_none("description"),
-        "source_reference": str(row.get("source_reference", "")).strip(),
+        "source_reference": _clean_cell(row.get("source_reference")),
         "validated_by": "pharmacy_team",
     }
 

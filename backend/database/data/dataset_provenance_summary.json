@@ -1,0 +1,52 @@
+{
+  "generated_at": "2026-11-26T04:18:04.352570+00:00",
+  "pipeline_version": "official_source_pipeline_v2",
+  "total_records": 1500,
+  "toxic_records": 320,
+  "safe_records": 1180,
+  "sha256": "f883895ce750fbfe623173fccdbf6c925611c7cbf852fb3b0eea1137f77fd44b",
+  "by_tier": {
+    "baseline_500": 500,
+    "tier1_bpom_prohibited": 102,
+    "tier2_symmap_v2": 299,
+    "tier3_kemenkes_fhi": 199,
+    "tier3_bpom_jamu": 99,
+    "tier3_bpom_warnings": 21,
+    "tier4_hkcmms": 47,
+    "tier5_mkg_efsa_toxic": 15,
+    "tier5_tcm_mkg_chp2020": 218
+  },
+  "by_primary_source": {
+    "SymMap-v2.0 (SMHB)": 690,
+    "TCM-MKG (ChP-2020)": 224,
+    "Kemenkes-FHI": 199,
+    "PerBPOM-25/2023-Lamp.VIII": 126,
+    "BPOM-Jamu-Sederhana": 99,
+    "BPOM-OTSKK-Klaim": 68,
+    "HKCMMS-Vol.1-11": 47,
+    "BPOM-Peringatan": 20,
+    "BPOM-TI": 19,
+    "ChP-2020": 5,
+    "ChP-2020; BPOM-TI": 3
+  },
+  "by_toxicity_level": {
+    "none": 1180,
+    "low": 79,
+    "moderate": 171,
+    "high": 70
+  },
+  "by_toxicity_class": {
+    "safe": 1180,
+    "toxic": 320
+  },
+  "field_completeness": {
+    "mandarin_name": 1109,
+    "pinyin_name": 1071,
+    "indonesian_name": 1500,
+    "english_name": 1345,
+    "latin_name": 1446,
+    "target_organ": 1500,
+    "description": 1500,
+    "source_reference": 1500
+  }
+}
