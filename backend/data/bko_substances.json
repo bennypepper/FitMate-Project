@@ -109,6 +109,12 @@
           "display_name_id": "Homosildenafil (Analog Sildenafil)",
           "risk_summary_id": "Analog struktural sildenafil, tidak diizinkan regulasi manapun",
           "aliases": ["homosildenafil", "homo sildenafil"]
+        },
+        {
+          "generic_name": "Yohimbine",
+          "display_name_id": "Yohimbin",
+          "risk_summary_id": "Hipertensi berat, takikardia, kecemasan akut, sering ditemukan ilegal pada jamu stamina pria",
+          "aliases": ["yohimbine", "yohimbin", "yohimbina"]
         }
       ]
     },
@@ -196,7 +202,7 @@
           "generic_name": "Phenylbutazone",
           "display_name_id": "Fenilbutazon",
           "risk_summary_id": "Anemia aplastik, ditarik dari kebanyakan negara, sangat berbahaya",
-          "aliases": ["phenylbutazone", "fenilbutazon", "phenylbutazon"]
+          "aliases": ["phenylbutazone", "fenilbutazon", "fenilbutason", "phenylbutazon"]
         },
         {
           "generic_name": "Piroxicam",
@@ -233,6 +239,18 @@
           "display_name_id": "Kodein",
           "risk_summary_id": "Opioid — adiktif, depresi pernapasan terutama pada anak",
           "aliases": ["codeine", "kodein", "codein", "codeine phosphate"]
+        },
+        {
+          "generic_name": "Paracetamol",
+          "display_name_id": "Parasetamol",
+          "risk_summary_id": "Hepatotoksisitas dan kerusakan hati berat bila dikonsumsi tersembunyi tanpa kontrol dosis dalam jamu",
+          "aliases": ["paracetamol", "parasetamol", "acetaminophen", "asetaminofen"]
+        },
+        {
+          "generic_name": "Metamizole",
+          "display_name_id": "Antalgin (Metampiron)",
+          "risk_summary_id": "Agranulositosis fatal, syok anafilaksis, perdarahan saluran cerna",
+          "aliases": ["metamizole", "antalgin", "metampiron", "methampyrone", "dipyrone"]
         }
       ]
     },
@@ -407,6 +425,12 @@
           "display_name_id": "Klorfeniramina",
           "risk_summary_id": "Antihistamin yang disembunyikan, efek sedasi kuat",
           "aliases": ["chlorpheniramine", "klorfeniramina", "ctm", "chlorfeniramina"]
+        },
+        {
+          "generic_name": "Allopurinol",
+          "display_name_id": "Alopurinol",
+          "risk_summary_id": "Sindrom Stevens-Johnson, kerusakan ginjal dan hati bila dicampur ilegal dalam jamu asam urat",
+          "aliases": ["allopurinol", "alopurinol", "allupurinol"]
         }
       ]
     }

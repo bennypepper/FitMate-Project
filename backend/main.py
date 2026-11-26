@@ -1,3 +1,4 @@
+import os
 import sys
 if sys.stdout and hasattr(sys.stdout, "reconfigure"):
     try:
@@ -6,19 +7,20 @@ if sys.stdout and hasattr(sys.stdout, "reconfigure"):
     except Exception:
         pass
 
+from contextlib import asynccontextmanager
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
-from fastapi.middleware.trustedhost import TrustedHostMiddleware
 from starlette.middleware.base import BaseHTTPMiddleware
 from starlette.requests import Request as StarletteRequest
 from starlette.responses import Response
 
-from database.mongo import connect_to_mongo, close_mongo_connection
-from contextlib import asynccontextmanager
-
 from slowapi import _rate_limit_exceeded_handler
 from slowapi.errors import RateLimitExceeded
+
+from core.config import settings
 from core.limiter import limiter
+from database.mongo import db, connect_to_mongo, close_mongo_connection
+
 
 class SecurityHeadersMiddleware(BaseHTTPMiddleware):
     """Adds standard security headers to all responses."""
@@ -31,19 +33,22 @@ class SecurityHeadersMiddleware(BaseHTTPMiddleware):
         response.headers["Permissions-Policy"] = "camera=(self), microphone=(), geolocation=()"
         return response
 
+
 @asynccontextmanager
 async def lifespan(app: FastAPI):
     await connect_to_mongo()
     yield
     await close_mongo_connection()
 
+
+_is_prod = settings.APP_ENV.lower() == "production"
+
 app = FastAPI(
     title="FitMate API",
     description="FastAPI Backend for TCM Safety Scanner",
     version="1.0.0",
     lifespan=lifespan,
-
-    docs_url="/api/docs",
+    docs_url=None if _is_prod else "/api/docs",
     redoc_url=None,
 )
 
@@ -52,38 +57,44 @@ app.add_exception_handler(RateLimitExceeded, _rate_limit_exceeded_handler)
 
 app.add_middleware(SecurityHeadersMiddleware)
 
-import os
-
 ALLOWED_ORIGINS = [
     "http://localhost:3000",
     "http://127.0.0.1:3000",
-    "https://fitmate-tcm.vercel.app",
     "https://fitmate-project.vercel.app",
+    "https://fitmate-tcm.vercel.app",
     "https://fitmate-scanner.vercel.app",
 ]
 
-env_origin = os.environ.get("FRONTEND_URL")
-if env_origin and env_origin not in ALLOWED_ORIGINS:
-    ALLOWED_ORIGINS.append(env_origin)
+for extra_origin in (
+    [settings.FRONTEND_URL, os.environ.get("FRONTEND_URL", "")]
+    + [o.strip() for o in (settings.ALLOWED_ORIGINS or "").split(",")]
+):
+    cleaned = (extra_origin or "").strip().rstrip("/")
+    if cleaned and cleaned not in ALLOWED_ORIGINS:
+        ALLOWED_ORIGINS.append(cleaned)
 
 app.add_middleware(
     CORSMiddleware,
     allow_origins=ALLOWED_ORIGINS,
-    allow_origin_regex=r"^https:\/\/fitmate(-[a-zA-Z0-9_-]+)?\.vercel\.app$",
     allow_credentials=True,
-    allow_methods=["*"],
-    allow_headers=["*"],
+    allow_methods=["GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"],
+    allow_headers=["Authorization", "Content-Type", "X-Bridge-Token"],
 )
+
 
 @app.get("/")
 async def root():
     return {"message": "FitMate API is running", "version": "1.0.0"}
 
+
 @app.get("/health")
 @app.get("/api/v1/health")
 async def health():
     """Health check endpoint for uptime monitoring."""
-    return {"status": "healthy"}
+    return {
+        "status": "healthy",
+        "database": "fallback" if db.is_fallback else "mongodb",
+    }
 
 from routers.ocr import router as ocr_router
 from routers.analyze import router as analyze_router

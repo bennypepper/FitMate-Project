@@ -9,6 +9,7 @@ Both endpoints require valid admin JWT (Depends(get_current_admin)).
 Max file size: 10MB.
 """
 
+import asyncio
 import logging
 import os
 from typing import Annotated
@@ -18,6 +19,7 @@ from database.mongo import get_db
 from fastapi import APIRouter, Depends, File, HTTPException, Request, UploadFile, status
 from utils.auth import get_current_admin
 from utils.excel_parser import parse_file, validate_all_rows
+from utils.upload_validation import read_upload_limited
 
 logger = logging.getLogger("fitmate.upload")
 
@@ -63,15 +65,14 @@ async def validate_upload(
     """
     _check_extension(file)
 
-    file_bytes = await file.read()
-    if len(file_bytes) > MAX_FILE_SIZE:
-        raise HTTPException(
-            status_code=status.HTTP_413_REQUEST_ENTITY_TOO_LARGE,
-            detail="File terlalu besar. Maksimum ukuran file adalah 10MB.",
-        )
+    file_bytes = await read_upload_limited(
+        file,
+        max_bytes=MAX_FILE_SIZE,
+        detail="File terlalu besar. Maksimum ukuran file adalah 10MB.",
+    )
 
     try:
-        rows = parse_file(file_bytes, file.filename or "upload.xlsx")
+        rows = await asyncio.to_thread(parse_file, file_bytes, file.filename or "upload.xlsx")
     except ValueError as exc:
         raise HTTPException(status_code=422, detail=str(exc))
 
@@ -108,15 +109,14 @@ async def import_upload(
     """
     _check_extension(file)
 
-    file_bytes = await file.read()
-    if len(file_bytes) > MAX_FILE_SIZE:
-        raise HTTPException(
-            status_code=status.HTTP_413_REQUEST_ENTITY_TOO_LARGE,
-            detail="File terlalu besar. Maksimum ukuran file adalah 10MB.",
-        )
+    file_bytes = await read_upload_limited(
+        file,
+        max_bytes=MAX_FILE_SIZE,
+        detail="File terlalu besar. Maksimum ukuran file adalah 10MB.",
+    )
 
     try:
-        rows = parse_file(file_bytes, file.filename or "upload.xlsx")
+        rows = await asyncio.to_thread(parse_file, file_bytes, file.filename or "upload.xlsx")
     except ValueError as exc:
         raise HTTPException(status_code=422, detail=str(exc))
 
@@ -149,7 +149,7 @@ async def import_upload(
                 imported_count += 1
             else:
                 updated_count += 1
-        except Exception as exc:
+        except Exception:
             logger.exception(
                 f"[Upload] Failed to upsert ingredient '{row_data.get('mandarin_name') or row_data.get('indonesian_name')}'",
             )
@@ -157,7 +157,7 @@ async def import_upload(
             failed_rows.append({
                 "mandarin_name": row_data.get("mandarin_name"),
                 "indonesian_name": row_data.get("indonesian_name"),
-                "reason": str(exc),
+                "reason": "Gagal menyimpan baris ke database",
             })
 
     if imported_count + updated_count > 0:

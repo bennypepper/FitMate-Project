@@ -15,6 +15,7 @@ Conversation history is passed to all chat functions so the LLM can resolve
 references like "bahan itu", "yang tadi", "apakah aman?", etc.
 """
 import json
+import re
 import asyncio
 import random
 import logging
@@ -64,27 +65,32 @@ async def chat_completion(
                     json=payload,
                 )
                 if resp.status_code in (429, 502, 503, 504):
-                    wait = (_RETRY_BASE_DELAY * (2 ** attempt)) + random.uniform(0.1, 0.5)
-                    logger.warning(
-                        f"[OpenRouter] HTTP {resp.status_code} on attempt "
-                        f"{attempt + 1}/{_MAX_RETRIES}. Retrying in {wait:.2f}s with jitter..."
-                    )
-                    await asyncio.sleep(wait)
                     last_err = Exception(f"HTTP {resp.status_code}: {resp.text[:200]}")
+                    if attempt < _MAX_RETRIES - 1:
+                        wait = (_RETRY_BASE_DELAY * (2 ** attempt)) + random.uniform(0.1, 0.5)
+                        logger.warning(
+                            f"[OpenRouter] HTTP {resp.status_code} on attempt "
+                            f"{attempt + 1}/{_MAX_RETRIES}. Retrying in {wait:.2f}s with jitter..."
+                        )
+                        await asyncio.sleep(wait)
                     continue
 
                 resp.raise_for_status()
                 data = resp.json()
+                if "error" in data or not data.get("choices"):
+                    err_detail = data.get("error", "Empty choices in OpenRouter response")
+                    raise ValueError(f"OpenRouter upstream error: {err_detail}")
                 return data["choices"][0]["message"]["content"]
 
             except httpx.TimeoutException as e:
-                wait = (_RETRY_BASE_DELAY * (2 ** attempt)) + random.uniform(0.1, 0.5)
-                logger.warning(
-                    f"[OpenRouter] Timeout on attempt {attempt + 1}/{_MAX_RETRIES}. "
-                    f"Retrying in {wait:.2f}s with jitter..."
-                )
-                await asyncio.sleep(wait)
                 last_err = e
+                if attempt < _MAX_RETRIES - 1:
+                    wait = (_RETRY_BASE_DELAY * (2 ** attempt)) + random.uniform(0.1, 0.5)
+                    logger.warning(
+                        f"[OpenRouter] Timeout on attempt {attempt + 1}/{_MAX_RETRIES}. "
+                        f"Retrying in {wait:.2f}s with jitter..."
+                    )
+                    await asyncio.sleep(wait)
 
     raise last_err or Exception("OpenRouter: all retries exhausted")
 
@@ -170,7 +176,9 @@ async def parse_intent(message_text: str, history: list[dict] | None = None, mod
             timeout=12.0,
             model=model,
         )
-        result_text = result_text.strip().lstrip("```json").lstrip("```").rstrip("```").strip()
+        result_text = result_text.strip()
+        result_text = re.sub(r"^```(?:json)?\s*", "", result_text, flags=re.IGNORECASE)
+        result_text = re.sub(r"\s*```$", "", result_text).strip()
         result = json.loads(result_text)
         if "intent" not in result:
             raise ValueError("Missing 'intent' key")
@@ -267,8 +275,7 @@ async def generate_safety_reply(
         "- Boleh tambah info berguna dari DB seperti kontraindikasi, tapi jangan berlebihan\n"
         "- Panjang: 3-5 kalimat, cukup informatif tapi tidak bertele-tele\n"
         "- Tutup dengan pertanyaan natural, tidak harus selalu sama, buat bervariasi\n"
-        "- JANGAN tulis disclaimer, karena sudah ditambahkan secara terpisah\n"
-        f"\nPesan user: {user_message}"
+        "- JANGAN tulis disclaimer, karena sudah ditambahkan secara terpisah"
     )
 
     messages: list[dict] = [{"role": "system", "content": system}]

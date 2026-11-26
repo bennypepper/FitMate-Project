@@ -2,6 +2,7 @@ import logging
 from fastapi import APIRouter, File, UploadFile, HTTPException, Request
 from services.vision import extract_and_translate_text
 from core.limiter import limiter
+from utils.upload_validation import detect_image_mime, read_upload_limited
 
 logger = logging.getLogger("fitmate.ocr")
 
@@ -21,9 +22,16 @@ async def process_image_ocr(
         raise HTTPException(status_code=400, detail="File must be an image")
 
     try:
-        content = await file.read()
-        if len(content) > 10 * 1024 * 1024:
-            raise HTTPException(status_code=413, detail="Image too large. Maximum size is 10MB.")
+        content = await read_upload_limited(
+            file,
+            max_bytes=10 * 1024 * 1024,
+            detail="Image too large. Maximum size is 10MB.",
+        )
+        if not detect_image_mime(content):
+            raise HTTPException(
+                status_code=400,
+                detail="Invalid image file content. Supported formats: JPEG, PNG, GIF, WEBP.",
+            )
 
         results = await extract_and_translate_text(content)
         return {

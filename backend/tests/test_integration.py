@@ -66,13 +66,23 @@ async def run_all_tests():
         print(f"Analyze invalid MIME: status {res.status_code}")
         assert res.status_code == 400
 
-        # WhatsApp test-chat endpoint
+        # WhatsApp test-chat endpoint (disabled by default in production -> 403)
+        from core.config import settings
         wa_payload = {"sender": "integration_test", "message": "Apakah Fu Zi aman?"}
-        wa_res = await client.post("/api/v1/whatsapp/test-chat", json=wa_payload)
-        print(f"WhatsApp test-chat: status {wa_res.status_code}")
-        assert wa_res.status_code == 200
-        assert wa_res.json()["status"] == "success"
-        print("WhatsApp test-chat: PASS")
+        wa_disabled = await client.post("/api/v1/whatsapp/test-chat", json=wa_payload)
+        print(f"WhatsApp test-chat (disabled): status {wa_disabled.status_code}")
+        assert wa_disabled.status_code == 403
+
+        prev_flag = settings.ENABLE_TEST_ENDPOINTS
+        settings.ENABLE_TEST_ENDPOINTS = True
+        try:
+            wa_res = await client.post("/api/v1/whatsapp/test-chat", json=wa_payload)
+            print(f"WhatsApp test-chat (enabled): status {wa_res.status_code}")
+            assert wa_res.status_code == 200
+            assert wa_res.json()["status"] == "success"
+            print("WhatsApp test-chat: PASS")
+        finally:
+            settings.ENABLE_TEST_ENDPOINTS = prev_flag
 
         # Bridge session endpoint
         bridge_res = await client.post("/api/v1/bridge/session")
@@ -108,23 +118,37 @@ async def run_all_tests():
     print(f"Repository fuzzy_lookup: PASS (Matched '{fuzzy_doc.get('indonesian_name')}' with score {fuzzy_score})")
 
     print("--- 5. Testing Proxy-Aware Client IP Extractor ---")
+    from core.config import settings
     from core.limiter import get_client_ip
     from starlette.requests import Request as StarletteRequest
 
-    # Test CF-Connecting-IP
-    scope_cf = {"type": "http", "headers": [(b"cf-connecting-ip", b"203.0.113.195")], "client": ("10.0.0.1", 12345)}
-    req_cf = StarletteRequest(scope_cf)
-    assert get_client_ip(req_cf) == "203.0.113.195"
+    prev_proxies = settings.TRUSTED_PROXIES
+    try:
+        # Untrusted peer spoofing forwarded headers must be ignored
+        settings.TRUSTED_PROXIES = "10.0.0.0/8"
+        scope_spoof = {
+            "type": "http",
+            "headers": [(b"x-forwarded-for", b"203.0.113.99")],
+            "client": ("198.51.100.7", 12345),
+        }
+        assert get_client_ip(StarletteRequest(scope_spoof)) == "198.51.100.7"
 
-    # Test X-Forwarded-For
-    scope_xff = {"type": "http", "headers": [(b"x-forwarded-for", b"198.51.100.42, 10.0.0.2")], "client": ("10.0.0.1", 12345)}
-    req_xff = StarletteRequest(scope_xff)
-    assert get_client_ip(req_xff) == "198.51.100.42"
+        # Trusted proxy with CF-Connecting-IP
+        scope_cf = {"type": "http", "headers": [(b"cf-connecting-ip", b"203.0.113.195")], "client": ("10.0.0.1", 12345)}
+        req_cf = StarletteRequest(scope_cf)
+        assert get_client_ip(req_cf) == "203.0.113.195"
 
-    # Test direct client host fallback
-    scope_direct = {"type": "http", "headers": [], "client": ("192.0.2.1", 12345)}
-    req_direct = StarletteRequest(scope_direct)
-    assert get_client_ip(req_direct) == "192.0.2.1"
+        # Trusted proxy with X-Forwarded-For (rightmost untrusted hop)
+        scope_xff = {"type": "http", "headers": [(b"x-forwarded-for", b"198.51.100.42, 10.0.0.2")], "client": ("10.0.0.1", 12345)}
+        req_xff = StarletteRequest(scope_xff)
+        assert get_client_ip(req_xff) == "198.51.100.42"
+
+        # Direct client host fallback
+        scope_direct = {"type": "http", "headers": [], "client": ("192.0.2.1", 12345)}
+        req_direct = StarletteRequest(scope_direct)
+        assert get_client_ip(req_direct) == "192.0.2.1"
+    finally:
+        settings.TRUSTED_PROXIES = prev_proxies
     print("Proxy-aware client IP extractor: PASS")
 
     print("--- ALL INTEGRATION TESTS PASSED! ---")

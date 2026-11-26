@@ -27,14 +27,25 @@ Security:
 """
 import re
 import asyncio
+import logging
 import traceback
-from fastapi import APIRouter, Request, BackgroundTasks, Form, Depends
+from fastapi import APIRouter, Request, BackgroundTasks, Form, Depends, HTTPException
 from pydantic import BaseModel
 from services.whatsapp_service import whatsapp_client
 from cachetools import TTLCache
 from core.config import settings
+from core.limiter import limiter
 from database.mongo import get_db
 from database.ingredient_repository import ingredient_repository
+
+logger = logging.getLogger("fitmate.whatsapp")
+
+ALLOWED_TEST_MODELS = frozenset({
+    "google/gemini-2.5-flash",
+    "google/gemini-2.5-flash-lite",
+    "google/gemini-2.0-flash-001",
+    "meta-llama/llama-3.3-70b-instruct:free",
+})
 
 router = APIRouter(prefix="/whatsapp", tags=["whatsapp"])
 
@@ -141,18 +152,26 @@ async def receive_message(
     MessageSid: str = Form(default=""),
 ):
 
-    twilio_signature = request.headers.get("X-Twilio-Signature", "")
+    twilio_signature = request.headers.get("X-Twilio-Signature", "").strip()
+    if not settings.TWILIO_AUTH_TOKEN or not twilio_signature:
+        logger.warning(
+            "[Twilio] Rejecting webhook request: missing TWILIO_AUTH_TOKEN or X-Twilio-Signature"
+        )
+        raise HTTPException(status_code=403, detail="Invalid or missing Twilio signature")
+
     form_data = await request.form()
     params = dict(form_data)
 
-    scheme = request.headers.get("X-Forwarded-Proto", request.url.scheme)
-    host = request.headers.get("X-Forwarded-Host", request.headers.get("host", ""))
-    webhook_url = f"{scheme}://{host}{request.url.path}"
+    if settings.PUBLIC_BASE_URL:
+        query_suffix = f"?{request.url.query}" if request.url.query else ""
+        webhook_url = settings.PUBLIC_BASE_URL.rstrip("/") + request.url.path + query_suffix
+    else:
+        webhook_url = str(request.url)
 
-    if twilio_signature and settings.TWILIO_AUTH_TOKEN:
-        if not _validate_twilio_signature(webhook_url, params, twilio_signature):
-            print(f"[Twilio] [WARN] Invalid signature from {request.client.host} - rejected")
-            return {"status": "ok"}
+    if not _validate_twilio_signature(webhook_url, params, twilio_signature):
+        client_host = request.client.host if request.client else "unknown"
+        logger.warning(f"[Twilio] Invalid signature from {client_host} - rejected")
+        raise HTTPException(status_code=403, detail="Invalid or missing Twilio signature")
 
     sender_phone = From.replace("whatsapp:", "").strip()
     message_text = Body.strip()
@@ -410,12 +429,22 @@ class TestChatRequest(BaseModel):
 
 
 @router.post("/test-chat")
-async def test_chat(req: TestChatRequest, db=Depends(get_db)):
+@limiter.limit("20/minute")
+async def test_chat(request: Request, req: TestChatRequest, db=Depends(get_db)):
     """
     Test endpoint to bypass Twilio sandbox limits.
-    Acts like the real webhook but returns JSON instead of relying on Twilio API.
-    All safety interceptor layers are active here so batch testing reflects real behavior.
+    Gated behind ENABLE_TEST_ENDPOINTS=True and restricted to an explicit model allowlist.
     """
+    if not settings.ENABLE_TEST_ENDPOINTS:
+        raise HTTPException(status_code=403, detail="Test chat endpoint is disabled")
+
+    allowed_models = ALLOWED_TEST_MODELS | {settings.OPENROUTER_CHATBOT_MODEL}
+    if req.model is not None and req.model not in allowed_models:
+        raise HTTPException(
+            status_code=400,
+            detail="Requested model is not in the allowed test model list",
+        )
+
     return await process_chat_message(
         sender=req.sender,
         text=req.message,

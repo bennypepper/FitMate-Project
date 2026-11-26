@@ -17,6 +17,8 @@ import openpyxl
 
 REQUIRED_COLUMNS = {"indonesian_name", "is_toxic", "source_reference"}
 
+MAX_ROWS = 5000
+
 VALID_TOXICITY_LEVELS = {"none", "low", "moderate", "high", "unknown"}
 
 TRUTHY_VALUES = {"true", "1", "yes", "ya", "benar"}
@@ -45,25 +47,37 @@ def parse_file(file_bytes: bytes, filename: str) -> list[dict]:
         )
 
 def _parse_xlsx(file_bytes: bytes) -> list[dict]:
-    wb = openpyxl.load_workbook(io.BytesIO(file_bytes), data_only=True)
-    sheet = wb.active
+    wb = openpyxl.load_workbook(io.BytesIO(file_bytes), data_only=True, read_only=True)
+    try:
+        sheet = wb.active
+        row_iter = sheet.iter_rows(values_only=True)
+        try:
+            header_row = next(row_iter)
+        except StopIteration:
+            return []
 
-    headers = []
-    for cell in sheet[1]:
-        val = cell.value
-        headers.append(str(val).strip().lower() if val is not None else "")
+        headers = [
+            str(val).strip().lower() if val is not None else ""
+            for val in header_row
+        ]
 
-    rows = []
-    for row in sheet.iter_rows(min_row=2, values_only=True):
-        if all(v is None for v in row):
-            continue
-        row_dict = {}
-        for col_idx, value in enumerate(row):
-            if col_idx < len(headers) and headers[col_idx]:
-                row_dict[headers[col_idx]] = value
-        rows.append(row_dict)
+        rows = []
+        for row in row_iter:
+            if all(v is None for v in row):
+                continue
+            if len(rows) >= MAX_ROWS:
+                raise ValueError(
+                    f"Jumlah baris melebihi batas maksimum ({MAX_ROWS} baris)."
+                )
+            row_dict = {}
+            for col_idx, value in enumerate(row):
+                if col_idx < len(headers) and headers[col_idx]:
+                    row_dict[headers[col_idx]] = value
+            rows.append(row_dict)
 
-    return rows
+        return rows
+    finally:
+        wb.close()
 
 def _parse_csv(file_bytes: bytes) -> list[dict]:
 
@@ -83,6 +97,10 @@ def _parse_csv(file_bytes: bytes) -> list[dict]:
             if k
         }
         if any(v for v in normalized.values()):
+            if len(rows) >= MAX_ROWS:
+                raise ValueError(
+                    f"Jumlah baris melebihi batas maksimum ({MAX_ROWS} baris)."
+                )
             rows.append(normalized)
 
     return rows
